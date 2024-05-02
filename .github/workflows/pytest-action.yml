@@ -1,0 +1,15 @@
+name: pytest-action
+run-name: ${{ github.actor }} is the actor that has triggered the action
+on: [push]
+jobs:
+  run-pytest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up pythpn
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        architecture: "x64"
+    - name: Display Python Version
+      run: python -c "import sys ; print(sys.version)"
