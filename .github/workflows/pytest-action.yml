@@ -1,5 +1,5 @@
 name: pytest-action
-run-name: ${{ github.actor }} is the actor that has triggered the action
+run-name: PYTEST
 on: [push]
 jobs:
   run-pytest:
@@ -17,4 +17,4 @@ jobs:
     - name: Install poetry env
       run: poetry install
     - name: run pytest
-      run: poetry run pytest
+      run: poetry run pytest -v
