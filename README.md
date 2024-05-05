@@ -27,8 +27,9 @@ https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
 More info : https://pre-commit.com/
 
 ## CI/CD (Github)
+
+- Main branch : no pushes, only merges from branches that pass tests
 - github action `pytest-action` is setup to run pytest on each push
-- **TODO** : protect main branch to block merge from a branch which last commit has failed actions
 - **TODO** : auto deploy to PYPI on merge to main branch
 
 # HOW TO PUBLISH TO PYPI
