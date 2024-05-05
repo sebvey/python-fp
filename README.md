@@ -14,19 +14,23 @@ A custom functional style library for python
 -> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
 
 ## Black
-Black is used as python formatter. If setup done as above, black formats all new commited files before commit.  
+Black is used as python formatter. If setup done as above, black formats all commited files before commit.  
 To manually format a file : `black path/to/file`  
 All files, from project root dir : `black .`  
 
 Info on Black IDE integration [here](https://black.readthedocs.io/en/stable/integrations/editors.html)
 
+We should configure output python versions ... possibliy done automatically from pyproject.toml...  
+https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html  
+
 ## Pre-commit
 More info : https://pre-commit.com/
 
-## TODOs
-We should configure output python versions ...
-TODO : possibliy done automatically from pyproject.toml...  
-https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html  
+## CI/CD (Github)
+
+- Main branch : no pushes, only merges from branches that pass tests
+- github action `pytest-action` is setup to run pytest on each push
+- **TODO** : auto deploy to PYPI on merge to main branch
 
 # HOW TO PUBLISH TO PYPI
 
