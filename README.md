@@ -20,13 +20,16 @@ All files, from project root dir : `black .`
 
 Info on Black IDE integration [here](https://black.readthedocs.io/en/stable/integrations/editors.html)
 
+We should configure output python versions ... possibliy done automatically from pyproject.toml...  
+https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html  
+
 ## Pre-commit
 More info : https://pre-commit.com/
 
-## TODOs
-We should configure output python versions ...
-TODO : possibliy done automatically from pyproject.toml...  
-https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html  
+## CI/CD (Github)
+- github action `pytest-action` is setup to run pytest on each push
+- **TODO** : protect main branch to block merge from a branch which last commit has failed actions
+- **TODO** : auto deploy to PYPI on merge to main branch
 
 # HOW TO PUBLISH TO PYPI
 
