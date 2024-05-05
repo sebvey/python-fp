@@ -14,7 +14,7 @@ A custom functional style library for python
 -> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
 
 ## Black
-Black is used as python formatter. If setup done as above, black formats all new commited files before commit.  
+Black is used as python formatter. If setup done as above, black formats all commited files before commit.  
 To manually format a file : `black path/to/file`  
 All files, from project root dir : `black .`  
 
