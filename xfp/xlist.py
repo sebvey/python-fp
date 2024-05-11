@@ -1,12 +1,14 @@
 from typing import Iterable, Iterator, Callable, Any, List
 from collections.abc import Iterable as ABCIterable
 
+## TYPE RESTRICTION (commented)
 # flat element type (no nested Xlist)
-# TODO : to be extended in the future
-type F = (int | str | float)
-
+# type F = (int | str | float)
 # element type, one possible 'nested level'
-type E = (F | "Xlist[F]" | List[F])
+# type E = (F | "Xlist[F]" | List[F])
+
+# NO RESTRICTION
+type E = Any
 
 
 def _id[E](e: E) -> E:
