@@ -40,4 +40,4 @@ def test_xlist_from_generator():
 
 def test_xlist_from_bad_type():
     with pytest.raises(TypeError) as e:
-        input = Xlist(666)
+        input = Xlist(666)  # type: ignore
