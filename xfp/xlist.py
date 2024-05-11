@@ -1,63 +1,58 @@
-from typing import List, Tuple, Iterable, Iterator, Self, Callable
+from typing import Iterable, Iterator, Callable, Any, List
+from collections.abc import Iterable as ABCIterable
 
-# from collections import UserList
-from copy import deepcopy
+# flat element type (no nested Xlist)
+# TODO : to be extended in the future
+type F = (int | str | float)
+
+# element type, one possible 'nested level'
+type E = (F | "Xlist[F]" | List[F])
 
 
-class Xlist(Iterable):
+def _id[E](e: E) -> E:
+    return e
 
-    def __init__(self, iterable: Iterable) -> None:
 
-        match iterable:
-            case list():
-                self.__data = self._convert_list(iterable)
-            case tuple():
-                self.__data = self._convert_tuple(iterable)
-            case object(__iter__=_):
-                self.__data = self._convert_iterator(iterable)
-            case _:
-                raise TypeError(
-                    f"Xlist constructed from Iterator, provided : {type(iterable)}"
-                )
+class Xlist[T: E]:
 
-    @classmethod
-    def _convert_list(cls, list: List) -> List:
-        return deepcopy(list)
+    def __init__(self, iterable: Iterable[T]) -> None:
 
-    @classmethod
-    def _convert_tuple(cls, tuple: Tuple) -> List:
-        return cls._convert_list(list(tuple))
+        self.__data = list(iterable)
 
-    @classmethod
-    def _convert_iterator(cls, iterator: Iterator) -> List:
-        return list(iterator)
-
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[T]:
         return iter(self.__data)
 
     def __eq__(self, other: object) -> bool:
-        return self.__data == other.__data
+        match other:
+            case ABCIterable():
+                return [e for e in self] == [e for e in other]
+            case _:
+                return False
 
-    def map(self, f: Callable) -> Self:
+    def map(self, f: Callable[[T], E]) -> "Xlist[E]":
         return Xlist([f(el) for el in self])
 
-    def flatten(self) -> Self:
-        return Xlist([inner for outer in self for inner in outer])
-
-    def flatMap(self, f: Callable) -> Self:
-        return Xlist([i for el in map(f, self) for i in el])
-
-    def filter(self, predicate: Callable) -> Self:
+    def filter(self, predicate: Callable[[T], bool]) -> "Xlist[T]":
         return Xlist([el for el in self if predicate(el)])
 
-    def sorted(self, key: None = None, reverse: bool = False) -> Self:
-        return Xlist(sorted(self, key=key, reverse=reverse))
+    def foreach(self, statement: Callable[[T], None]) -> None:
+        for el in self:
+            statement(el)
 
-    def foreach(self, statement: Callable) -> None:
-        self.map(statement)
+    def flatten(self) -> "Xlist[E]":
+        return Xlist([inner for e in self if isinstance(e, ABCIterable) for inner in e])
 
-    def min(self, key: None = None):
+    def flatMap(self, f: Callable[[T], E]) -> "Xlist[E]":
+        return self.map(f).flatten()
+
+    # should be something like key: Callable[[T], SupportsRichComparison]
+    def min(self, key: Callable[[T], Any] = _id):
         return min(self, key=key)
 
-    def max(self, key: None = None):
+    def max(self, key: Callable[[T], Any] = _id):
         return max(self, key=key)
+
+    def sorted(
+        self, key: Callable[[T], Any] = _id, reverse: bool = False
+    ) -> "Xlist[T]":
+        return Xlist(sorted(self, key=key, reverse=reverse))
