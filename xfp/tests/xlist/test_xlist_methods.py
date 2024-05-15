@@ -10,10 +10,10 @@ def test_xlist_map():
     assert actual == expected
 
 
-def test_xlist_flatmap():
+def test_xlist_flat_map():
 
     input = Xlist([1, 2])
-    actual = input.flatMap(lambda x: [x, x**2])
+    actual = input.flat_map(lambda x: [x, x**2])
     expected = Xlist([1, 1, 2, 4])
 
     assert actual == expected
