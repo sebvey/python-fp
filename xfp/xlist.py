@@ -1,13 +1,10 @@
-from typing import Iterable, Iterator, Callable, Any, List
+# from _typeshed import SupportsRichComparison # not available ...
+
+from typing import Iterable, Iterator, Callable, Any
 from collections.abc import Iterable as ABCIterable
 
-## TYPE RESTRICTION (commented)
-# flat element type (no nested Xlist)
-# type F = (int | str | float)
-# element type, one possible 'nested level'
-# type E = (F | "Xlist[F]" | List[F])
 
-# NO RESTRICTION
+# Element type alias
 type E = Any
 
 
@@ -18,8 +15,13 @@ def _id[E](e: E) -> E:
 class Xlist[T: E]:
 
     def __init__(self, iterable: Iterable[T]) -> None:
-
-        self.__data = list(iterable)
+        match iterable:
+            case ABCIterable():
+                self.__data = list(iterable)
+            case _:
+                raise TypeError(
+                    f"'{type(iterable).__name__}' not allowed for Xlist constructor"
+                )
 
     def __iter__(self) -> Iterator[T]:
         return iter(self.__data)
@@ -44,17 +46,14 @@ class Xlist[T: E]:
     def flatten(self) -> "Xlist[E]":
         return Xlist([inner for e in self if isinstance(e, ABCIterable) for inner in e])
 
-    def flatMap(self, f: Callable[[T], E]) -> "Xlist[E]":
+    def flat_map(self, f: Callable[[T], Iterable[E]]) -> "Xlist[E]":
         return self.map(f).flatten()
 
-    # should be something like key: Callable[[T], SupportsRichComparison]
-    def min(self, key: Callable[[T], Any] = _id):
+    def min(self, key: Callable[[T], E] = _id) -> T:
         return min(self, key=key)
 
-    def max(self, key: Callable[[T], Any] = _id):
+    def max(self, key: Callable[[T], E] = _id) -> T:
         return max(self, key=key)
 
-    def sorted(
-        self, key: Callable[[T], Any] = _id, reverse: bool = False
-    ) -> "Xlist[T]":
+    def sorted(self, key: Callable[[T], E] = _id, reverse: bool = False) -> "Xlist[T]":
         return Xlist(sorted(self, key=key, reverse=reverse))
