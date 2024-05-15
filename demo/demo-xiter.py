@@ -21,9 +21,7 @@ def add_one(s: Sale) -> Sale:
 
 
 def is_day_of_month(day_of_month: int):
-
     def predicate(sale: Sale):
-
         expected_DOM = str(day_of_month).rjust(2, "0")
         actual_DOM = sale.ref_date[-2:]
 
@@ -51,9 +49,7 @@ sales = Xiter(
 )
 
 new_sales = (
-    sales.filter(is_day_of_month(1))
-    .map(double)
-    .map(add_one)
+    sales.filter(is_day_of_month(1)).map(double).map(add_one)
     #        .flatMap(lambda x: [x, x])
 )
 
