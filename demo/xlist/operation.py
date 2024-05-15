@@ -7,9 +7,7 @@ def convert_amount(s: Sale) -> Sale:
 
 
 def is_day_of_month(day_of_month: int):
-
     def predicate(sale: Sale):
-
         expected_DOM = str(day_of_month).rjust(2, "0")
         actual_DOM = sale.ref_date[-2:]
 
