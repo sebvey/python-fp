@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Iterator, Self
+from typing import Callable, Iterator, Self
 
 
 class Xeffect[T, E]:

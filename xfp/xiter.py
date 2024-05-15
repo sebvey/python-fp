@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Iterator, Self, Any
+from typing import Callable, Iterable, Iterator, Any
 from collections.abc import Iterable as ABCIterable
 
 # Base type
@@ -6,7 +6,6 @@ type E = Any
 
 
 class Xiter[T: E]:
-
     def __init__(self, iterable: Iterable[T]) -> None:
         match iterable:
             case ABCIterable():

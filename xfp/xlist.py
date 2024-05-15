@@ -13,7 +13,6 @@ def _id[E](e: E) -> E:
 
 
 class Xlist[T: E]:
-
     def __init__(self, iterable: Iterable[T]) -> None:
         match iterable:
             case ABCIterable():
