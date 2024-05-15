@@ -13,15 +13,9 @@ A custom functional style library for python
 
 -> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
 
-## Black
-Black is used as python formatter. If setup done as above, black formats all commited files before commit.  
-To manually format a file : `black path/to/file`  
-All files, from project root dir : `black .`  
-
-Info on Black IDE integration [here](https://black.readthedocs.io/en/stable/integrations/editors.html)
-
-We should configure output python versions ... possibliy done automatically from pyproject.toml...  
-https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html  
+## Linter / formatter = ruff
+Ruff is hooked on pre-commit as linter and formatter.  
+More here : https://github.com/astral-sh/ruff
 
 ## Pre-commit
 More info : https://pre-commit.com/
