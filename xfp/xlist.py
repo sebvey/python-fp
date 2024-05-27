@@ -2,33 +2,34 @@
 
 from typing import Iterable, Iterator, Callable, Any
 from collections.abc import Iterable as ABCIterable
-from utils import E, id
+from .utils import E, id
 
 
 class Xlist[X: E]:
     """Enhance Lists (eager) with functional behaviors.
-    
+
     This class provides common behaviors used for declarative programming.
     It brings :
-    Monadic behavior through : 
+    Monadic behavior through :
     - map
     - flat_map
+    - flatten
     - filter
     - foreach
-    Descriptive accumulation through : 
+    Descriptive accumulation through :
     - min |- and sorted/reverse by extension
     - max |
     - fold
     - fold_left
     - fold_right
     - reduce
-    List proxies or quality of lifes : 
+    List proxies or quality of lifes :
     - head
     - tail
     - iter
     - len
     """
-    
+
     def __init__(self, iterable: Iterable[X]) -> None:
         """Construct an Xlist from an iterable."""
         match iterable:
@@ -57,8 +58,8 @@ class Xlist[X: E]:
 
     def head(self) -> X:
         """Return the first element of the Xlist.
-        
-        Raise: 
+
+        Raise:
         IndexError -- if the list is empty.
         """
         if len(self) <= 0:
@@ -67,8 +68,8 @@ class Xlist[X: E]:
 
     def tail(self) -> "Xlist[X]":
         """Return the Xlist / its first element.
-        
-        Raise: 
+
+        Raise:
         IndexError -- if the list is empty.
         """
         if len(self) <= 0:
@@ -77,7 +78,7 @@ class Xlist[X: E]:
 
     def map(self, f: Callable[[X], E]) -> "Xlist[E]":
         """Return a new Xlist with the function f applied to each element.
-        
+
         Keyword arguments:
         f -- the transformation to apply to each element of the list
         Usage:
@@ -89,7 +90,7 @@ class Xlist[X: E]:
 
     def filter(self, predicate: Callable[[X], bool]) -> "Xlist[X]":
         """Return a new Xlist containing only the elements for which predicate is True.
-        
+
         Keyword arguments:
         predicate -- the function describing which elements to keep
         Usage:
@@ -101,7 +102,7 @@ class Xlist[X: E]:
 
     def foreach(self, statement: Callable[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the Xlist.
-        
+
         Keyword arguments:
         statement -- the procedure to execute for each element
         Usage:
@@ -112,13 +113,19 @@ class Xlist[X: E]:
         # This is an element of the list : 2
         # This is an element of the list : 3
         """
+        return Xlist([f(el) for el in self])
+
+    def filter(self, predicate: Callable[[X], bool]) -> "Xlist[X]":
+        return Xlist([el for el in self if predicate(el)])
+
+    def foreach(self, statement: Callable[[X], Any]) -> None:
         (statement(e) for e in self)
 
     # TODO : Document
     def flatten(self) -> "Xlist[E]":
         return Xlist([inner for e in self if isinstance(e, ABCIterable) for inner in e])
 
-    def flat_map(self, f: Callable[[T], Iterable[E]]) -> "Xlist[E]":
+    def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xlist[E]":
         return self.map(f).flatten()
 
     def min(self, key: Callable[[X], E] = id) -> X:
@@ -130,13 +137,13 @@ class Xlist[X: E]:
     def sorted(self, key: Callable[[X], E] = id, reverse: bool = False) -> "Xlist[X]":
         return Xlist(sorted(self, key=key, reverse=reverse))
 
-    def reverse(self) -> "Xlist[T]":
-        data: list[T] = self.__data.copy()
+    def reverse(self) -> "Xlist[X]":
+        data: list[X] = self.__data.copy()
         data.reverse()
         return Xlist(data)
 
-    def foldLeft(self, zero: E) -> Callable[[Callable[[E, T], E]], E]:
-        def inner(f: Callable[[E, T], E]) -> E:
+    def fold_left(self, zero: E) -> Callable[[Callable[[E, X], E]], E]:
+        def inner(f: Callable[[E, X], E]) -> E:
             acc: E = zero
             for e in self:
                 acc = f(acc, e)
@@ -144,19 +151,19 @@ class Xlist[X: E]:
 
         return inner
 
-    def foldRight(self, zero: E) -> Callable[[Callable[[T, E], E]], E]:
-        def inner(f: Callable[[T, E], E]) -> E:
-            return self.reverse().foldLeft(zero)(lambda e, t: f(t, e))
+    def fold_right(self, zero: E) -> Callable[[Callable[[X, E], E]], E]:
+        def inner(f: Callable[[X, E], E]) -> E:
+            return self.reverse().fold_left(zero)(lambda e, t: f(t, e))
 
         return inner
 
-    def fold(self, zero: T) -> Callable[[Callable[[T, T], E]], E]:
-        def inner(f: Callable[[T, T], E]) -> E:
-            return self.foldLeft(zero)(f)
+    def fold(self, zero: X) -> Callable[[Callable[[X, X], E]], E]:
+        def inner(f: Callable[[X, X], E]) -> E:
+            return self.fold_left(zero)(f)
 
         return inner
 
-    def reduce(self, f: Callable[[T, T], T]) -> T:
+    def reduce(self, f: Callable[[X, X], X]) -> X:
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
