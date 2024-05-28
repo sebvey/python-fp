@@ -1,17 +1,17 @@
-from typing import Callable, Iterator, Self
+from typing import Callable, Any, cast
+from enum import Enum
+from dataclasses import dataclass
+from utils import E, Unused
 
 
-class Xeffect[T, E]:
-    left_value: T | None
-    right_value: E | None
-    __key = object()
-    # TODO : remove, test feature
-    key = __key
+XFXBranch = Enum("XFXBranch", ["LEFT", "RIGHT"])
 
-    # TODO : Xeffect.lift(None) should be a left
-    @classmethod
-    def lift(cls, value: T) -> Self:
-        return cls.from_optional(value)
+
+@dataclass(frozen=True)
+class Xeffect[X: E, Y: E]:
+    branch: XFXBranch
+    value: X | Y
+    bias: XFXBranch = XFXBranch.LEFT
 
     @classmethod
     def from_optional(cls, value: T | None) -> Self:

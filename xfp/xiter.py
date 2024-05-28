@@ -1,9 +1,6 @@
 from typing import Callable, Iterable, Iterator, Any
 from collections.abc import Iterable as ABCIterable
-
-# Base type
-type E = Any
-
+from utils import E
 
 class Xiter[T: E]:
     def __init__(self, iterable: Iterable[T]) -> None:
