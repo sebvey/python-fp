@@ -158,12 +158,55 @@ class Xeffect[X: E, Y: E]:
                 return self.map_left(f)
             case XFXBranch.RIGHT:
                 return self.map_right(f)
+            
+    def flatten_left(self) -> "Xeffect[E, E]":
+        """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
+        
+        Raise:
+        TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect, and flattening should happen
+        Return:
+        if self.value is an Xeffect, and branch = bias = LEFT -- a new Xeffect being a copy of the underlying value
+        otherwise                                             -- self
+        Usage:
+        see flatten
+        """
+        match self:
+            case Xeffect(XFXBranch.LEFT, Xeffect(branch, value, XFXBranch.LEFT), XFXBranch.LEFT):
+                return Xeffect(branch, value, XFXBranch.LEFT)
+            case Xeffect(XFXBranch.LEFT, Xeffect(_, _, XFXBranch.RIGHT), XFXBranch.LEFT):
+                raise TypeError(
+                    f"Effect flattening can only work within same bias. Found ${self}"
+                )
+            case _:
+                return self
+            
+    def flatten_right(self) -> "Xeffect[E, E]":
+        """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
+        
+        Raise:
+        TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect, and flattening should happen
+        Return:
+        if self.value is an Xeffect, and branch = bias = RIGHT -- a new Xeffect being a copy of the underlying value
+        otherwise                                              -- self
+        Usage:
+        see flatten
+        """
+        match self:
+            case Xeffect(XFXBranch.RIGHT, Xeffect(branch, value, XFXBranch.RIGHT), XFXBranch.RIGHT):
+                return Xeffect(branch, value, XFXBranch.RIGHT)
+            case Xeffect(XFXBranch.RIGHT, Xeffect(_, _, XFXBranch.LEFT), XFXBranch.RIGHT):
+                raise TypeError(
+                    f"Effect flattening can only work within same bias. Found ${self}"
+                )
+            case _:
+                return self
+            
 
     def flatten(self) -> "Xeffect[E, E]":
         """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
         
         Raise:
-        TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect
+        TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect, and flattening should happen
         Return:
         if self.value is an Xeffect -- a new Xeffect being a copy of the underlying value
         otherwise                   -- self
@@ -174,15 +217,11 @@ class Xeffect[X: E, Y: E]:
         with pytest.raises(TypeError):
             Xeffect.lift(Xeffect.lift("example").biased(XFXBranch.RIGHT)).flatten()
         """
-        match self:
-            case Xeffect( _, Xeffect(branch, value, in_bias), out_bias) if in_bias == out_bias:
-                return Xeffect(branch, value, out_bias)
-            case Xeffect(_, Xeffect(_, _, _), _):
-                raise TypeError(
-                    f"Effect flattening can only work within same bias. Found ${self}"
-                )
-            case default:  # same bias, either plain value or wrong branch to flatten
-                return default
+        match self.bias:
+            case XFXBranch.LEFT:
+                return self.flatten_left()
+            case XFXBranch.RIGHT:
+                return self.flatten_right()
 
     def flat_map_left(self, f: Callable[[X], E]) -> "Xeffect[E, Y]":
         """Return the result of map_left then flatten.

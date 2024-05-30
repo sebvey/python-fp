@@ -1,32 +1,31 @@
-from xfp import Xeffect
+from xfp import *
 
-option = Xeffect.from_optional(3).map(lambda x: x * 2).map(lambda x: str(x) * 3)
+"""
+taList = list()
+taMappedList = map(taList, lambda x: x*x)
+taFilteredList = filter(taMappedList, lambda x: x % 2 == 0)
 
-print("THIRD CONSUMPTION")
-option.foreach(print)
 
-print("FOURTH CONSUMPTION")
+
+taList
+  .map(lambda x: x*x)
+  .filter(lambda x: x % 2 == 0)
+"""
+
 (
-    option.flatMap(lambda x: Xeffect.from_optional(None if len(x) > 0 else x)).foreach(
-        print
-    )
+    Xlist([1, 2, 3, 4])
+      .flat_map(lambda x: [x, x]) # Xlist([1, 1, 2, 2, 3, 3, 4, 4])      
 )
 
+def div(x: float, y: float) -> Xeffect[float, str]:
+    if y == 0:
+        return Xeffect(XFXBranch.RIGHT, "banane")
+    return Xeffect(XFXBranch.LEFT, x / y)
+
+Xeffect.from_unsafe(lambda: div(3, 0))
+
 (
-    option.flatMap(lambda x: Xeffect.from_optional(None if len(x) == 0 else x)).foreach(
-        print
-    )
+  div(3, 1)
+    .flat_map(lambda x:float: div(1, x))
+    .fold(0)(lambda x: x - 3)
 )
-
-print("FIFTH CONSUMPTION")
-out = option.flatMap(lambda x: Xeffect(Xeffect.key, None, "Error")).foreach(print)
-
-out2 = Xeffect(Xeffect.key, None, "Error").flatMap(
-    lambda x: Xeffect.from_optional(None if len(x) > 0 else x)
-)  # .foreach(print)
-out3 = Xeffect.from_optional(None).flatMap(
-    lambda x: Xeffect.from_optional(None if len(x) > 0 else x)
-)  # .foreach(print)
-print(out.right_value)
-print(out2.right_value)
-print(out3.right_value)
