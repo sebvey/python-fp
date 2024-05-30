@@ -56,6 +56,10 @@ class Xlist[X: E]:
         """Return the length of the underlying data."""
         return len(self.__data)
 
+    def __str__(self) -> str:
+        """Return the string representation of the underlying data"""
+        return str(self.__data)
+
     def head(self) -> X:
         """Return the first element of the Xlist.
 
@@ -78,7 +82,7 @@ class Xlist[X: E]:
 
     def map(self, f: Callable[[X], E]) -> "Xlist[E]":
         """Return a new Xlist with the function f applied to each element.
-        
+
         Usage:
         input = Xlist([1, 2, 3])
         f = lambda el: el*el
@@ -107,36 +111,38 @@ class Xlist[X: E]:
         # This is an element of the list : 2
         # This is an element of the list : 3
         """
-        return Xlist([f(el) for el in self])
-
-    def filter(self, predicate: Callable[[X], bool]) -> "Xlist[X]":
-        return Xlist([el for el in self if predicate(el)])
-
-    def foreach(self, statement: Callable[[X], Any]) -> None:
-        (statement(e) for e in self)
+        [statement(e) for e in self]
 
     def flatten(self) -> "Xlist[E]":
         """Return a new Xlist with one less level of nest.
-        
+
         Usage:
         assert Xlist.flatten([1, 2, 3]) == Xlist([1, 2, 3])
         assert Xlist.flatten([[1, 2], [3]]) == Xlist([1, 2, 3])
         assert Xlist.flatten([[1, 2], 3]) == Xlist([1, 2, 3])
         """
-        return Xlist([inner for e in self if isinstance(e, ABCIterable) for inner in e])
+        flatten_data = list()
+        for el in self:
+            if isinstance(el, ABCIterable):
+                for inner_el in el:
+                    flatten_data.append(inner_el)
+            else:
+                flatten_data.append(el)
+
+        return Xlist(flatten_data)
 
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xlist[E]":
         """Return the result of map and then flatten.
-        
+
         Exists as homogenisation with Xeffect.flat_map
-        Usage: 
+        Usage:
         assert Xlist([1, 2, 3]).flat_map(lambda x: Xlist([4, 5]).map(lambda y: (x, y))) == Xlist([(1, 4), (2, 4), (3, 4), (1, 5), (2, 5), (3, 5)])
         """
         return self.map(f).flatten()
 
     def min(self, key: Callable[[X], E] = id) -> X:
         """Return the smallest element of the Xlist given the key criteria.
-        
+
         Keyword Arguments:
         key (default id) -- the function which extrapolate a sortable from the elements of the list
         Usage:
@@ -148,10 +154,10 @@ class Xlist[X: E]:
 
     def max(self, key: Callable[[X], E] = id) -> X:
         """Return the biggest element of the Xlist given the key criteria.
-        
+
         Keyword Arguments:
         key (default id) -- the function which extrapolate a sortable from the elements of the list
-    
+
         Usage:
         input = Xlist(["ae", "bd", "cc"])
         assert input.max() == "cc"
@@ -161,7 +167,7 @@ class Xlist[X: E]:
 
     def sorted(self, key: Callable[[X], E] = id, reverse: bool = False) -> "Xlist[X]":
         """Return a new Xlist containing the same elements sorted given the key criteria.
-        
+
         Keyword Arguments:
         key (default id)        -- the function which extrapolate a sortable from the elements of the list
         reverse (default False) -- should we sort ascending (False) or descending (True)
@@ -181,7 +187,7 @@ class Xlist[X: E]:
 
     def fold_left(self, zero: E) -> Callable[[Callable[[E, X], E]], E]:
         """Return the accumulation of the Xlist elements.
-        
+
         Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
         Initialize the accumulator with the zero value
         Then from the first to the last element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
@@ -196,6 +202,7 @@ class Xlist[X: E]:
         assert Xlist(["1", "2", "3"]).fold_left("")(lambda x, y: x + y) == "123"
         assert Xlist([]).fold_left(0)(lambda x, y: x + y) == 0
         """
+
         def inner(f: Callable[[E, X], E]) -> E:
             acc: E = zero
             for e in self:
@@ -206,7 +213,7 @@ class Xlist[X: E]:
 
     def fold_right(self, zero: E) -> Callable[[Callable[[X, E], E]], E]:
         """Return the accumulation of the Xlist elements.
-        
+
         Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
         Initialize the accumulator with the zero value
         Then from the last to the first element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
@@ -221,6 +228,7 @@ class Xlist[X: E]:
         assert Xlist(["1", "2", "3"]).fold_right("")(lambda x, y: x + y) == "321"
         assert Xlist([]).fold_right(0)(lambda x, y: x + y) == 0
         """
+
         def inner(f: Callable[[X, E], E]) -> E:
             return self.reverse().fold_left(zero)(lambda e, t: f(t, e))
 
@@ -228,14 +236,14 @@ class Xlist[X: E]:
 
     def fold(self, zero: X) -> Callable[[Callable[[X, X], E]], E]:
         """Return the accumulation of the Xlist elements.
-        
+
         Shorthand for fold_left
         """
         return self.fold_left(zero)
 
     def reduce(self, f: Callable[[X, X], X]) -> X:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
-        
+
         Raise:
         IndexError -- when the Xlist is empty
         Keyword Arguments:
