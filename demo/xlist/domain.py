@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Self
+from typing import Any
 
 
 @total_ordering
@@ -11,8 +11,16 @@ class Sale:
     ref_date: str
     amount: float
 
-    def __eq__(self, other: Self) -> bool:
-        return self.amount == other.amount
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Sale):
+            return False
+        else:
+            return self.amount == other.amount
 
-    def __lt__(self, other: Self) -> bool:
-        return self.amount < other.amount
+    def __lt__(self, other: Any) -> bool:
+        if not isinstance(other, Sale):
+            raise TypeError(
+                f"'<' not supported between instances of '{type(other)}' and 'Sale'"
+            )
+        else:
+            return self.amount < other.amount
