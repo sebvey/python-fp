@@ -158,10 +158,11 @@ class Xlist[X: E]:
         return inner
 
     def fold(self, zero: X) -> Callable[[Callable[[X, X], E]], E]:
-        def inner(f: Callable[[X, X], E]) -> E:
-            return self.fold_left(zero)(f)
-
-        return inner
+        """Return the accumulation of the Xlist elements.
+        
+        Shorthand for fold_left
+        """
+        return self.fold_left(zero)
 
     def reduce(self, f: Callable[[X, X], X]) -> X:
         if len(self) <= 0:
