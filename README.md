@@ -1,6 +1,7 @@
-# zfp library prject
+# xfp library prject
 
-A custom functional style library for python
+A custom functional style library for python.  
+Github repository [HERE](https://github.com/sebvey/python-fp/)
 
 # HOW TO CONTRIBUTE
 
@@ -24,12 +25,12 @@ More info : https://pre-commit.com/
 
 - Main branch : no pushes, only merges from branches that pass tests
 - github action `pytest-action` is setup to run pytest on each push
-- **TODO** : auto deploy to PYPI on merge to main branch
+- **TODO** : auto deploy to PyPI
 
 # HOW TO PUBLISH TO PYPI
 
-By now, pypi credentials (token) is configured locally with :  
-`poetry config pypi-token.pypi <token>``
+By now, pypi credentials (token) have to be configured locally with :  
+`poetry config pypi-token.pypi <token>`
 
 To publish locally (from given branch) :  
 `poetry publish`
