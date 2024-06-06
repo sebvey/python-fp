@@ -14,6 +14,14 @@ class Xiter[X: E]:
     def __iter__(self) -> Iterator[X]:
         return self.iter
 
+    def __eq__(self, other: object) -> bool:
+        """Return the equality by comparison of inner values (and order)."""
+        match other:
+            case ABCIterable():
+                return [e for e in self] == [e for e in other]
+            case _:
+                return False
+
     def __repr__(self) -> str:
         return repr(self.iter)
 
@@ -21,8 +29,8 @@ class Xiter[X: E]:
         return Xiter(map(f, self))
 
     def flatten(self) -> "Xiter[E]":
-        def result(self):
-            for el in self:
+        def result(xi):
+            for el in xi:
                 if isinstance(el, ABCIterable):
                     for inner_el in el:
                         yield inner_el
