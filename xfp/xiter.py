@@ -21,7 +21,15 @@ class Xiter[X: E]:
         return Xiter(map(f, self))
 
     def flatten(self) -> "Xiter[E]":
-        return Xiter(inner for e in self if isinstance(e, ABCIterable) for inner in e)
+        def result(self):
+            for el in self:
+                if isinstance(el, ABCIterable):
+                    for inner_el in el:
+                        yield inner_el
+                else:
+                    yield el
+
+        return Xiter(result(self))
 
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
         return Xiter(el for iterable in self.map(f) for el in iterable)
@@ -30,4 +38,4 @@ class Xiter[X: E]:
         return Xiter(filter(predicate, self))
 
     def foreach(self, statement: Callable[[X], Any]) -> None:
-        (statement(e) for e in self)
+        [statement(e) for e in self]
