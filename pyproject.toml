@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xfp"
-version = "1.0.0b2"
+version = "1.0.0b3"
 description = "functional programming library for python"
 authors = ["Sébastien VEY", "Jérôme LIERMANN"]
 readme = "README.md"
