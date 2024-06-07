@@ -1,4 +1,4 @@
-from domain import Sale
+from .domain import Sale
 from dataclasses import replace
 
 
