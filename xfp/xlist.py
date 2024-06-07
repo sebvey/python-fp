@@ -257,3 +257,7 @@ class Xlist[X: E]:
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
+
+    def zip(self, other: Iterable[E]) -> "Xlist[tuple[X, E]]":
+        """Zip this Xlist with another iterable."""
+        return Xlist(zip(self, other))
