@@ -1,6 +1,6 @@
 from xfp import Xlist
-from domain import Sale
-import operation as op
+from .domain import Sale
+from . import operation as op
 
 from operator import attrgetter
 

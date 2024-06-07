@@ -1,5 +1,5 @@
 from typing import Callable
-from operation import load_csv
+from .operation import load_csv
 from xfp import XFXBranch, Xeffect
 
 
