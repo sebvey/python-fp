@@ -1,7 +1,10 @@
-from typing import Callable, Any, Self, cast
+from typing import Callable, Any, ParamSpec, Self, cast
 from enum import Enum
 from dataclasses import dataclass
 from .utils import E
+
+
+P = ParamSpec("P")
 
 
 XFXBranch = Enum("XFXBranch", ["LEFT", "RIGHT"])
@@ -91,6 +94,13 @@ class Xeffect[X: E, Y: E]:
             return Xeffect(XFXBranch.LEFT, f())
         except Exception as e:
             return Xeffect(XFXBranch.RIGHT, e)
+
+    @classmethod
+    def safed(cls, f: Callable[P, E]) -> Callable[P, "Xeffect[E, Exception]"]:
+        def inner(*args: P.args, **kwargs: P.kwargs):
+            return Xeffect.from_unsafe(lambda: f(*args, **kwargs))
+
+        return inner
 
     def __repr__(self) -> str:
         return f"{self.branch} : {self.value}"
