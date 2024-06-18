@@ -75,46 +75,46 @@ def test_xeffect_flatten():
 
 def test_xeffect_flat_map_left_do():
     input = Xeffect(XFXBranch.LEFT, 1, XFXBranch.LEFT)
-    actual = input.flat_map_left(lambda x: Xeffect.lift(x + 2))
-    expected = Xeffect(XFXBranch.LEFT, 3, XFXBranch.LEFT)
+    actual = input.flat_map_left(lambda x: Xeffect.left(x + 2))
+    expected = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_left_do_but_fail():
     input = Xeffect(XFXBranch.LEFT, 1, XFXBranch.LEFT)
-    actual = input.flat_map_left(lambda x: Xeffect.from_optional(None))
-    expected = Xeffect.from_optional(None)
+    actual = input.flat_map_left(lambda x: Xeffect.right(None))
+    expected = Xeffect.right(None)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_left_pass():
     input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.LEFT)
-    actual = input.flat_map_left(lambda x: Xeffect.lift(x + 2))
+    actual = input.flat_map_left(lambda x: Xeffect.left(x + 2))
 
     assert actual == input
 
 
 def test_xeffect_flat_map_right_do():
     input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.RIGHT)
-    actual = input.flat_map_right(lambda x: Xeffect.lift(x + 2))
-    expected = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
+    actual = input.flat_map_right(lambda x: Xeffect.right(x + 2))
+    expected = Xeffect(XFXBranch.RIGHT, 3, XFXBranch.RIGHT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_right_do_but_fail():
-    input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.LEFT)
-    actual = input.flat_map_right(lambda x: Xeffect.from_optional(None))
-    expected = Xeffect.from_optional(None)
+    input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.RIGHT)
+    actual = input.flat_map_right(lambda x: Xeffect.left(None))
+    expected = Xeffect.left(None)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_right_pass():
     input = Xeffect(XFXBranch.LEFT, 1, XFXBranch.RIGHT)
-    actual = input.flat_map_right(lambda x: Xeffect.lift(x + 2))
+    actual = input.flat_map_right(lambda x: Xeffect.right(x + 2))
 
     assert actual == input
 
