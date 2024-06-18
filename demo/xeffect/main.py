@@ -1,57 +1,58 @@
 from typing import Callable
 from .operation import load_csv
-from xfp import XFXBranch, Xeffect
+from xfp import Xeffect
 
 
 # 'FP LANGUAGES' STYLE
 
 print("@@@ FUNCTIONAL STYLE @@@")
-
 print("@@@@@ HANDLING OWNED ERRORS @@@@@")
 
 
 def buy_yummy(fruit: str) -> Callable:
-    def inner(cart: list) -> Xeffect[list, Exception]:
+    def inner(cart: list) -> Xeffect[Exception, list]:
         if fruit in ("apple", "peach", "blackberry"):
             new_cart = cart.copy()
             new_cart.append(fruit)
-            return Xeffect(XFXBranch.LEFT, new_cart)
+            return Xeffect.right(new_cart)
         else:
-            return Xeffect(XFXBranch.RIGHT, Exception(f"eurgh, {fruit} is not yummy"))
+            return Xeffect.left(Exception(f"eurgh, {fruit} is not yummy"))
 
     return inner
 
 
 (
-    Xeffect.lift(list())
+    Xeffect.right(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("peach"))
     .foreach(lambda x: print(f"see my cart : {x}"))
 )
 
 (
-    Xeffect.lift(list())
+    Xeffect.right(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("brusselsprouts"))
     .flat_map(buy_yummy("anchovies"))
     .flat_map(buy_yummy("peach"))
-    .foreach_right(lambda x: print(f"see my not so yummy cart : {x}"))
+    .foreach_left(lambda x: print(f"see my not so yummy cart : {x}"))
 )
 
 print("@@@@@ HANDLING RAISED ERRORS @@@@@")
 
-safe_load: Xeffect[str, Exception] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
-safe_load_but_empty: Xeffect[str, Exception] = Xeffect.from_unsafe(
+# TODO - pas sûr que ça marche, 'but_empty' lève pas d'erreur ...
+
+safe_load: Xeffect[Exception, str] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
+safe_load_but_empty: Xeffect[Exception, str] = Xeffect.from_unsafe(
     lambda: load_csv("file.csv")
 )
 
 safe_load.foreach(print)
-safe_load_but_empty.foreach_right(print)
+safe_load_but_empty.foreach_left(print)
 
 
 # PYTHONIC STYLE
-print("@@@ PYTHONIC STYLE @@@")
 
+print("@@@ PYTHONIC STYLE @@@")
 print("@@@@@ HANDLING OWNED ERRORS @@@@@")
 
 
@@ -66,7 +67,7 @@ cart = list()
 
 try:
     buy_yummy_imp(cart, "apple")
-    buy_yummy_imp(cart, "peached")
+    buy_yummy_imp(cart, "peach")
     print(f"see my cart : {cart}")
 except Exception:
     pass
