@@ -6,6 +6,18 @@ Github repository [HERE](https://github.com/sebvey/python-fp/)
 # HOW TO USE
 xfp is plublished on PyPI, easy to install with your package manager.
 
+# HOW TO RUN THE DEMOS
+Some demos are provided in the `demo` folder. Each one is in a separate
+subfolder.  
+
+For simplicity :
+- main code is in the `main.py` file
+- eventual modules are in the same folder and used in `main.py` with relative imports
+
+**To run the demos (here the xlist one):**
+- make sure xfp is installed on your python environment (eg `pip install xfp`)
+- from the demo folder of the repo :`python -m xiter.main`
+
 # HOW TO CONTRIBUTE
 
 ## Setup
