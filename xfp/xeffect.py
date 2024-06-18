@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-from typing import Callable, Any, Self, cast
-=======
-from typing import Callable, Any, Literal, ParamSpec, cast
->>>>>>> Stashed changes
+from typing import Callable, Any, Self, cast, ParamSpec
 from enum import Enum
 from dataclasses import dataclass
 from .utils import E
