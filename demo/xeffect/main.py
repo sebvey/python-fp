@@ -1,6 +1,6 @@
 from typing import Callable
 from .operation import load_csv
-from xfp import XFXBranch, Xeffect
+from xfp import Xeffect
 
 
 # 'FP LANGUAGES' STYLE
@@ -11,26 +11,26 @@ print("@@@@@ HANDLING OWNED ERRORS @@@@@")
 
 
 def buy_yummy(fruit: str) -> Callable:
-    def inner(cart: list) -> Xeffect[list, Exception]:
+    def inner(cart: list) -> Xeffect[Exception, list]:
         if fruit in ("apple", "peach", "blackberry"):
             new_cart = cart.copy()
             new_cart.append(fruit)
-            return Xeffect(XFXBranch.LEFT, new_cart)
+            return Xeffect.right(new_cart)
         else:
-            return Xeffect(XFXBranch.RIGHT, Exception(f"eurgh, {fruit} is not yummy"))
+            return Xeffect.left(Exception(f"eurgh, {fruit} is not yummy"))
 
     return inner
 
 
 (
-    Xeffect.lift(list())
+    Xeffect.right(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("peach"))
     .foreach(lambda x: print(f"see my cart : {x}"))
 )
 
 (
-    Xeffect.lift(list())
+    Xeffect.right(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("brusselsprouts"))
     .flat_map(buy_yummy("anchovies"))
@@ -40,13 +40,13 @@ def buy_yummy(fruit: str) -> Callable:
 
 print("@@@@@ HANDLING RAISED ERRORS @@@@@")
 
-safe_load: Xeffect[str, Exception] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
-safe_load_but_empty: Xeffect[str, Exception] = Xeffect.from_unsafe(
+safe_load: Xeffect[Exception, str] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
+safe_load_but_empty: Xeffect[Exception, str] = Xeffect.from_unsafe(
     lambda: load_csv("file.csv")
 )
 
 safe_load.foreach(print)
-safe_load_but_empty.foreach_right(print)
+safe_load_but_empty.foreach_left(print)
 
 
 # PYTHONIC STYLE
