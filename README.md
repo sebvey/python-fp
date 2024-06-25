@@ -1,14 +1,17 @@
-# xfp library prject
+# xfp library project
 
 A custom functional style library for python.  
 Github repository [HERE](https://github.com/sebvey/python-fp/)
+
+# HOW TO USE
+xfp is plublished on PyPI, easy to install with your package manager.
 
 # HOW TO CONTRIBUTE
 
 ## Setup
 - clone the repo
 - install poetry
-- install compatible python version (from 3.12), eg. `pyenv install 3.12.3`
+- install compatible python version (from 3.12), eg. `pyenv install 3.12.4`
 - install the project : `poetry install`
 - set up the git hook scripts (linter / formatter): `pre-commit install` 
 
