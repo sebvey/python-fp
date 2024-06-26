@@ -76,7 +76,7 @@ def test_xeffect_flatten():
 def test_xeffect_flat_map_left_do():
     input = Xeffect(XFXBranch.LEFT, 1, XFXBranch.LEFT)
     actual = input.flat_map_left(lambda x: Xeffect.left(x + 2))
-    expected = Xeffect(XFXBranch.LEFT, 3, XFXBranch.LEFT)
+    expected = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
 
     assert actual == expected
 
