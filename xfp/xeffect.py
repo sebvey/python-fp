@@ -27,7 +27,7 @@ class Xeffect[Y: E, X: E]:
     - bias   -- XFXBranch (LEFT, RIGHT), default = RIGHT. Tells in which cases non specific operations (such as map and flat_map) applies
 
     ### Features
-    
+
     - Monadic behavior
     - Manual handling of the bias
     - Class method to lift values to Xeffect
@@ -70,7 +70,7 @@ class Xeffect[Y: E, X: E]:
     branch: XFXBranch
     value: X | Y
     bias: XFXBranch = XFXBranch.RIGHT
-    
+
     @classmethod
     def right(cls, value: X) -> "Xeffect[E, X]":
         """Return an Xeffect (always RIGHT) from a value."""
@@ -137,12 +137,20 @@ class Xeffect[Y: E, X: E]:
         return f"{self.branch} : {self.value}"
 
     @curry_method
-    def __check_branch(self, branch: XFXBranch, f: Callable[[Self], "Xeffect[E, E]"]) -> "Xeffect[E, E]":
+    def __check_branch(
+        self, branch: XFXBranch, f: Callable[[Self], "Xeffect[E, E]"]
+    ) -> "Xeffect[E, E]":
         if self.branch == branch:
             return f(self)
         else:
             return self
-        
+
+    @curry_method
+    def __with_bias(
+        self, bias: XFXBranch, f: Callable[[Self], "Xeffect[E, E]"]
+    ) -> "Xeffect[E, E]":
+        return f(cast(Self, self.set_bias(bias))).set_bias(self.bias)
+
     def set_bias(self, bias: XFXBranch) -> "Xeffect[Y, X]":
         """Return a new effect with the set bias."""
         return Xeffect(self.branch, self.value, bias)
@@ -191,10 +199,8 @@ class Xeffect[Y: E, X: E]:
 
         see map
         """
-        return (
-            self.set_bias(XFXBranch.LEFT)
-            .map(cast(Callable[[X | Y], E], f))
-            .set_bias(self.bias)
+        return self.__with_bias(XFXBranch.LEFT)(
+            lambda s: s.map(cast(Callable[[X | Y], E], f))
         )
 
     def map_right(self, f: Callable[[X], E]) -> "Xeffect[Y, E]":
@@ -209,10 +215,8 @@ class Xeffect[Y: E, X: E]:
 
         see map
         """
-        return (
-            self.set_bias(XFXBranch.RIGHT)
-            .map(cast(Callable[[X | Y], E], f))
-            .set_bias(self.bias)
+        return self.__with_bias(XFXBranch.RIGHT)(
+            lambda s: s.map(cast(Callable[[X | Y], E], f))
         )
 
     def flatten(self) -> "Xeffect[E, E]":
@@ -238,7 +242,7 @@ class Xeffect[Y: E, X: E]:
 
     def flatten_left(self) -> "Xeffect[E, E]":
         """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
-        
+
         ### Return
 
         - if self.value is an Xeffect, and branch = bias = LEFT -- a new Xeffect being the underlying value
@@ -248,7 +252,7 @@ class Xeffect[Y: E, X: E]:
 
         see flatten
         """
-        return self.set_bias(XFXBranch.LEFT).flatten().set_bias(self.bias)
+        return self.__with_bias(XFXBranch.LEFT)(lambda s: s.flatten())
 
     def flatten_right(self) -> "Xeffect[E, E]":
         """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
@@ -262,7 +266,7 @@ class Xeffect[Y: E, X: E]:
 
         see flatten
         """
-        return self.set_bias(XFXBranch.RIGHT).flatten().set_bias(self.bias)
+        return self.__with_bias(XFXBranch.LEFT)(lambda s: s.flatten())
 
     def flat_map(self, f: Callable[[X | Y], E]) -> "Xeffect[E, E]":
         """Return the result of map then flatten.
@@ -319,7 +323,9 @@ class Xeffect[Y: E, X: E]:
 
         see flat_map
         """
-        return self.map_left(f).flatten_left()
+        return self.__with_bias(XFXBranch.LEFT)(
+            lambda s: s.flat_map(cast(Callable[[X | Y], E], f))
+        )
 
     def flat_map_right(self, f: Callable[[X], E]) -> "Xeffect[Y, E]":
         """Return the result of map_right then flatten.
@@ -337,7 +343,9 @@ class Xeffect[Y: E, X: E]:
 
         see flat_map
         """
-        return self.map_right(f).flatten_right()
+        return self.__with_bias(XFXBranch.RIGHT)(
+            lambda s: s.flat_map(cast(Callable[[X | Y], E], f))
+        )
 
     @curry_method
     def fold(self, default: E, f: Callable[[X | Y], E]) -> E:
@@ -394,20 +402,20 @@ class Xeffect[Y: E, X: E]:
                     .foreach(lambda x: print(f"This is the left element : $x))
             )
             # This is an element of the list : 25
-            
+
             (
                 Effect
                     .from_optional(None)
                     .foreach(lambda x: print(f"This is the left element : $x))
             )
             # doesn't output anything
-            
+
             (
                 Effect(XFXBranch.RIGHT, 25, XFXBranch.LEFT)
                     .foreach(lambda x: print(f"This is the left element : $x))
             )
             # doesn't output anything
-            
+
             (
                 Effect(XFXBranch.LEFT, 25)
                     .set_bias(XFXBranch.LEFT)
@@ -426,7 +434,7 @@ class Xeffect[Y: E, X: E]:
 
         see foreach
         """
-        (self.set_bias(XFXBranch.LEFT).foreach(cast(Callable[[X | Y], E], statement)))
+        self.set_bias(XFXBranch.LEFT).foreach(cast(Callable[[X | Y], E], statement))
 
     def foreach_right(self, statement: Callable[[X], Any]) -> None:
         """Do the statement procedure to the underlying value if self is a RIGHT.
@@ -435,4 +443,4 @@ class Xeffect[Y: E, X: E]:
 
         see foreach
         """
-        (self.set_bias(XFXBranch.RIGHT).foreach(cast(Callable[[X | Y], E], statement)))
+        self.set_bias(XFXBranch.RIGHT).foreach(cast(Callable[[X | Y], E], statement))

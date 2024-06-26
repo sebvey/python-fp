@@ -105,9 +105,9 @@ def test_xeffect_flat_map_right_do():
 
 
 def test_xeffect_flat_map_right_do_but_fail():
-    input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.LEFT)
+    input = Xeffect(XFXBranch.RIGHT, 1, XFXBranch.RIGHT)
     actual = input.flat_map_right(lambda x: Xeffect.left(None))
-    expected = Xeffect.from_optional(None)
+    expected = Xeffect.left(None)
 
     assert actual == expected
 
