@@ -69,7 +69,7 @@ class Xeffect[Y: E, X: E]:
 
     branch: XFXBranch
     value: X | Y
-    bias: XFXBranch = XFXBranch.LEFT
+    bias: XFXBranch = XFXBranch.RIGHT
     
     @classmethod
     def right(cls, value: X) -> "Xeffect[E, X]":
@@ -142,7 +142,7 @@ class Xeffect[Y: E, X: E]:
             return f(self)
         else:
             return self
-
+        
     def set_bias(self, bias: XFXBranch) -> "Xeffect[Y, X]":
         """Return a new effect with the set bias."""
         return Xeffect(self.branch, self.value, bias)
@@ -220,7 +220,7 @@ class Xeffect[Y: E, X: E]:
 
         ### Return
 
-        - if self.value is an Xeffect -- a new Xeffect being a copy of the underlying value
+        - if self.value is an Xeffect and bias == branch -- a new Xeffect being the underlying value
         - otherwise                   -- self
 
         ### Usage
@@ -228,7 +228,8 @@ class Xeffect[Y: E, X: E]:
         ```python
             assert Xeffect.lift(Xeffect.lift("example")).flatten() == Xeffect(XFXBranch.RIGHT, "example", XFXBranch.RIGHT)
             assert Xeffect.lift("example").flatten() == Xeffect(XFXBranch.RIGHT, "example", XFXBranch.RIGHT)
-            assert Xeffect.lift(Xeffect.from_optional(None)) == Xeffect(XFXBranch.LEFT, None, XFXBranch.RIGHT)
+            assert Xeffect.lift(Xeffect.from_optional(None)).flatten() == Xeffect(XFXBranch.LEFT, None, XFXBranch.RIGHT)
+            assert Xeffect.lift(Xeffect(XFXBranch.LEFT, "example", XFXBranch.LEFT)).flatten() == Xeffect(XFXBranch.LEFT, "example", XFXBranch.LEFT)
         ```
         """
         return self.__check_branch(self.bias)(
@@ -237,14 +238,10 @@ class Xeffect[Y: E, X: E]:
 
     def flatten_left(self) -> "Xeffect[E, E]":
         """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
-
-        ### Raise
-
-        - TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect, and flattening should happen
-
+        
         ### Return
 
-        - if self.value is an Xeffect, and branch = bias = LEFT -- a new Xeffect being a copy of the underlying value
+        - if self.value is an Xeffect, and branch = bias = LEFT -- a new Xeffect being the underlying value
         - otherwise                                             -- self
 
         ### Usage
@@ -256,13 +253,9 @@ class Xeffect[Y: E, X: E]:
     def flatten_right(self) -> "Xeffect[E, E]":
         """Return either self or a new flat Xeffect if the underlying value is an Xeffect.
 
-        ### Raise
-
-        - TypeError -- when the underlying value is an Xeffect with a different bias from the wrapping Xeffect, and flattening should happen
-
         ### Return
 
-        - if self.value is an Xeffect, and branch = bias = RIGHT -- a new Xeffect being a copy of the underlying value
+        - if self.value is an Xeffect, and branch = bias = RIGHT -- a new Xeffect being the underlying value
         - otherwise                                              -- self
 
         ### Usage
@@ -275,10 +268,6 @@ class Xeffect[Y: E, X: E]:
         """Return the result of map then flatten.
 
         Is mainly used to chain effectful operations.
-
-        ### Raise
-
-        - TypeError -- if f(self.value) returns an effect with a LEFT bias
 
         ### Return
 
@@ -321,14 +310,10 @@ class Xeffect[Y: E, X: E]:
     def flat_map_left(self, f: Callable[[Y], E]) -> "Xeffect[E, X]":
         """Return the result of map_left then flatten.
 
-        ### Raise
-
-        - TypeError -- if f(self.value) returns an effect with a RIGHT bias
-
         ### Return
 
         - if self is a RIGHT -- self
-        - if self is a LEFT  -- a new Xeffect, map_right then flatten
+        - if self is a LEFT  -- a new Xeffect, map_left then flatten
 
         ### Usage
 
