@@ -149,7 +149,8 @@ class Xeffect[Y: E, X: E]:
     def __with_bias(
         self, bias: XFXBranch, f: Callable[[Self], "Xeffect[E, E]"]
     ) -> "Xeffect[E, E]":
-        return f(cast(Self, self.set_bias(bias))).set_bias(self.bias)
+        result: "Xeffect[E, E]" = f(cast(Self, self.set_bias(bias)))
+        return result.set_bias(self.bias) if result.bias == bias else result
 
     def set_bias(self, bias: XFXBranch) -> "Xeffect[Y, X]":
         """Return a new effect with the set bias."""
