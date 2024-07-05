@@ -133,7 +133,7 @@ class Xeffect[Y: E, X: E]:
         return inner
 
     def __repr__(self) -> str:
-        return f"{self.branch} : {repr(self.value)}"
+        return f"{self.branch} : {self.value}"
 
     @curry_method
     def __check_branch(
@@ -362,11 +362,6 @@ class Xeffect[Y: E, X: E]:
         ### Usage
 
         ```python
-            from xfp import Xeffect
-            from typing import List
-            from datetime import date
-
-
             def load_dated_partition(partition_value: date) -> str:
                 return "actual partition"
 
@@ -403,7 +398,7 @@ class Xeffect[Y: E, X: E]:
         """
         return self.fold(default)(lambda x: x)
 
-    def foreach(self, statement: Callable[[X | Y], E]) -> None:
+    def foreach(self, statement: Callable[[X | Y], Any]) -> None:
         """Do either foreach_left or foreach_right on statement depending on the bias.
 
         ### Usage
