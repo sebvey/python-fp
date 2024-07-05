@@ -4,14 +4,13 @@ from typing import Iterable, Iterator, Callable, Any
 from collections.abc import Iterable as ABCIterable
 from .utils import E, curry_method, id
 
-
 class Xlist[X: E]:
     """Enhance Lists (eager) with functional behaviors.
 
     This class provides common behaviors used for declarative programming.
-    
+
     ### Features
-    
+
     - Monadic behavior through :
         - map
         - flat_map
@@ -66,7 +65,7 @@ class Xlist[X: E]:
         """Return the first element of the Xlist.
 
         ### Raise
-        
+
         - IndexError -- if the list is empty.
         """
         if len(self) <= 0:
@@ -75,9 +74,9 @@ class Xlist[X: E]:
 
     def tail(self) -> "Xlist[X]":
         """Return the Xlist / its first element.
-        
+
         ### Raise
-        
+
         - IndexError -- if the list is empty.
         """
         if len(self) <= 0:
@@ -88,7 +87,7 @@ class Xlist[X: E]:
         """Return a new Xlist with the function f applied to each element.
 
         ### Usage
-        
+
         ```python
             input = Xlist([1, 2, 3])
             f = lambda el: el*el
@@ -101,7 +100,7 @@ class Xlist[X: E]:
         """Return a new Xlist containing only the elements for which predicate is True.
 
         ### Usage
-        
+
         ```python
             input = Xlist([1, 2, 3, 4])
             predicate = lambda el: el % 2 == 0
@@ -114,7 +113,7 @@ class Xlist[X: E]:
         """Do the 'statement' procedure once for each element of the Xlist.
 
         ### Usage
-        
+
         ```python
             input = Xlist([1, 2, 3])
             statement = lambda el: println(f"This is an element of the list : ${el}")
@@ -130,7 +129,7 @@ class Xlist[X: E]:
         """Return a new Xlist with one less level of nest.
 
         ### Usage
-        
+
         ```python
             assert Xlist.flatten([1, 2, 3]) == Xlist([1, 2, 3])
             assert Xlist.flatten([[1, 2], [3]]) == Xlist([1, 2, 3])
@@ -151,9 +150,9 @@ class Xlist[X: E]:
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xeffect.flat_map
-        
+
         ### Usage
-        
+
         ```python
             assert Xlist([1, 2, 3]).flat_map(lambda x: Xlist([4, 5]).map(lambda y: (x, y))) == Xlist([(1, 4), (2, 4), (3, 4), (1, 5), (2, 5), (3, 5)])
         ```
@@ -164,11 +163,11 @@ class Xlist[X: E]:
         """Return the smallest element of the Xlist given the key criteria.
 
         ### Keyword Arguments
-        
+
         - key (default id) -- the function which extrapolate a sortable from the elements of the list
-        
+
         ### Usage
-        
+
         ```python
             input = Xlist(["ae", "bd", "cc"])
             assert input.min() == "ae"
@@ -181,11 +180,11 @@ class Xlist[X: E]:
         """Return the biggest element of the Xlist given the key criteria.
 
         ### Keyword Arguments
-        
+
         - key (default id) -- the function which extrapolate a sortable from the elements of the list
 
         ### Usage
-        
+
         ```python
             input = Xlist(["ae", "bd", "cc"])
             assert input.max() == "cc"
@@ -198,12 +197,12 @@ class Xlist[X: E]:
         """Return a new Xlist containing the same elements sorted given the key criteria.
 
         ### Keyword Arguments
-        
+
         - key (default id)        -- the function which extrapolate a sortable from the elements of the list
         - reverse (default False) -- should we sort ascending (False) or descending (True)
-        
+
         ### Usage
-        
+
         ```python
             input = Xlist(["bd", "ae", "cc"])
             assert input.sorted() == Xlist(["ae", "bd", "cc"])
@@ -228,14 +227,14 @@ class Xlist[X: E]:
         - Then from the first to the last element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
           accumulator(n+1) = f(accumulator(n), self.data[n])
         - Return the last state of the accumulator
-        
+
         ### Keyword Arguments
-        
+
         - zero -- initial state of the accumulator
         - f    -- accumulation function, compute the next state of the accumulator
-        
+
         ### Usage
-        
+
         ```python
             assert Xlist([1, 2, 3]).fold_left(0)(lambda x, y: x + y) == 6
             assert Xlist([1, 2, 3]).fold_left(10)(lambda x, y: x + y) == 16
@@ -257,14 +256,14 @@ class Xlist[X: E]:
         - Then from the last to the first element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
           accumulator(n+1) = f(accumulator(n), self.data[n])
         - Return the last state of the accumulator
-        
+
         ### Keyword Arguments
-        
+
         - zero -- initial state of the accumulator
         - f    -- accumulation function, compute the next state of the accumulator
-        
+
         ### Usage
-        
+
         ```python
             assert Xlist([1, 2, 3]).fold_right(0)(lambda x, y: x + y) == 6
             assert Xlist([1, 2, 3]).fold_right(10)(lambda x, y: x + y) == 16
@@ -286,15 +285,15 @@ class Xlist[X: E]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         ### Raise
-        
+
         - IndexError -- when the Xlist is empty
-        
+
         ### Keyword Arguments
-        
+
         - f -- accumulation function, compute the next state of the accumulator
-        
+
         ### Usage
-        
+
         ```python
             assert Xlist([1, 2, 3]).reduce(lambda x, y: x + y) == 6
             assert Xlist(["1", "2", "3"]).reduce(lambda x, y: x + y) == "321"
