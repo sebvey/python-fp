@@ -15,8 +15,8 @@ For simplicity :
 - eventual modules are in the same folder and used in `main.py` with relative imports
 
 **To run the demos (here the xlist one):**
-- make sure xfp is installed on your python environment (eg `pip install xfp`)
-- from the demo folder of the repo :`python -m xiter.main`
+- make sure xfp is installed on your python environment (eg `cd python-fp && pip install .`)
+- Run the demo from the root of the repo :`python -m demo.xiter.main`
 
 # HOW TO CONTRIBUTE
 
