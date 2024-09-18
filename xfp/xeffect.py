@@ -15,6 +15,15 @@ class XFXBranch(Enum):
         return XFXBranch.RIGHT if self == XFXBranch.LEFT else XFXBranch.LEFT
 
 
+@dataclass(init=False)
+class XeffectError(Exception):
+    xeffect: "Xeffect[E, E]"
+
+    def __init__(self, xeffect: "Xeffect[E, E]"):
+        self.xeffect = xeffect
+        super().__init__(f"Auto generated error for initial effect {self.xeffect}")
+
+
 @dataclass(frozen=True)
 class Xeffect[Y: E, X: E]:
     """Encapsulate Union type in container.
@@ -472,13 +481,41 @@ class Xeffect[Y: E, X: E]:
     def recover_left(self, f: Callable[[X], E]) -> "Xeffect[Y | E, None]":
         return (
             self.set_bias(XFXBranch.LEFT)
-            .recover(cast(Callable[[X | Y], E], f))
+            .recover(cast(Callable[[Y | X], E], f))
             .set_bias(self.bias)
         )
 
     def recover_right(self, f: Callable[[Y], E]) -> "Xeffect[None, E | X]":
         return (
             self.set_bias(XFXBranch.RIGHT)
-            .recover(cast(Callable[[X | Y], E], f))
+            .recover(cast(Callable[[Y | X], E], f))
             .set_bias(self.bias)
+        )
+
+    def filter(
+        self, predicate: Callable[[Y | X], bool]
+    ) -> "Xeffect[Y | XeffectError, X | XeffectError]":
+        return cast(
+            "Xeffect[Y | XeffectError, X | XeffectError]",
+            self.filter_left(predicate)
+            if self.bias == XFXBranch.LEFT
+            else self.filter_right(predicate),
+        )
+
+    def filter_left(
+        self, predicate: Callable[[Y], bool]
+    ) -> "Xeffect[Y, X | XeffectError]":
+        return self.__check_branch(XFXBranch.LEFT)(
+            lambda s: s
+            if predicate(s.value)
+            else Xeffect(s.branch.invert(), XeffectError(s), s.bias)
+        )
+
+    def filter_right(
+        self, predicate: Callable[[X], bool]
+    ) -> "Xeffect[Y | XeffectError, X]":
+        return self.__check_branch(XFXBranch.RIGHT)(
+            lambda s: s
+            if predicate(s.value)
+            else Xeffect(s.branch.invert(), XeffectError(s), s.bias)
         )

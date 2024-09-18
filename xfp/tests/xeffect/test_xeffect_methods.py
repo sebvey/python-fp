@@ -1,4 +1,4 @@
-from xfp import Xeffect, XFXBranch, Xlist
+from xfp import Xeffect, XFXBranch, XeffectError, Xlist
 
 
 def test_xeffect_set_bias():
@@ -267,5 +267,50 @@ def test_xeffect_recover_right_do():
     input = Xeffect.left(1)
     expected = Xeffect.right(2)
     actual = input.recover_right(lambda _: 2)
+
+    assert actual == expected
+
+
+def test_xeffect_filter_pass():
+    input = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
+    actual = input.filter(lambda x: x > 10)
+
+    assert actual == input
+
+
+def test_xeffect_filter_do():
+    input = Xeffect(XFXBranch.LEFT, 3, XFXBranch.LEFT)
+    expected = Xeffect(XFXBranch.RIGHT, XeffectError(input), XFXBranch.LEFT)
+    actual = input.filter(lambda x: x > 10)
+
+    assert actual == expected
+
+
+def test_xeffect_filter_left_pass():
+    input = Xeffect(XFXBranch.RIGHT, 3, XFXBranch.RIGHT)
+    actual = input.filter_left(lambda x: x > 10)
+
+    assert actual == input
+
+
+def test_xeffect_filter_left_do():
+    input = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
+    expected = Xeffect(XFXBranch.RIGHT, XeffectError(input), XFXBranch.RIGHT)
+    actual = input.filter_left(lambda x: x > 10)
+
+    assert actual == expected
+
+
+def test_xeffect_filter_right_pass():
+    input = Xeffect(XFXBranch.LEFT, 3, XFXBranch.RIGHT)
+    actual = input.filter_right(lambda x: x > 10)
+
+    assert actual == input
+
+
+def test_xeffect_filter_right_do():
+    input = Xeffect(XFXBranch.RIGHT, 3, XFXBranch.RIGHT)
+    expected = Xeffect(XFXBranch.LEFT, XeffectError(input), XFXBranch.RIGHT)
+    actual = input.filter_right(lambda x: x > 10)
 
     assert actual == expected

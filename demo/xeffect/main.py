@@ -43,7 +43,7 @@ print("@@@@@ HANDLING RAISED ERRORS @@@@@")
 
 safe_load: Xeffect[Exception, str] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
 safe_load_but_empty: Xeffect[Exception, str] = Xeffect.from_unsafe(
-    lambda: load_csv("file.csv")
+    lambda: load_csv("file.cv")
 )
 
 safe_load.foreach(print)
