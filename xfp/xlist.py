@@ -1,8 +1,11 @@
 # from _typeshed import SupportsRichComparison # not available ...
 
-from typing import Iterable, Iterator, Callable, Any
+from typing import Iterable, Iterator, Callable, Any, cast
 from collections.abc import Iterable as ABCIterable
+
+from xfp import Xeffect
 from .utils import E, curry_method, id
+
 
 class Xlist[X: E]:
     """Enhance Lists (eager) with functional behaviors.
@@ -11,24 +14,9 @@ class Xlist[X: E]:
 
     ### Features
 
-    - Monadic behavior through :
-        - map
-        - flat_map
-        - flatten
-        - filter
-        - foreach
-    - Descriptive accumulation through :
-        - min |- and sorted/reverse by extension
-        - max |
-        - fold
-        - fold_left
-        - fold_right
-        - reduce
-    - List proxies or quality of lifes :
-        - head
-        - tail
-        - iter
-        - len
+    - Monadic behavior
+    - Descriptive accumulation
+    - List proxies or quality of lifes
     """
 
     def __init__(self, iterable: Iterable[X]) -> None:
@@ -72,6 +60,13 @@ class Xlist[X: E]:
             raise IndexError("<head> operation not allowed on empty list")
         return self.__data[0]
 
+    def head_fx(self) -> Xeffect[IndexError, X]:
+        """Return the first element of the Xlist.
+
+        Wrap the potential error in an effect.
+        """
+        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(self.head))
+
     def tail(self) -> "Xlist[X]":
         """Return the Xlist / its first element.
 
@@ -82,6 +77,13 @@ class Xlist[X: E]:
         if len(self) <= 0:
             raise IndexError("<tail> operation not allowed on empty list")
         return Xlist(self.__data[1:])
+
+    def tail_fx(self) -> Xeffect[IndexError, "Xlist[X]"]:
+        """Return the Xlist / its first element.
+
+        Wrap the potential error in an effect.
+        """
+        return cast(Xeffect[IndexError, "Xlist[X]"], Xeffect.from_unsafe(self.tail))
 
     def map(self, f: Callable[[X], E]) -> "Xlist[E]":
         """Return a new Xlist with the function f applied to each element.
@@ -304,6 +306,25 @@ class Xlist[X: E]:
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
+
+    def reduce_fx(self, f: Callable[[X, X], X]) -> Xeffect[IndexError, X]:
+        """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
+
+        Wrap the potential error in an effect.
+
+        ### Keyword Arguments
+
+        - f -- accumulation function, compute the next state of the accumulator
+
+        ### Usage
+
+        ```python
+            assert Xlist([1, 2, 3]).reduce(lambda x, y: x + y) == Xeffect.right(6)
+            assert Xlist(["1", "2", "3"]).reduce(lambda x, y: x + y) == Xeffect.right("321")
+            assert Xlist([]).reduce(lambda x, y: x + y) == Xeffect.left(IndexError("<reduce> operation not allowed on empty list"))
+        ```
+        """
+        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(lambda: self.reduce(f)))
 
     def zip(self, other: Iterable[E]) -> "Xlist[tuple[X, E]]":
         """Zip this Xlist with another iterable."""
