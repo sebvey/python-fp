@@ -1,6 +1,5 @@
-from typing import Callable
 from .operation import load_csv
-from xfp import Xeffect
+from xfp import Xeffect, curry
 
 
 # 'FP LANGUAGES' STYLE
@@ -9,16 +8,14 @@ print("@@@ FUNCTIONAL STYLE @@@")
 print("@@@@@ HANDLING OWNED ERRORS @@@@@")
 
 
-def buy_yummy(fruit: str) -> Callable:
-    def inner(cart: list) -> Xeffect[Exception, list]:
-        if fruit in ("apple", "peach", "blackberry"):
-            new_cart = cart.copy()
-            new_cart.append(fruit)
-            return Xeffect.right(new_cart)
-        else:
-            return Xeffect.left(Exception(f"eurgh, {fruit} is not yummy"))
-
-    return inner
+@curry
+def buy_yummy(fruit: str, cart: list) -> Xeffect[Exception, list]:
+    if fruit in ("apple", "peach", "blackberry"):
+        new_cart = cart.copy()
+        new_cart.append(fruit)
+        return Xeffect.right(new_cart)
+    else:
+        return Xeffect.left(Exception(f"eurgh, {fruit} is not yummy"))
 
 
 (
@@ -38,8 +35,6 @@ def buy_yummy(fruit: str) -> Callable:
 )
 
 print("@@@@@ HANDLING RAISED ERRORS @@@@@")
-
-# TODO - pas sûr que ça marche, 'but_empty' lève pas d'erreur ...
 
 safe_load: Xeffect[Exception, str] = Xeffect.from_unsafe(lambda: load_csv("file.csv"))
 safe_load_but_empty: Xeffect[Exception, str] = Xeffect.from_unsafe(
