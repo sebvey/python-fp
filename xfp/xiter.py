@@ -40,7 +40,7 @@ class Xiter[X: E]:
         return Xiter(result(self))
 
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
-        return Xiter(el for iterable in self.map(f) for el in iterable)
+        return self.map(f).flatten()
 
     def filter(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
         return Xiter(filter(predicate, self))
