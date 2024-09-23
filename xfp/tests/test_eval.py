@@ -66,3 +66,13 @@ def test_xiter_consumation():
     assert next(r3) == 16
     assert next(r3) == 81
     assert next(r2) == 9
+
+
+def test_xiter_to_xlist_should_eval():
+    sink = Appender()
+    eager_value = forced_side_effect(sink)
+    assert sink.value == []
+    r1 = Xiter([1, 2, 3]).map(lambda x: eager_value(x))
+    assert sink.value == []
+    _ = Xlist(r1)
+    assert sink.value == [1, 2, 3]

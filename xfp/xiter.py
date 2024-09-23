@@ -1,7 +1,9 @@
 from copy import deepcopy
 from itertools import tee
-from typing import Callable, Iterable, Iterator, Any
+from typing import Callable, Iterable, Iterator, Any, cast
 from collections.abc import Iterable as ABCIterable
+
+from xfp import Xeffect, Xlist
 from .utils import E
 
 
@@ -83,6 +85,46 @@ class Xiter[X: E]:
         self.__iter = Xiter(a).map(lambda x: deepcopy(x))
         return Xiter(b)
 
+    def head(self) -> X:
+        """Return the first element of the iterator.
+
+        ### Raise
+
+        - IndexError -- if the iterator is empty.
+        """
+        try:
+            return next(self.copy())
+        except StopIteration:
+            raise IndexError("<head> operation not allowed on empty iterator")
+
+    def head_fx(self) -> Xeffect[IndexError, X]:
+        """Return the first element of the iterator.
+
+        Wrap the potential error in an effect.
+        """
+        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(self.head))
+
+    def tail(self) -> "Xiter[X]":
+        """Return the iterator / its first element.
+
+        ### Raise
+
+        - IndexError -- if the list is empty.
+        """
+        try:
+            out = self.copy()
+            next(out)
+            return out
+        except StopIteration:
+            raise IndexError("<tail> operation not allowed on empty iterator")
+
+    def tail_fx(self) -> Xeffect[IndexError, "Xiter[X]"]:
+        """Return the iterator / its first element.
+
+        Wrap the potential error in an effect.
+        """
+        return cast(Xeffect[IndexError, "Xiter[X]"], Xeffect.from_unsafe(self.tail))
+
     def map(self, f: Callable[[X], E]) -> "Xiter[E]":
         """Return a new iterator, with f applied to each future element.
 
@@ -114,29 +156,6 @@ class Xiter[X: E]:
         """
         return Xiter(filter(predicate, self.copy()))
 
-    def flatten(self) -> "Xiter[E]":
-        """Return a new iterator, with each element nested iterated on individually.
-
-        ## Usage
-
-        ```python
-            # Xiter([1, 2, 3])
-            Xiter([1, 2, 3]).flatten()
-            Xiter([[1, 2], [3]]).flatten()
-            Xiter([[1, 2], 3]).flatten()
-        ```
-        """
-
-        def result(xi):
-            for el in xi:
-                if isinstance(el, ABCIterable):
-                    for inner_el in el:
-                        yield inner_el
-                else:
-                    yield el
-
-        return Xiter(result(self.copy()))
-
     def foreach(self, statement: Callable[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the iterator.
 
@@ -160,6 +179,29 @@ class Xiter[X: E]:
         """
         [statement(e) for e in self.copy()]
 
+    def flatten(self) -> "Xiter[E]":
+        """Return a new iterator, with each element nested iterated on individually.
+
+        ## Usage
+
+        ```python
+            # Xiter([1, 2, 3])
+            Xiter([1, 2, 3]).flatten()
+            Xiter([[1, 2], [3]]).flatten()
+            Xiter([[1, 2], 3]).flatten()
+        ```
+        """
+
+        def result(xi):
+            for el in xi:
+                if isinstance(el, ABCIterable):
+                    for inner_el in el:
+                        yield inner_el
+                else:
+                    yield el
+
+        return Xiter(result(self.copy()))
+
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
         """Return the result of map and then flatten.
 
@@ -173,3 +215,11 @@ class Xiter[X: E]:
         ```
         """
         return self.map(f).flatten()
+
+    def zip(self, other: Iterable[E]) -> "Xiter[tuple[X, E]]":
+        """Zip this iterator with another iterable."""
+        return Xiter(zip(self.copy(), other))
+
+    def to_Xlist(self) -> "Xlist[X]":
+        """Return an Xlist being the evaluated version of self."""
+        return Xlist(self)

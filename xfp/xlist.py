@@ -1,6 +1,7 @@
 # from _typeshed import SupportsRichComparison # not available ...
 
-from typing import Iterable, Iterator, Callable, Any
+from copy import copy, deepcopy
+from typing import Iterable, Iterator, Callable, Any, cast
 from collections.abc import Iterable as ABCIterable
 from .utils import E, curry_method, id
 
@@ -60,6 +61,14 @@ class Xlist[X: E]:
     def __repr__(self) -> str:
         """Return the representation of the underlying data"""
         return repr(self.__data)
+
+    def copy(self) -> "Xlist[X]":
+        "Return a shallow copy of itself."
+        return Xlist(copy(self.__data))
+
+    def deepcopy(self) -> "Xlist[X]":
+        "Return a deep copy of itself."
+        return Xlist(deepcopy(self.__data))
 
     def head(self) -> X:
         """Return the first element of the Xlist.

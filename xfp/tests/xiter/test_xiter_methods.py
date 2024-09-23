@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from xfp import Xiter
+
+import pytest
+from xfp import XFXBranch, Xeffect, Xiter, tupled
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
-    for i, j in zip(actual, expected):
+    for i, j in zip(actual.copy(), expected.copy()):
         if i != j:
             return False
     return True
@@ -49,6 +51,56 @@ def test_xiter_deepcopy_is_deep():
 
     value1.text = "world"
     assert value2.text == "hello"
+
+
+def test_xiter_head():
+    input = Xiter([1, 2, 3])
+    assert input.head() == 1
+    assert input.head() == 1
+    assert next(input) == 1
+
+
+def test_xiter_head_fail():
+    with pytest.raises(IndexError):
+        Xiter([]).head()
+
+
+def test_xiter_tail():
+    input = Xiter([1, 2, 3])
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input, Xiter([1, 2, 3]))
+
+
+def test_xiter_tail_fail():
+    with pytest.raises(IndexError):
+        Xiter([]).tail()
+
+
+def test_xiter_head_fx():
+    input = Xiter([1, 2, 3])
+    assert input.head_fx() == Xeffect.right(1)
+    assert input.head_fx() == Xeffect.right(1)
+    assert next(input) == 1
+
+
+def test_xiter_head_fail_fx():
+    input = Xiter([])
+    actual = input.head_fx()
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+
+
+def test_xiter_tail_fx():
+    input = Xiter([1, 2, 3])
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input, Xiter([1, 2, 3]))
+
+
+def test_xiter_tail_fail_fx():
+    input = Xiter([])
+    actual = input.tail_fx()
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
 
 
 def test_xiter_map():
@@ -97,3 +149,10 @@ def test_xiter_filter():
     expected = Xiter(range(2, 10, 2))
 
     assert compare(actual, expected)
+
+
+def test_xiter_zip():
+    in1 = Xiter([1, 2, 3])
+    in2 = Xiter([4, 5])
+    assert compare(in1.zip(in2), Xiter([(1, 4), (2, 5)]))
+    assert compare(in2.zip(in1), in1.zip(in2).map(tupled(lambda x, y: (y, x))))

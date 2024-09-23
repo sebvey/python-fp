@@ -1,4 +1,4 @@
-from xfp import Xlist
+from xfp import XFXBranch, Xeffect, Xlist, tupled
 import pytest
 
 
@@ -12,7 +12,7 @@ def test_xlist_head():
 
 def test_xlist_head_fail():
     with pytest.raises(IndexError):
-        _ = Xlist([]).head()
+        Xlist([]).head()
 
 
 def test_xlist_tail():
@@ -25,7 +25,7 @@ def test_xlist_tail():
 
 def test_xlist_tail_fail():
     with pytest.raises(IndexError):
-        _ = Xlist([]).tail()
+        Xlist([]).tail()
 
 
 def test_xlist_map():
@@ -126,3 +126,25 @@ def test_xlist_reduce():
 def test_xlist_empty_reduce():
     with pytest.raises(IndexError):
         _ = Xlist([]).reduce(lambda x, y: x + y)
+
+
+def test_xlist_reduce_fx():
+    input = Xlist([4, 3, -1, 2])
+    actual = input.reduce_fx(lambda x, y: x + y)
+    expected = Xeffect.right(8)
+
+    assert actual == expected
+
+
+def test_xlist_empty_reduce_fx():
+    input = Xlist([])
+    actual = input.reduce_fx(lambda x, y: x + y)
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+
+
+def test_xlist_zip():
+    in1 = Xlist([1, 2, 3])
+    in2 = Xlist([4, 5])
+    assert in1.zip(in2) == Xlist([(1, 4), (2, 5)])
+    assert in2.zip(in1) == in1.zip(in2).map(tupled(lambda x, y: (y, x)))
