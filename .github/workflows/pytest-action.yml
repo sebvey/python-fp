@@ -17,4 +17,8 @@ jobs:
     - name: Install poetry env
       run: poetry install
     - name: run pytest
-      run: poetry run pytest -v
+      run: poetry run pytest --cov-report lcov --cov=xfp xfp/tests/ -v
+    - name: Coveralls GitHub Action
+      uses: coverallsapp/github-action@v2.3.0
+
+            
