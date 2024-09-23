@@ -44,9 +44,25 @@ def test_xiter_lazy():
     assert sink.value == []
     r1 = Xiter([1, 2, 3]).map(lambda x: eager_value(x))
     assert sink.value == []
-    r2 = r1.flat_map(lambda x: eager_value([eager_value(x)]))
-    assert sink.value == []
+    r2 = r1.flat_map(lambda x: eager_value([x, eager_value(x * 10)]))
+    assert next(r2) == 1
+    assert sink.value == [1, 10, [1, 10]]
+    assert next(r2) == 10
     r2.foreach(print)
-    assert sink.value == [1, 1, [1], 2, 2, [2], 3, 3, [3]]
+    assert sink.value == [1, 10, [1, 10], 2, 20, [2, 20], 3, 30, [3, 30]]
     r2.foreach(print)
-    assert sink.value == [1, 1, [1], 2, 2, [2], 3, 3, [3]]
+    assert sink.value == [1, 10, [1, 10], 2, 20, [2, 20], 3, 30, [3, 30]]
+
+
+def test_xiter_consumation():
+    r1 = Xiter([1, 2, 3])
+    r2 = r1.map(lambda x: x * x)
+    assert next(r1) == 1
+    assert next(r2) == 1
+    r3 = r2.map(lambda x: x * x)
+    assert next(r1) == 2
+    assert next(r1) == 3
+    assert next(r2) == 4
+    assert next(r3) == 16
+    assert next(r3) == 81
+    assert next(r2) == 9

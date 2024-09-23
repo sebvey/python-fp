@@ -1,4 +1,54 @@
+from dataclasses import dataclass
 from xfp import Xiter
+
+
+def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
+    for i, j in zip(actual, expected):
+        if i != j:
+            return False
+    return True
+
+
+def test_xiter_copy():
+    r1 = Xiter([1, 2, 3])
+    r2 = r1.copy()
+    assert next(r1) == 1
+    assert next(r2) == 1
+
+
+def test_xiter_copy_is_shallow():
+    @dataclass
+    class A:
+        text: str
+
+    r1 = Xiter([A("hello")])
+    r2 = r1.copy()
+
+    value1 = next(r1)
+    value2 = next(r2)
+    value1.text = "world"
+    assert value2.text == value1.text
+
+
+def test_xiter_deepcopy():
+    r1 = Xiter([1, 2, 3])
+    r2 = r1.deepcopy()
+    assert next(r1) == 1
+    assert next(r2) == 1
+
+
+def test_xiter_deepcopy_is_deep():
+    @dataclass
+    class A:
+        text: str
+
+    r1 = Xiter([A("hello")])
+    r2 = r1.deepcopy()
+    value1 = next(r1)
+    value2 = next(r2)
+
+    value1.text = "world"
+    assert value2.text == "hello"
 
 
 def test_xiter_map():
@@ -6,7 +56,7 @@ def test_xiter_map():
     actual = input.map(lambda x: (x - 1) * -1)
     expected = Xiter([0, -1, -2, -3])
 
-    assert actual == expected
+    assert compare(actual, expected)
 
 
 def test_xiter_flatten():
@@ -14,7 +64,7 @@ def test_xiter_flatten():
     actual = input.flatten()
     expected = Xiter([1, 2, 3])
 
-    assert actual == expected
+    assert compare(actual, expected)
 
 
 def test_xiter_flatten_id():
@@ -22,7 +72,7 @@ def test_xiter_flatten_id():
     actual = input.flatten()
     expected = Xiter([1, 2, 3])
 
-    assert actual == expected
+    assert compare(actual, expected)
 
 
 def test_xiter_flatten_mixed():
@@ -30,7 +80,7 @@ def test_xiter_flatten_mixed():
     actual = input.flatten()
     expected = Xiter([1, 2, 3])
 
-    assert actual == expected
+    assert compare(actual, expected)
 
 
 def test_xiter_flat_map():
@@ -38,7 +88,7 @@ def test_xiter_flat_map():
     actual = input.flat_map(lambda x: [x, x**2])
     expected = Xiter([1, 1, 2, 4])
 
-    assert actual == expected
+    assert compare(actual, expected)
 
 
 def test_xiter_filter():
@@ -46,4 +96,4 @@ def test_xiter_filter():
     actual = input.filter(lambda x: x % 2 == 0)
     expected = Xiter(range(2, 10, 2))
 
-    assert actual == expected
+    assert compare(actual, expected)

@@ -57,9 +57,9 @@ class Xlist[X: E]:
         """Return the length of the underlying data."""
         return len(self.__data)
 
-    def __str__(self) -> str:
-        """Return the string representation of the underlying data"""
-        return str(self.__data)
+    def __repr__(self) -> str:
+        """Return the representation of the underlying data"""
+        return repr(self.__data)
 
     def head(self) -> X:
         """Return the first element of the Xlist.
@@ -131,9 +131,9 @@ class Xlist[X: E]:
         ### Usage
 
         ```python
-            assert Xlist.flatten([1, 2, 3]) == Xlist([1, 2, 3])
-            assert Xlist.flatten([[1, 2], [3]]) == Xlist([1, 2, 3])
-            assert Xlist.flatten([[1, 2], 3]) == Xlist([1, 2, 3])
+            assert Xlist([1, 2, 3]).flatten() == Xlist([1, 2, 3])
+            assert Xlist([[1, 2], [3]]).flatten() == Xlist([1, 2, 3])
+            assert Xlist([[1, 2], 3]).flatten() == Xlist([1, 2, 3])
         ```
         """
         flatten_data = list()
