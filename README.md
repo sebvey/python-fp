@@ -1,5 +1,8 @@
 # XFP
 
+[![PyPI version](https://badge.fury.io/py/xfp.svg)](https://badge.fury.io/py/xfp)
+[![Coverage Status](https://coveralls.io/repos/github/sebvey/python-fp/badge.svg?branch=dev)](https://coveralls.io/github/sebvey/python-fp?branch=dev)
+
 XFP is a python library allowing functional syntax with python collections.  
 It enables dot notation on lists and iterators, and provides a way to functionally handle effects through values.
 Its objectives is to add functional tools to the language (in opposition to making it functional), deeper than what the language evolutions proposes today (ie with its recent pattern matching and lambda functions).  
