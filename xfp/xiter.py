@@ -1,5 +1,6 @@
 from copy import deepcopy
 from itertools import tee
+import itertools
 from typing import Callable, Iterable, Iterator, Any, cast
 from collections.abc import Iterable as ABCIterable
 
@@ -15,9 +16,19 @@ class Xiter[X: E]:
     ### Features
 
     - Monadic behavior
-    - Descriptive accumulation
     - List proxies or quality of lifes
+    - Iter proxy from (itertools homogene)
     """
+
+    @classmethod
+    def cycle(cls, c: Iterable[X]) -> "Xiter[X]":
+        "Proxy for itertools.cycle."
+        return Xiter(itertools.cycle(c))
+
+    @classmethod
+    def repeat(cls, x: X) -> "Xiter[X]":
+        "Proxy for itertools.repeat."
+        return Xiter(itertools.repeat(x))
 
     def __init__(self, iterable: Iterable[X]) -> None:
         """Construct an Xiter from an iterable."""
@@ -41,6 +52,13 @@ class Xiter[X: E]:
         Consume this element in the data structure.
         """
         return next(self.__iter)
+
+    def __getitem__(self, i: int) -> X:
+        """Alias for get(i).
+
+        Exists to enable [] syntax
+        """
+        return self.get(i)
 
     def copy(self):
         """Return a new Xiter, tee-ed from self.
@@ -85,24 +103,42 @@ class Xiter[X: E]:
         self.__iter = Xiter(a).map(lambda x: deepcopy(x))
         return Xiter(b)
 
-    def head(self) -> X:
-        """Return the first element of the iterator.
+    def chain(self, other: Iterable[X]) -> "Xiter[X]":
+        """Proxy for itertools.chain."""
+        return Xiter(itertools.chain(self, other))
+
+    def get(self, i: int) -> X:
+        """Return the i-th element of the Xlist.
+
+        Does not consume the i-1 first elements, but evaluate them
 
         ### Raise
 
-        - IndexError -- if the iterator is empty.
+        - IndexError -- if the list is shorter than i
         """
-        try:
-            return next(self.copy())
-        except StopIteration:
-            raise IndexError("<head> operation not allowed on empty iterator")
+        if i == 0:
+            try:
+                return next(self.copy())
+            except StopIteration:
+                raise IndexError("<next> operation not allowed on empty iterator")
+        else:
+            return self.tail().get(i - 1)
+
+    def get_fx(self, i: int) -> Xeffect[IndexError, X]:
+        """Return the i-th element of the Xlist.
+
+        Does not consume the i-1 first elements, but evaluate them
+        Wrap the potential error in an effect
+        """
+        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(lambda: self.get(i)))
+
+    def head(self) -> X:
+        """Alias for get(0)."""
+        return self.get(0)
 
     def head_fx(self) -> Xeffect[IndexError, X]:
-        """Return the first element of the iterator.
-
-        Wrap the potential error in an effect.
-        """
-        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(self.head))
+        """Alias for get_fx(0)."""
+        return self.get_fx(0)
 
     def tail(self) -> "Xiter[X]":
         """Return the iterator / its first element.
