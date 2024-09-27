@@ -50,6 +50,13 @@ class Xlist[X: E]:
         """Return the representation of the underlying data"""
         return repr(self.__data)
 
+    def __getitem__(self, i: int) -> X:
+        """Alias for get(i).
+
+        Exists to enable [] syntax
+        """
+        return self.get(i)
+
     def copy(self) -> "Xlist[X]":
         "Return a shallow copy of itself."
         return Xlist(copy(self.__data))
@@ -58,23 +65,33 @@ class Xlist[X: E]:
         "Return a deep copy of itself."
         return Xlist(deepcopy(self.__data))
 
-    def head(self) -> X:
-        """Return the first element of the Xlist.
+    def get(self, i: int) -> X:
+        """Return the i-th element of the Xlist.
 
         ### Raise
 
-        - IndexError -- if the list is empty.
+        - IndexError -- if the list is shorter than i
         """
-        if len(self) <= 0:
-            raise IndexError("<head> operation not allowed on empty list")
-        return self.__data[0]
+        if len(self) <= i:
+            raise IndexError(
+                f"<get> operation not allowed on list shorter than index {i} (found {len(self)} elements)."
+            )
+        return self.__data[i]
 
-    def head_fx(self) -> Xeffect[IndexError, X]:
-        """Return the first element of the Xlist.
+    def get_fx(self, i: int) -> Xeffect[IndexError, X]:
+        """Return the i-th element of the Xlist.
 
         Wrap the potential error in an effect.
         """
-        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(self.head))
+        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(lambda: self.get(i)))
+
+    def head(self) -> X:
+        """Alias for get(0)."""
+        return self.get(0)
+
+    def head_fx(self) -> Xeffect[IndexError, X]:
+        """Alias for get_fx(0)."""
+        return self.get_fx(0)
 
     def tail(self) -> "Xlist[X]":
         """Return the Xlist / its first element.
