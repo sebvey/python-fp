@@ -1,4 +1,4 @@
-from xfp import Xlist
+from xfp import XFXBranch, Xeffect, Xlist
 import pytest
 
 
@@ -26,6 +26,36 @@ def test_xlist_tail():
 def test_xlist_tail_fail():
     with pytest.raises(IndexError):
         _ = Xlist([]).tail()
+
+
+def test_xlist_head_fx():
+    input = Xlist([1, 2, 3, 4])
+    actual = input.head_fx()
+    expected = Xeffect.right(1)
+
+    assert actual == expected
+
+
+def test_xlist_head__fx_fail():
+    input = Xlist([])
+    actual = input.head_fx()
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+
+
+def test_xlist_tail_fx():
+    input = Xlist([1, 2, 3, 4])
+    actual = input.tail_fx()
+    expected = Xeffect.right(Xlist([2, 3, 4]))
+
+    assert actual == expected
+
+
+def test_xlist_tail_fx_fail():
+    input = Xlist([])
+    actual = input.tail_fx()
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
 
 
 def test_xlist_map():
@@ -126,3 +156,18 @@ def test_xlist_reduce():
 def test_xlist_empty_reduce():
     with pytest.raises(IndexError):
         _ = Xlist([]).reduce(lambda x, y: x + y)
+
+
+def test_xlist_reduce_fx():
+    input = Xlist([4, 3, -1, 2])
+    actual = input.reduce_fx(lambda x, y: x + y)
+    expected = Xeffect.right(8)
+
+    assert actual == expected
+
+
+def test_xlist_empty_reduce_fx():
+    input = Xlist([])
+    actual = input.reduce_fx(lambda x, y: x + y)
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
