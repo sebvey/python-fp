@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Callable, ParamSpec, TypeVar
 from xfp.xeffect._xeffect import Xeffect, XFXBranch
-from xfp.xeffect.xeither import XEither
+from xfp.xeffect.xeither import Xeither
 
 P = ParamSpec("P")
 X = TypeVar("X")
 
 
-class XTry:
+class Xtry:
     """Common tools to instantiate and pattern match Xeffect[Exception, X].
 
     ### Provides
@@ -19,19 +19,19 @@ class XTry:
 
     ```python
         regular_effect: Xeffect[Exception, Any] = Xeffect(Exception("Something went wrong"), XFXBranch.LEFT)
-        try_effect: Xeffect[Exception, Int] = XTry.Success(3)
+        try_effect: Xeffect[Exception, Int] = Xtry.Success(3)
 
         match try_effect:
-            case XTry.Success(value):
+            case Xtry.Success(value):
                 print(value)
-            case XTry.Failure(e):
+            case Xtry.Failure(e):
                 raise e
 
         # You can also pattern match regular Xeffect with Success/Failure
         match regular_effect:
-            case XTry.Success(value):
+            case Xtry.Success(value):
                 print(value)
-            case XTry.Failure(e):
+            case Xtry.Failure(e):
                 raise e
     ```
     """
@@ -52,7 +52,7 @@ class XTry:
                     raise Exception("error")
                 return 3
 
-            a: Xeffect[Exception, int] = XTry.from_unsafe(lambda: unsafe_function("foo"))
+            a: Xeffect[Exception, int] = Xtry.from_unsafe(lambda: unsafe_function("foo"))
         ```
         """
         try:
@@ -70,7 +70,7 @@ class XTry:
         ### Usage
 
         ```python
-            @XTry.safed
+            @Xtry.safed
             def unsafe_function(param: str) -> int:
                 if param == "":
                     raise Exception("error")
@@ -92,7 +92,7 @@ class XTry:
         """
 
         def __instancecheck__(self, instance):
-            return isinstance(instance, XEither.Left) and isinstance(
+            return isinstance(instance, Xeither.Left) and isinstance(
                 instance.value, Exception
             )
 
@@ -116,7 +116,7 @@ class XTry:
         """
 
         def __instancecheck__(self, instance):
-            return isinstance(instance, XEither.Right)
+            return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Success[X](Xeffect[Exception, X], metaclass=XeffectSuccessMeta):

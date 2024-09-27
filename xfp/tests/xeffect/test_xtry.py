@@ -1,12 +1,12 @@
-from xfp import XTry, Xeffect, XFXBranch
+from xfp import Xtry, Xeffect, XFXBranch
 
 
 def test_from_unsafe_lift_success():
     def input():
         return 3
 
-    expected = XTry.Success(3)
-    actual = XTry.from_unsafe(input)
+    expected = Xtry.Success(3)
+    actual = Xtry.from_unsafe(input)
 
     assert actual == expected
 
@@ -15,32 +15,32 @@ def test_from_unsafe_lift_failure():
     def input():
         raise Exception("fail")
 
-    actual = XTry.from_unsafe(input)
+    actual = Xtry.from_unsafe(input)
 
     assert isinstance(actual.value, Exception)
 
 
 def test_safed_lift_success():
-    @XTry.safed
+    @Xtry.safed
     def actual():
         return 3
 
-    expected = XTry.Success(3)
+    expected = Xtry.Success(3)
 
     assert actual() == expected
 
 
 def test_safed_lift_failure():
-    @XTry.safed
+    @Xtry.safed
     def actual():
         raise Exception("fail")
 
     assert isinstance(actual().value, Exception)
 
 
-def test_xtry_instantiate_xeffect():
-    success = XTry.Success(3)
-    failure = XTry.Failure(Exception("fail"))
+def test_Xtry_instantiate_xeffect():
+    success = Xtry.Success(3)
+    failure = Xtry.Failure(Exception("fail"))
 
     assert isinstance(success, Xeffect)
     assert isinstance(failure, Xeffect)
@@ -50,7 +50,7 @@ def test_xtry_instantiate_xeffect():
 
 def test_success_can_be_pattern_match():
     match Xeffect(3, XFXBranch.RIGHT):
-        case XTry.Success(v):
+        case Xtry.Success(v):
             assert v == 3
         case _:
             assert False
@@ -58,7 +58,7 @@ def test_success_can_be_pattern_match():
 
 def test_failure_can_be_pattern_match():
     match Xeffect(Exception("fail"), XFXBranch.LEFT):
-        case XTry.Failure(e):
+        case Xtry.Failure(e):
             assert isinstance(e, Exception) and e.args[0] == "fail"
         case _:
             assert False
@@ -66,7 +66,7 @@ def test_failure_can_be_pattern_match():
 
 def test_empty_do_not_false_positive():
     match Xeffect(None, XFXBranch.LEFT):
-        case XTry.Failure(_):
+        case Xtry.Failure(_):
             assert False
         case _:
             assert True

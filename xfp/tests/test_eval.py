@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import override
 
-from xfp import XEither, Xeffect, Xiter, Xlist, curry, tupled, XOpt
+from xfp import Xeither, Xeffect, Xiter, Xlist, curry, tupled, Xopt
 
 
 class Sink[T](ABC):
@@ -78,7 +78,7 @@ def test_xiter_to_xlist_should_eval():
     assert sink.value == [1, 2, 3]
 
 
-def test_xiter_infifinite_iterator_works_fine():
+def test_xiter_infinite_iterator_works_fine():
     sink = Appender()
     eager_value = forced_side_effect(sink)
     assert sink.value == []
@@ -92,23 +92,49 @@ def test_xiter_infifinite_iterator_works_fine():
 
 def test_xiter_fizzbuzz():
     def notify(frequency: int, text: str) -> Xiter[Xeffect[None, str]]:
-        raw = [XOpt.Empty] * (frequency - 1)
-        raw.append(XOpt.Some(text))
-        return Xiter([XOpt.Empty]).chain(Xiter.cycle(raw))
+        raw = [Xopt.Empty] * (frequency - 1)
+        raw.append(Xopt.Some(text))
+        return Xiter([Xopt.Empty]).chain(Xiter.cycle(raw))
 
     def concat(
         first: Xeffect[None, str], second: Xeffect[None, str]
     ) -> Xeffect[None, str]:
         match (first, second):
-            case (XOpt.Some(ll), XOpt.Some(rr)):
-                return XOpt.Some(ll + rr)
-            case (_, XOpt.Empty):
+            case (Xopt.Some(ll), Xopt.Some(rr)):
+                return Xopt.Some(ll + rr)
+            case (_, Xopt.Empty):
                 return first
             case _:
                 return second
 
     f = notify(3, "fizz").zip(notify(5, "buzz")).map(tupled(concat))
 
-    assert f[3] == XEither.Right("fizz")
-    assert f[5] == XEither.Right("buzz")
-    assert f[15] == XEither.Right("fizzbuzz")
+    assert f[3] == Xeither.Right("fizz")
+    assert f[5] == Xeither.Right("buzz")
+    assert f[15] == Xeither.Right("fizzbuzz")
+
+
+def test_for_comprehension_pass():
+    result = Xeffect.fors(
+        lambda: [x + y for x, y in zip(Xeither.Right(1), Xeither.Right(2))]
+    )
+
+    assert result == Xeither.Right(3)
+
+
+def test_for_comprehension_fail():
+    result = Xeffect.fors(
+        lambda: [x + y for x, y in zip(Xeither.Right(1), Xeither.Left(2))]
+    )
+
+    assert result == Xeither.Left(2)
+
+
+def test_for_comprehension_flatten():
+    result = Xeffect.fors(
+        lambda: [
+            Xeither.Left(x + y) for x, y in zip(Xeither.Right(1), Xeither.Right(2))
+        ]
+    )
+
+    assert result == Xeither.Left(3)
