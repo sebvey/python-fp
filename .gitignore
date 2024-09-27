@@ -114,3 +114,5 @@ dmypy.json
 
 .vscode
 *.ipynb
+
+jli_*
