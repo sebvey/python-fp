@@ -15,8 +15,8 @@ class Xlist[X: E]:
 
     ### Features
 
-    - Monadic behavior through
-    - Descriptive accumulation through
+    - Monadic behavior
+    - Descriptive accumulation
     - List proxies or quality of lifes
     """
 
