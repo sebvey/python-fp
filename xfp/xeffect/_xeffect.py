@@ -1,10 +1,7 @@
-from typing import Callable, Any, Self, ParamSpec
+from typing import Callable, Any, Self
 from enum import Enum, auto
 from dataclasses import dataclass
-from .utils import E, curry_method
-
-
-P = ParamSpec("P")
+from ..utils import E, curry_method
 
 
 class XFXBranch(Enum):
@@ -45,28 +42,33 @@ class Xeffect[Y: E, X: E]:
     - Manual handling of the bias
     - Class method to lift values to Xeffect
 
+    ### Helper classes
+
+    Helper classes are provided to semantically instantiate / pattern match your effects.
+    See XEither, XTry, XOpt for more information.
+
     ### Usages
     - directly returns Xeffect in your own functions:
 
     ```python
         def f_that_breaks(should_break: bool) -> Xeffect[Error, str]:
             if should_break:
-                return Xeffect(XFXBranch.LEFT, Error("something went wrong"))
+                return Xeffect(Error("something went wrong", XFXBranch.LEFT))
             else:
-                return Xeffect(XFXBranch.RIGHT, "Everything's fine")
+                return Xeffect("Everything's fine", XFXBranch.RIGHT)
     ```
 
     - catch common functions into Xeffect:
 
     ```python
-        effect_result: Xeffect[Error, E] = Xeffect.from_unsafe(some_function_that_raises)
+        effect_result: Xeffect[Exception, E] = XTry.from_unsafe(some_function_that_raises)
     ```
 
     - powerful optional handling:
 
     ```python
         optional_value: int | None = 3
-        option_value: Xeffect[None, int] = Xeffect.from_optional(optional_value)
+        option_value: Xeffect[None, int] = XOpt.from_optional(optional_value)
     ```
 
     - rich union type:
@@ -74,76 +76,21 @@ class Xeffect[Y: E, X: E]:
     ```python
         def returns_a_str_or_int(should_be_str: boolean) -> Xeffect[str, int]:
             if should_be_str:
-                return Xeffect(XFXBranch.LEFT, "foo")
+                return Xeffect("foo", XFXBranch.LEFT)
             else:
-                return Xeffect(XFXBranch.RIGHT, 42)
+                return Xeffect(42, XFXBranch.RIGHT)
     ```
     """
 
-    branch: XFXBranch
     value: Y | X
+    branch: XFXBranch
 
-    @classmethod
-    def right(cls, value: X) -> "Xeffect[E, X]":
-        """Return an Xeffect (always RIGHT) from a value."""
-        return Xeffect(XFXBranch.RIGHT, value)
-
-    @classmethod
-    def left(cls, value: Y) -> "Xeffect[Y, E]":
-        """Return an Xeffect (always LEFT) from a value."""
-        return Xeffect(XFXBranch.LEFT, value)
-
-    @classmethod
-    def from_optional(cls, value: None | X) -> "Xeffect[None, X]":
-        """Return an Xeffect from an optional value.
-
-        value:
-        - X    -- Return a RIGHT
-        - None -- Return a LEFT
-        """
-        match value:
-            case None:
-                return Xeffect.left(value)
-            case _:
-                return Xeffect.right(value)
-
-    @classmethod
-    def from_unsafe(cls, f: Callable[[], X]) -> "Xeffect[Exception, X]":
-        """Return the result of a function as an Xeffect.
-
-        Execute the callable and catch the result :
-        - Callable returns -- wrap the result in a RIGHT
-        - Callable raises  -- wrap the Exception in a LEFT
-        """
-        try:
-            return Xeffect.right(f())
-        except Exception as e:
-            return Xeffect.left(e)
-
-    @classmethod
-    def safed(cls, f: Callable[P, X]) -> Callable[P, "Xeffect[Exception, X]"]:
-        """Return a new function being f with the side effect wrapped.
-
-        Used as a decorator for quickly converting unsafe code into safe one.
-        Downside is there is no fine tuning over the caught exception.
-
-        ### Usage
-
-        ```python
-            @Xeffect.safed
-            def unsafe_function(param: str) -> int:
-                if param == "":
-                    raise Exception("error")
-                return 3
-
-            a: Xeffect[Exception, int] = unsafe_function("foo")
-        ```
-        """
-
-        def inner(*args: P.args, **kwargs: P.kwargs) -> "Xeffect[Exception, X]":
-            return Xeffect.from_unsafe(lambda: f(*args, **kwargs))
-
-        return inner
+    def __eq__(self, value: object) -> bool:
+        return (
+            isinstance(value, Xeffect)
+            and self.value == value.value
+            and self.branch == value.branch
+        )
 
     def __repr__(self) -> str:
         return f"{self.branch} : {self.value}"
@@ -176,7 +123,7 @@ class Xeffect[Y: E, X: E]:
         see map_right
         """
         return self.__check_branch(XFXBranch.LEFT)(
-            lambda x: Xeffect(x.branch, f(x.value))
+            lambda x: Xeffect(f(x.value), x.branch)
         )
 
     def map_right(self, f: Callable[[X], E]) -> "Xeffect[Y, E]":
@@ -198,15 +145,15 @@ class Xeffect[Y: E, X: E]:
 
             (
                 Xeffect
-                    .from_optional(3)            # Xeffect(XFXBranch.RIGHT, 3)
-                    .map_right(add_three)        # Xeffect(XFXBranch.RIGHT, 6)
-                    .map_right(pow)              # Xeffect(XFXBranch.RIGHT, 36)
-                    .map_right(lambda x: x - 4)  # Xeffect(XFXBranch.RIGHT, 32)
+                    .from_optional(3)            # Xeffect(3, XFXBranch.RIGHT)
+                    .map_right(add_three)        # Xeffect(6, XFXBranch.RIGHT)
+                    .map_right(pow)              # Xeffect(36, XFXBranch.RIGHT)
+                    .map_right(lambda x: x - 4)  # Xeffect(32, XFXBranch.RIGHT)
             )
         ```
         """
         return self.__check_branch(XFXBranch.RIGHT)(
-            lambda x: Xeffect(x.branch, f(x.value))
+            lambda x: Xeffect(f(x.value), x.branch)
         )
 
     def flatten(self) -> "Xeffect[E, E]":
@@ -240,10 +187,10 @@ class Xeffect[Y: E, X: E]:
         ### Usage
 
         ```python
-            assert Xeffect.right(Xeffect.right("example")).flatten_right() == Xeffect(XFXBranch.RIGHT, "example")
-            assert Xeffect.right("example").flatten_right() == Xeffect(XFXBranch.RIGHT, "example")
-            assert Xeffect.right(Xeffect.from_optional(None)).flatten_right() == Xeffect(XFXBranch.LEFT, None)
-            assert Xeffect.right(Xeffect.left("example")).flatten_right() == Xeffect(XFXBranch.LEFT, "example")
+            assert Xeffect.right(Xeffect.right("example")).flatten_right() == Xeffect("example", XFXBranch.RIGHT)
+            assert Xeffect.right("example").flatten_right() == Xeffect("example", XFXBranch.RIGHT)
+            assert Xeffect.right(Xeffect.from_optional(None)).flatten_right() == Xeffect(None, XFXBranch.LEFT)
+            assert Xeffect.right(Xeffect.left("example")).flatten_right() == Xeffect("example", XFXBranch.LEFT)
         ```
         """
         return self.__check_branch(XFXBranch.RIGHT)(
@@ -289,21 +236,21 @@ class Xeffect[Y: E, X: E]:
 
             (
                 Xeffect
-                    .right(4)               # Xeffect(XFXBranch.RIGHT, 4)
-                    .flat_map_right(invert) # Xeffect(XFXBranch.RIGHT, 0.25)
-                    .flat_map_right(sqrt)   # Xeffect(XFXBranch.RIGHT, 0.5)
+                    .right(4)               # Xeffect(4, XFXBranch.RIGHT)
+                    .flat_map_right(invert) # Xeffect(0.25, XFXBranch.RIGHT)
+                    .flat_map_right(sqrt)   # Xeffect(0.5, XFXBranch.RIGHT)
             )
             (
                 Xeffect
-                    .right(0)               # Xeffect(XFXBranch.RIGHT, 0)
-                    .flat_map_right(invert) # Xeffect(XFXBranch.LEFT, ZeroDivisionError(...))
-                    .flat_map_right(sqrt)   # Xeffect(XFXBranch.LEFT, ZeroDivisionError(...))
+                    .right(0)               # Xeffect(0, XFXBranch.RIGHT)
+                    .flat_map_right(invert) # Xeffect(ZeroDivisionError(..., XFXBranch.LEFT))
+                    .flat_map_right(sqrt)   # Xeffect(ZeroDivisionError(..., XFXBranch.LEFT))
             )
             (
                 Xeffect
-                    .right(-4)              # Xeffect(XFXBranch.RIGHT, -4)
-                    .flat_map_right(invert) # Xeffect(XFXBranch.RIGHT, -0.25)
-                    .flat_map_right(sqrt)   # Xeffect(XFXBranch.LEFT, ValueError(...))
+                    .right(-4)              # Xeffect(-4, XFXBranch.RIGHT)
+                    .flat_map_right(invert) # Xeffect(-0.25, XFXBranch.RIGHT)
+                    .flat_map_right(sqrt)   # Xeffect(ValueError(..., XFXBranch.LEFT))
             )
         """
         return self.map_right(f).flatten_right()
@@ -370,7 +317,9 @@ class Xeffect[Y: E, X: E]:
 
         see foreach_right
         """
-        self.__check_branch(XFXBranch.LEFT)(lambda s: Xeffect.left(statement(s.value)))
+        self.__check_branch(XFXBranch.LEFT)(
+            lambda s: Xeffect(statement(s.value), XFXBranch.LEFT)
+        )
 
     def foreach_right(self, statement: Callable[[X], Any]) -> None:
         """Do the statement procedure to the underlying value if self is a RIGHT.
@@ -392,14 +341,14 @@ class Xeffect[Y: E, X: E]:
             # doesn't output anything
 
             (
-                Xeffect(XFXBranch.RIGHT, 25)
+                Xeffect(25, XFXBranch.RIGHT)
                     .foreach(lambda x: print(f"This is the left element : {x}"))
             )
             # doesn't output anything
         ```
         """
         self.__check_branch(XFXBranch.RIGHT)(
-            lambda s: Xeffect.right(statement(s.value))
+            lambda s: Xeffect(statement(s.value), XFXBranch.RIGHT)
         )
 
     def recover_with(self, f: Callable[[Y], E]) -> "Xeffect[E, X]":
@@ -434,13 +383,13 @@ class Xeffect[Y: E, X: E]:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                                      # Xeffect(XFXBranch.LEFT, ValueError(...))
-                    .recover_with_right(lambda _: invert(-4)) # Xeffect(XFXBranch.RIGHT, -0.25)
+                sqrt(-4)                                      # Xeffect(ValueError(..., XFXBranch.LEFT))
+                    .recover_with_right(lambda _: invert(-4)) # Xeffect(-0.25, XFXBranch.RIGHT)
             )
 
             (
-                sqrt(4)                                       # Xeffect(XFXBranch.RIGHT, 2)
-                    .recover_with_right(lambda _: invert(-4)) # Xeffect(XFXBranch.RIGHT, 2)
+                sqrt(4)                                       # Xeffect(2, XFXBranch.RIGHT)
+                    .recover_with_right(lambda _: invert(-4)) # Xeffect(2, XFXBranch.RIGHT)
             )
         ```
         """
@@ -467,7 +416,9 @@ class Xeffect[Y: E, X: E]:
 
         See recover_right
         """
-        return self.__check_branch(XFXBranch.RIGHT)(lambda s: Xeffect.left(f(s.value)))
+        return self.__check_branch(XFXBranch.RIGHT)(
+            lambda s: Xeffect(f(s.value), XFXBranch.LEFT)
+        )
 
     def recover_right(self, f: Callable[[Y], E]) -> "Xeffect[None, E | X]":
         """Return a new effect with is always a RIGHT.
@@ -490,16 +441,18 @@ class Xeffect[Y: E, X: E]:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                        # Xeffect(XFXBranch.LEFT, ValueError(...))
-                    .recover_right(lambda _: 0) # Xeffect(XFXBranch.RIGHT, 0)
+                sqrt(-4)                        # Xeffect(ValueError(..., XFXBranch.LEFT))
+                    .recover_right(lambda _: 0) # Xeffect(0, XFXBranch.RIGHT)
             )
             (
-                sqrt(4)                         # Xeffect(XFXBranch.RIGHT, 2)
-                    .recover_right(lambda _: 0) # Xeffect(XFXBranch.RIGHT, 2)
+                sqrt(4)                         # Xeffect(2, XFXBranch.RIGHT)
+                    .recover_right(lambda _: 0) # Xeffect(2, XFXBranch.RIGHT)
             )
         ```
         """
-        return self.__check_branch(XFXBranch.LEFT)(lambda s: Xeffect.right(f(s.value)))
+        return self.__check_branch(XFXBranch.LEFT)(
+            lambda s: Xeffect(f(s.value), XFXBranch.RIGHT)
+        )
 
     def filter(self, predicate: Callable[[X], bool]) -> "Xeffect[Y | XeffectError, X]":
         """Alias for filter_right."""
@@ -523,7 +476,9 @@ class Xeffect[Y: E, X: E]:
         see filter_right
         """
         return self.__check_branch(XFXBranch.LEFT)(
-            lambda s: s if predicate(s.value) else Xeffect.right(XeffectError(s))
+            lambda s: s
+            if predicate(s.value)
+            else Xeffect(XeffectError(s), XFXBranch.RIGHT)
         )
 
     def filter_right(
@@ -545,14 +500,16 @@ class Xeffect[Y: E, X: E]:
 
             (
                 Xeffect
-                    .right(4)                 # Xeffect(XFXBranch.RIGHT, 4)
-                    .filter(lambda x: x < 10) # Xeffect(XFXBranch.RIGHT, 4)
-                    .filter(lambda x: x > 10) # Xeffect(XFXBranch.LEFT, XeffectError(Xeffect.right(4)))
-                    .filter(lambda _: True)   # Xeffect(XFXBranch.LEFT, XeffectError(Xeffect.right(4)))
-                    .filter(lambda _: False)  # Xeffect(XFXBranch.LEFT, XeffectError(Xeffect.right(4)))
+                    .right(4)                 # Xeffect(4, XFXBranch.RIGHT)
+                    .filter(lambda x: x < 10) # Xeffect(4, XFXBranch.RIGHT)
+                    .filter(lambda x: x > 10) # Xeffect(XeffectError(Xeffect.right(4, XFXBranch.LEFT)))
+                    .filter(lambda _: True)   # Xeffect(XeffectError(Xeffect.right(4, XFXBranch.LEFT)))
+                    .filter(lambda _: False)  # Xeffect(XeffectError(Xeffect.right(4, XFXBranch.LEFT)))
             )
         ```
         """
         return self.__check_branch(XFXBranch.RIGHT)(
-            lambda s: s if predicate(s.value) else Xeffect.left(XeffectError(s))
+            lambda s: s
+            if predicate(s.value)
+            else Xeffect(XeffectError(s), XFXBranch.LEFT)
         )

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import override
 
-from xfp import XFXBranch, Xeffect, Xiter, Xlist, curry, tupled
+from xfp import XEither, Xeffect, Xiter, Xlist, curry, tupled, XOpt
 
 
 class Sink[T](ABC):
@@ -92,23 +92,23 @@ def test_xiter_infifinite_iterator_works_fine():
 
 def test_xiter_fizzbuzz():
     def notify(frequency: int, text: str) -> Xiter[Xeffect[None, str]]:
-        raw = [Xeffect.left(None)] * (frequency - 1)
-        raw.append(Xeffect.right(text))
-        return Xiter([Xeffect.left(None)]).chain(Xiter.cycle(raw))
+        raw = [XOpt.Empty] * (frequency - 1)
+        raw.append(XOpt.Some(text))
+        return Xiter([XOpt.Empty]).chain(Xiter.cycle(raw))
 
     def concat(
         first: Xeffect[None, str], second: Xeffect[None, str]
     ) -> Xeffect[None, str]:
         match (first, second):
-            case (Xeffect(XFXBranch.RIGHT, ll), Xeffect(XFXBranch.RIGHT, rr)):
-                return Xeffect.right(ll + rr)  # type: ignore
-            case (_, Xeffect(XFXBranch.LEFT, _)):
+            case (XOpt.Some(ll), XOpt.Some(rr)):
+                return XOpt.Some(ll + rr)
+            case (_, XOpt.Empty):
                 return first
             case _:
                 return second
 
     f = notify(3, "fizz").zip(notify(5, "buzz")).map(tupled(concat))
 
-    assert f[3] == Xeffect.right("fizz")
-    assert f[5] == Xeffect.right("buzz")
-    assert f[15] == Xeffect.right("fizzbuzz")
+    assert f[3] == XEither.Right("fizz")
+    assert f[5] == XEither.Right("buzz")
+    assert f[15] == XEither.Right("fizzbuzz")

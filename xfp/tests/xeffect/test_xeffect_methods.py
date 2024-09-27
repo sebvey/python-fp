@@ -2,30 +2,30 @@ from xfp import Xeffect, XFXBranch, XeffectError, Xlist
 
 
 def test_xeffect_map_left_do():
-    input = Xeffect(XFXBranch.LEFT, 1)
+    input = Xeffect(1, XFXBranch.LEFT)
     actual = input.map_left(lambda x: x + 2)
-    expected = Xeffect(XFXBranch.LEFT, 3)
+    expected = Xeffect(3, XFXBranch.LEFT)
 
     assert actual == expected
 
 
 def test_xeffect_map_left_pass():
-    input = Xeffect(XFXBranch.RIGHT, 1)
+    input = Xeffect(1, XFXBranch.RIGHT)
     actual = input.map_left(lambda x: x + 2)
 
     assert actual == input
 
 
 def test_xeffect_map_right_do():
-    input = Xeffect(XFXBranch.RIGHT, 1)
+    input = Xeffect(1, XFXBranch.RIGHT)
     actual = input.map_right(lambda x: x + 2)
-    expected = Xeffect(XFXBranch.RIGHT, 3)
+    expected = Xeffect(3, XFXBranch.RIGHT)
 
     assert actual == expected
 
 
 def test_xeffect_map_right_pass():
-    input = Xeffect(XFXBranch.LEFT, 1)
+    input = Xeffect(1, XFXBranch.LEFT)
     actual = input.map_right(lambda x: x + 2)
 
     assert actual == input
@@ -39,14 +39,14 @@ def test_xeffect_flatten():
 
     combinations = Xlist(
         [
-            (Xeffect(LEFT, Xeffect(RIGHT, 3)), id),
-            (Xeffect(LEFT, Xeffect(LEFT, 3)), id),
-            (Xeffect(RIGHT, Xeffect(RIGHT, 3)), reduce),
-            (Xeffect(RIGHT, Xeffect(LEFT, 3)), reduce),
-            (Xeffect(RIGHT, 3), id),
-            (Xeffect(LEFT, 3), id),
-            (Xeffect(RIGHT, 3), id),
-            (Xeffect(LEFT, 3), id),
+            (Xeffect(Xeffect(3, RIGHT), LEFT), id),
+            (Xeffect(Xeffect(3, LEFT), LEFT), id),
+            (Xeffect(Xeffect(3, RIGHT), RIGHT), reduce),
+            (Xeffect(Xeffect(3, LEFT), RIGHT), reduce),
+            (Xeffect(3, RIGHT), id),
+            (Xeffect(3, LEFT), id),
+            (Xeffect(3, RIGHT), id),
+            (Xeffect(3, LEFT), id),
         ]
     )
 
@@ -58,53 +58,53 @@ def test_xeffect_flatten():
 
 
 def test_xeffect_flat_map_left_do():
-    input = Xeffect(XFXBranch.LEFT, 1)
-    actual = input.flat_map_left(lambda x: Xeffect.left(x + 2))
-    expected = Xeffect(XFXBranch.LEFT, 3)
+    input = Xeffect(1, XFXBranch.LEFT)
+    actual = input.flat_map_left(lambda x: Xeffect(x + 2, XFXBranch.LEFT))
+    expected = Xeffect(3, XFXBranch.LEFT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_left_do_but_fail():
-    input = Xeffect(XFXBranch.LEFT, 1)
-    actual = input.flat_map_left(lambda x: Xeffect.right(None))
-    expected = Xeffect.right(None)
+    input = Xeffect(1, XFXBranch.LEFT)
+    actual = input.flat_map_left(lambda x: Xeffect(None, XFXBranch.RIGHT))
+    expected = Xeffect(None, XFXBranch.RIGHT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_left_pass():
-    input = Xeffect(XFXBranch.RIGHT, 1)
-    actual = input.flat_map_left(lambda x: Xeffect.left(x + 2))
+    input = Xeffect(1, XFXBranch.RIGHT)
+    actual = input.flat_map_left(lambda x: Xeffect(x + 2, XFXBranch.LEFT))
 
     assert actual == input
 
 
 def test_xeffect_flat_map_right_do():
-    input = Xeffect(XFXBranch.RIGHT, 1)
-    actual = input.flat_map_right(lambda x: Xeffect.right(x + 2))
-    expected = Xeffect(XFXBranch.RIGHT, 3)
+    input = Xeffect(1, XFXBranch.RIGHT)
+    actual = input.flat_map_right(lambda x: Xeffect(x + 2, XFXBranch.RIGHT))
+    expected = Xeffect(3, XFXBranch.RIGHT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_right_do_but_fail():
-    input = Xeffect(XFXBranch.RIGHT, 1)
-    actual = input.flat_map_right(lambda x: Xeffect.left(None))
-    expected = Xeffect.left(None)
+    input = Xeffect(1, XFXBranch.RIGHT)
+    actual = input.flat_map_right(lambda x: Xeffect(None, XFXBranch.LEFT))
+    expected = Xeffect(None, XFXBranch.LEFT)
 
     assert actual == expected
 
 
 def test_xeffect_flat_map_right_pass():
-    input = Xeffect(XFXBranch.LEFT, 1)
-    actual = input.flat_map_right(lambda x: Xeffect.right(x + 2))
+    input = Xeffect(1, XFXBranch.LEFT)
+    actual = input.flat_map_right(lambda x: Xeffect(x + 2, XFXBranch.RIGHT))
 
     assert actual == input
 
 
 def test_xeffect_fold_value():
-    input = Xeffect(XFXBranch.RIGHT, 1)
+    input = Xeffect(1, XFXBranch.RIGHT)
     actual = input.fold(36)(lambda x: x + 2)
     expected = 3
 
@@ -112,7 +112,7 @@ def test_xeffect_fold_value():
 
 
 def test_xeffect_fold_default():
-    input = Xeffect(XFXBranch.LEFT, 1)
+    input = Xeffect(1, XFXBranch.LEFT)
     actual = input.fold(36)(lambda x: x + 2)
     expected = 36
 
@@ -120,7 +120,7 @@ def test_xeffect_fold_default():
 
 
 def test_xeffect_get_or_else_value():
-    input = Xeffect(XFXBranch.RIGHT, 1)
+    input = Xeffect(1, XFXBranch.RIGHT)
     actual = input.get_or_else(36)
     expected = 1
 
@@ -128,7 +128,7 @@ def test_xeffect_get_or_else_value():
 
 
 def test_xeffect_get_or_else_default():
-    input = Xeffect(XFXBranch.LEFT, 1)
+    input = Xeffect(1, XFXBranch.LEFT)
     actual = input.get_or_else(36)
     expected = 36
 
@@ -136,90 +136,90 @@ def test_xeffect_get_or_else_default():
 
 
 def test_xeffect_recover_with_left_pass():
-    input = Xeffect(XFXBranch.LEFT, 1)
-    actual = input.recover_with_left(lambda _: Xeffect.right(2))
+    input = Xeffect(1, XFXBranch.LEFT)
+    actual = input.recover_with_left(lambda _: Xeffect(2, XFXBranch.RIGHT))
 
     assert actual == input
 
 
 def test_xeffect_recover_with_left_recover():
-    input = Xeffect(XFXBranch.RIGHT, 1)
-    expected = Xeffect.right(2)
+    input = Xeffect(1, XFXBranch.RIGHT)
+    expected = Xeffect(2, XFXBranch.RIGHT)
     actual = input.recover_with_left(lambda _: expected)
 
     assert actual == expected
 
 
 def test_xeffect_recover_with_right_pass():
-    input = Xeffect(XFXBranch.RIGHT, 1)
-    actual = input.recover_with_right(lambda _: Xeffect.right(2))
+    input = Xeffect(1, XFXBranch.RIGHT)
+    actual = input.recover_with_right(lambda _: Xeffect(2, XFXBranch.RIGHT))
 
     assert actual == input
 
 
 def test_xeffect_recover_with_right_recover():
-    input = Xeffect(XFXBranch.LEFT, 1)
-    expected = Xeffect.right(2)
+    input = Xeffect(1, XFXBranch.LEFT)
+    expected = Xeffect(2, XFXBranch.RIGHT)
     actual = input.recover_with_right(lambda _: expected)
 
     assert actual == expected
 
 
 def test_xeffect_recover_left_pass():
-    input = Xeffect.left(1)
+    input = Xeffect(1, XFXBranch.LEFT)
     actual = input.recover_left(lambda _: 2)
 
     assert actual == input
 
 
 def test_xeffect_recover_left_do():
-    input = Xeffect.right(1)
-    expected = Xeffect.left(2)
+    input = Xeffect(1, XFXBranch.RIGHT)
+    expected = Xeffect(2, XFXBranch.LEFT)
     actual = input.recover_left(lambda _: 2)
 
     assert actual == expected
 
 
 def test_xeffect_recover_right_pass():
-    input = Xeffect.right(1)
+    input = Xeffect(1, XFXBranch.RIGHT)
     actual = input.recover_right(lambda _: 2)
 
     assert actual == input
 
 
 def test_xeffect_recover_right_do():
-    input = Xeffect.left(1)
-    expected = Xeffect.right(2)
+    input = Xeffect(1, XFXBranch.LEFT)
+    expected = Xeffect(2, XFXBranch.RIGHT)
     actual = input.recover_right(lambda _: 2)
 
     assert actual == expected
 
 
 def test_xeffect_filter_left_pass():
-    input = Xeffect(XFXBranch.RIGHT, 3)
+    input = Xeffect(3, XFXBranch.RIGHT)
     actual = input.filter_left(lambda x: x > 10)
 
     assert actual == input
 
 
 def test_xeffect_filter_left_do():
-    input = Xeffect(XFXBranch.LEFT, 3)
-    expected = Xeffect(XFXBranch.RIGHT, XeffectError(input))
+    input = Xeffect(3, XFXBranch.LEFT)
+    expected = Xeffect(XeffectError(input), XFXBranch.RIGHT)
     actual = input.filter_left(lambda x: x > 10)
 
     assert actual == expected
 
 
 def test_xeffect_filter_right_pass():
-    input = Xeffect(XFXBranch.LEFT, 3)
+    input = Xeffect(3, XFXBranch.LEFT)
     actual = input.filter_right(lambda x: x > 10)
 
     assert actual == input
 
 
 def test_xeffect_filter_right_do():
-    input = Xeffect(XFXBranch.RIGHT, 3)
-    expected = Xeffect(XFXBranch.LEFT, XeffectError(input))
+    input = Xeffect(3, XFXBranch.RIGHT)
+    expected = Xeffect(XeffectError(input), XFXBranch.LEFT)
     actual = input.filter_right(lambda x: x > 10)
 
     assert actual == expected

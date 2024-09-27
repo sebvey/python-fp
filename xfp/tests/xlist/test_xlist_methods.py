@@ -1,4 +1,4 @@
-from xfp import XFXBranch, Xeffect, Xlist, tupled
+from xfp import XFXBranch, Xlist, tupled, XEither
 import pytest
 
 
@@ -31,7 +31,7 @@ def test_xlist_tail_fail():
 def test_xlist_head_fx():
     input = Xlist([1, 2, 3, 4])
     actual = input.head_fx()
-    expected = Xeffect.right(1)
+    expected = XEither.Right(1)
 
     assert actual == expected
 
@@ -46,7 +46,7 @@ def test_xlist_head__fx_fail():
 def test_xlist_tail_fx():
     input = Xlist([1, 2, 3, 4])
     actual = input.tail_fx()
-    expected = Xeffect.right(Xlist([2, 3, 4]))
+    expected = XEither.Right(Xlist([2, 3, 4]))
 
     assert actual == expected
 
@@ -161,7 +161,7 @@ def test_xlist_empty_reduce():
 def test_xlist_reduce_fx():
     input = Xlist([4, 3, -1, 2])
     actual = input.reduce_fx(lambda x, y: x + y)
-    expected = Xeffect.right(8)
+    expected = XEither.Right(8)
 
     assert actual == expected
 
