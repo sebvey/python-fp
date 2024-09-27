@@ -1,6 +1,7 @@
-from xfp.xiter import Xiter
+# Warning : import order matters
 from xfp.xeffect import Xeffect, XFXBranch, XeffectError
 from xfp.xlist import Xlist
+from xfp.xiter import Xiter
 from xfp.utils import curry, curry_method, tupled
 
 __all__ = [

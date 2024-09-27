@@ -1,4 +1,4 @@
-# ZITER EXPERIMENTATIONS ##############
+# XITER EXPERIMENTATIONS ##############
 
 from xfp import Xiter
 
@@ -34,8 +34,8 @@ def is_day_of_month(day_of_month: int):
     return predicate
 
 
-# ziterize only 'immutable' data
-# ziter is based on iterators
+# xiterize only 'immutable' data
+# xiter is based on iterators
 # lazy transfo, we collect when consuming the iterator
 # so if data changed between transfos declaration and consuption ...
 # -> DEVELOPPER RESPONSABILITY TO RELY ON tuples, frozen dataclasses ...
