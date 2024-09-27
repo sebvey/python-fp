@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 from typing import Iterable, Iterator, Callable, Any, cast
 from collections.abc import Iterable as ABCIterable
 
-from xfp import Xeffect
+from xfp import Xeffect, XTry
 from .utils import E, curry_method, id
 
 
@@ -83,7 +83,7 @@ class Xlist[X: E]:
 
         Wrap the potential error in an effect.
         """
-        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(lambda: self.get(i)))
+        return cast(Xeffect[IndexError, X], XTry.from_unsafe(lambda: self.get(i)))
 
     def head(self) -> X:
         """Alias for get(0)."""
@@ -109,7 +109,7 @@ class Xlist[X: E]:
 
         Wrap the potential error in an effect.
         """
-        return cast(Xeffect[IndexError, "Xlist[X]"], Xeffect.from_unsafe(self.tail))
+        return cast(Xeffect[IndexError, "Xlist[X]"], XTry.from_unsafe(self.tail))
 
     def map(self, f: Callable[[X], E]) -> "Xlist[E]":
         """Return a new Xlist with the function f applied to each element.
@@ -350,7 +350,7 @@ class Xlist[X: E]:
             assert Xlist([]).reduce(lambda x, y: x + y) == Xeffect.left(IndexError("<reduce> operation not allowed on empty list"))
         ```
         """
-        return cast(Xeffect[IndexError, X], Xeffect.from_unsafe(lambda: self.reduce(f)))
+        return cast(Xeffect[IndexError, X], XTry.from_unsafe(lambda: self.reduce(f)))
 
     def zip(self, other: Iterable[E]) -> "Xlist[tuple[X, E]]":
         """Zip this Xlist with another iterable."""

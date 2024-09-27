@@ -66,15 +66,15 @@ def under_eight(x: int) -> bool:
 )
 ```
 
-### Effect
+### XEffect
 
 Functional behaviors requires proper encapsulation of 'not a value' meaning (for example, None or raise Exception).  
 Those ecapsulations are modelised in xfp through the Xeffect class. It basically encapsulates a union type under two pathways, either LEFT or RIGHT, in a container. Think of this container as a 'list with one element'. Its API is homogene with the collection one.
 ```python
 from xfp import Xeffect
 
-r1 = Xeffect.right(1)
-r2 = Xeffect.left(3)
+r1 = Xeffect(1, XFXBranch.RIGHT)
+r2 = Xeffect(3, XFXBranch.LEFT)
 
 (
     r1
@@ -84,10 +84,13 @@ r2 = Xeffect.left(3)
 )
 ```
 
-Semantically, you can use this structure to encode values under a pathway, and errors under the other. Specific tools are provided :
+### XEither, XTry, XOpt
+
+You can add more semantic to your effects by making use of the proxy types `XEither`, `XTry`, `XOpt`, respectively indicating "a formal union type", "something that can crash", "the presence or absence of an element".  
+Those types resolves as an Xeffect, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of XTry :
 
 ```python
-from xfp import Xeffect
+from xfp import XTry
 
 def should_raise(x):
     if x > 10:
@@ -95,16 +98,26 @@ def should_raise(x):
     else:
         return x
 
-r1 = Xeffect.from_unsafe(lambda: should_raise(15)) # Xeffect.left(Exception("too much"))
-r2 = Xeffect.from_unsafe(lambda: should_raise(8))  # Xeffect.right(8)
+r1 = XTry.from_unsafe(lambda: should_raise(15)) # Xeffect.left(Exception("too much"))
+r2 = XTry.from_unsafe(lambda: should_raise(8))  # Xeffect.right(8)
 
 # a decorator is provided to automatically convert your functions
-@Xeffect.safed
+@XTry.safed
 def safed_function(x):
     return should_raise(x)
 
-r3 = safed_function(15) # Xeffect.left(Exception("too much"))
-r4 = safed_function(8)  # Xeffect.right(8)
+r3: Xeffect[Exception, Int] = safed_function(15) # Xeffect.left(Exception("too much"))
+r4: Xeffect[Exception, Int] = safed_function(8)  # Xeffect.right(8)
+
+# Constructors are also available
+r5: Xeffect[Exception, Int] = Xeffect.Success(3)
+
+# You can pattern match an expression depending on its pathway
+match r3:
+    case XTry.Success(value):
+        print(value)
+    case XTry.Failure(exception):
+        print(f"Something went wrong : {e}")
 ```
 
 # HOW TO CONTRIBUTE
