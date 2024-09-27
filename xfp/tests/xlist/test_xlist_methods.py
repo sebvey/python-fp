@@ -28,6 +28,36 @@ def test_xlist_tail_fail():
         Xlist([]).tail()
 
 
+def test_xlist_head_fx():
+    input = Xlist([1, 2, 3, 4])
+    actual = input.head_fx()
+    expected = Xeffect.right(1)
+
+    assert actual == expected
+
+
+def test_xlist_head__fx_fail():
+    input = Xlist([])
+    actual = input.head_fx()
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+
+
+def test_xlist_tail_fx():
+    input = Xlist([1, 2, 3, 4])
+    actual = input.tail_fx()
+    expected = Xeffect.right(Xlist([2, 3, 4]))
+
+    assert actual == expected
+
+
+def test_xlist_tail_fx_fail():
+    input = Xlist([])
+    actual = input.tail_fx()
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+
+
 def test_xlist_map():
     input = Xlist([1, 2, 3, 4])
     actual = input.map(lambda x: (x - 1) * -1)
