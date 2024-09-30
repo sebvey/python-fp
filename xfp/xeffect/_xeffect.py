@@ -1,4 +1,4 @@
-from typing import Callable, Any, Self
+from typing import Callable, Any, Iterator, Self, cast
 from enum import Enum, auto
 from dataclasses import dataclass
 from ..utils import E, curry_method
@@ -19,6 +19,17 @@ class XeffectError(Exception):
     def __init__(self, xeffect: "Xeffect[E, E]"):
         self.xeffect = xeffect
         super().__init__(f"Auto generated error for initial effect {self.xeffect}")
+
+
+@dataclass(init=False)
+class XeffectWrapper[X](Exception):
+    value: X
+
+    def __init__(self, value: X):
+        self.value = value
+        super().__init__(
+            "If you see this, your effect chains are not correctly encapsulated in an Xeffect.fors"
+        )
 
 
 @dataclass(frozen=True)
@@ -45,7 +56,7 @@ class Xeffect[Y: E, X: E]:
     ### Helper classes
 
     Helper classes are provided to semantically instantiate / pattern match your effects.
-    See XEither, XTry, XOpt for more information.
+    See Xeither, Xtry, Xopt for more information.
 
     ### Usages
     - directly returns Xeffect in your own functions:
@@ -61,14 +72,14 @@ class Xeffect[Y: E, X: E]:
     - catch common functions into Xeffect:
 
     ```python
-        effect_result: Xeffect[Exception, E] = XTry.from_unsafe(some_function_that_raises)
+        effect_result: Xeffect[Exception, E] = Xtry.from_unsafe(some_function_that_raises)
     ```
 
     - powerful optional handling:
 
     ```python
         optional_value: int | None = 3
-        option_value: Xeffect[None, int] = XOpt.from_optional(optional_value)
+        option_value: Xeffect[None, int] = Xopt.from_optional(optional_value)
     ```
 
     - rich union type:
@@ -103,6 +114,93 @@ class Xeffect[Y: E, X: E]:
             return f(self)
         else:
             return self
+
+    def __iter__(self) -> Iterator[X]:
+        """Return a tri-state iterator of this effect.
+
+        Exists as a syntax enhancer in co-usage with `Xeffect.fors`.
+        No usage of this iterator should be done outside of it since empty iterator will raise instead of stop.
+        Used to compose right pathes together.
+
+        ### Next values
+
+        - if branch = LEFT : raise an Exception wrapping the Xeffect to be caught in `Xeffect.fors`
+        - if branch = RIGHT : return self.value
+        - if branch = RIGHT (next already called) : raise StopIteration
+        """
+
+        class Internal(Iterator[X]):
+            def __init__(self):
+                self.called = False
+
+            def __next__(selff) -> X:  # type: ignore
+                if selff.called:
+                    raise StopIteration
+                if self.branch == XFXBranch.RIGHT:
+                    selff.called = True
+                    return cast(X, self.value)
+                raise XeffectWrapper(self.value)
+
+        return Internal()
+
+    @staticmethod
+    def fors(els: Callable[[], list[E]]) -> "Xeffect[Any, E]":
+        """Return the effect computed in a list comprehension of zipped effects.
+
+        Used as a complement of __iter__ to compose multiple effects together.
+
+        ### Keyword Arguments
+
+        - els: lazy list of zero or one element. To be mecanically useful, should be computed as a list comprehension.
+
+        ### Usage
+
+        ```python
+            # Return Xeffect(6, XFXBranch.RIGHT)
+            Xeffect.fors(lambda:          # lambda to make the computation lazy
+                [
+                    x + y + z             # put here your algorithm for composing effect values
+                    for x, y, z
+                    in zip(               # Chain your effects in a zip
+                        Xeither.Right(1),
+                        Xeither.Right(2),
+                        Xeither.Right(3)
+                    )
+                ]
+            )
+
+            # Return Xeffect(6, XFXBranch.LEFT)
+            Xeffect.fors(lambda:
+                [
+                    Xeither.LEFT(x + y + z) # Automatically flatten the eventual effect of the algorithm
+                    for x, y, z
+                    in zip(
+                        Xeither.Right(1),
+                        Xeither.Right(2),
+                        Xeither.Right(3)
+                    )
+                ]
+            )
+
+            # If at least one effect has a different branch than requested, stop at the first encountered
+            # Return Xeffect(2, XFXBranch.LEFT)
+            Xeffect.fors(lambda:
+                [
+                    x + y + z
+                    for x, y, z
+                    in zip(
+                        Xeither.Right(1),
+                        Xeither.Left(2),
+                        Xeither.Right(3)
+                    )
+                ]
+            )
+        ```
+        """
+        try:
+            return Xeffect(els()[0], XFXBranch.RIGHT).flatten()
+        except XeffectWrapper as e:
+            return Xeffect(e.value, XFXBranch.LEFT)
 
     def map(self, f: Callable[[X], E]) -> "Xeffect[Y, E]":
         """Alias for map_right."""

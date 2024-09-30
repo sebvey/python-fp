@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any
 from xfp.xeffect._xeffect import Xeffect, XFXBranch
-from xfp.xeffect.xeither import XEither
+from xfp.xeffect.xeither import Xeither
 
 
-class XOpt:
+class Xopt:
     """Common tools to instantiate and pattern match Xeffect[None, X].
 
     ### Provides
@@ -16,19 +16,19 @@ class XOpt:
 
     ```python
         regular_effect: Xeffect[None, Any] = Xeffect(None, XFXBranch.LEFT)
-        optional_effect: Xeffect[None, Int] = XOpt.from_optional(3)
+        optional_effect: Xeffect[None, Int] = Xopt.from_optional(3)
 
         match optional_effect:
-            case XOpt.Some(value):
+            case Xopt.Some(value):
                 print(value)
-            case XOpt.Empty:
+            case Xopt.Empty:
                 print("no value")
 
         # You can also pattern match regular Xeffect with Some/Empty
         match regular_effect:
-            case XOpt.Some(value):
+            case Xopt.Some(value):
                 print(value)
-            case XOpt.Empty:
+            case Xopt.Empty:
                 print("no value")
     ```
     """
@@ -38,8 +38,8 @@ class XOpt:
         """Return an Xeffect from an optional value.
 
         value:
-        - X    -- Return a XOpt.Some
-        - None -- Return XOpt.Empty
+        - X    -- Return a Xopt.Some
+        - None -- Return Xopt.Empty
         """
         match value:
             case None:
@@ -47,7 +47,7 @@ class XOpt:
             case _:
                 return cls.Some(value)
 
-    Empty: Xeffect[None, Any] = XEither.Left(None)
+    Empty: Xeffect[None, Any] = Xeither.Left(None)
 
     class XeffectMeta(type):
         """Metaclass to interprets Some as an Xeffect[None, X].
@@ -56,7 +56,7 @@ class XOpt:
         """
 
         def __instancecheck__(self, instance):
-            return isinstance(instance, XEither.Right)
+            return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Some[X](Xeffect[None, X], metaclass=XeffectMeta):

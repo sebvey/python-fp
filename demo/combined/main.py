@@ -1,5 +1,5 @@
 import functools
-from xfp import Xlist, XTry, XFXBranch
+from xfp import Xlist, Xtry, XFXBranch
 from xfp.utils import tupled
 
 print("@@@ EXPLORE Object @@@")
@@ -23,7 +23,7 @@ print("@@@ FUNCTIONAL STYLE @@@")
 (
     Xlist(dir(f))
     .map(functools.partial(getattr, f))
-    .map(XTry.from_unsafe)
+    .map(Xtry.from_unsafe)
     .zip(dir(f))
     .filter(tupled(lambda effect, _: effect.branch == XFXBranch.RIGHT))
     .foreach(print)

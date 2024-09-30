@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
-from xfp import XFXBranch, XEither, Xiter, tupled
+from xfp import XFXBranch, Xeither, Xiter, tupled
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
@@ -79,8 +79,8 @@ def test_xiter_tail_fail():
 
 def test_xiter_head_fx():
     input = Xiter([1, 2, 3])
-    assert input.head_fx() == XEither.Right(1)
-    assert input.head_fx() == XEither.Right(1)
+    assert input.head_fx() == Xeither.Right(1)
+    assert input.head_fx() == Xeither.Right(1)
     assert next(input) == 1
 
 
