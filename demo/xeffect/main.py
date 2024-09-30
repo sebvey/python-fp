@@ -1,5 +1,5 @@
 from .operation import load_csv
-from xfp import Xeffect, curry, XTry
+from xfp import Xeffect, curry, Xtry
 
 
 # 'FP LANGUAGES' STYLE
@@ -13,20 +13,20 @@ def buy_yummy(fruit: str, cart: list) -> Xeffect[Exception, list]:
     if fruit in ("apple", "peach", "blackberry"):
         new_cart = cart.copy()
         new_cart.append(fruit)
-        return XTry.Success(new_cart)
+        return Xtry.Success(new_cart)
     else:
-        return XTry.Failure(Exception(f"eurgh, {fruit} is not yummy"))
+        return Xtry.Failure(Exception(f"eurgh, {fruit} is not yummy"))
 
 
 (
-    XTry.Success(list())
+    Xtry.Success(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("peach"))
     .foreach(lambda x: print(f"see my cart : {x}"))
 )
 
 (
-    XTry.Success(list())
+    Xtry.Success(list())
     .flat_map(buy_yummy("apple"))
     .flat_map(buy_yummy("brusselsprouts"))
     .flat_map(buy_yummy("anchovies"))
@@ -36,8 +36,8 @@ def buy_yummy(fruit: str, cart: list) -> Xeffect[Exception, list]:
 
 print("@@@@@ HANDLING RAISED ERRORS @@@@@")
 
-safe_load: Xeffect[Exception, str] = XTry.from_unsafe(lambda: load_csv("file.csv"))
-safe_load_but_empty: Xeffect[Exception, str] = XTry.from_unsafe(
+safe_load: Xeffect[Exception, str] = Xtry.from_unsafe(lambda: load_csv("file.csv"))
+safe_load_but_empty: Xeffect[Exception, str] = Xtry.from_unsafe(
     lambda: load_csv("file.cv")
 )
 

@@ -84,13 +84,13 @@ r2 = Xeffect(3, XFXBranch.LEFT)
 )
 ```
 
-### XEither, XTry, XOpt
+### Xeither, Xtry, Xopt
 
-You can add more semantic to your effects by making use of the proxy types `XEither`, `XTry`, `XOpt`, respectively indicating "a formal union type", "something that can crash", "the presence or absence of an element".  
-Those types resolves as an Xeffect, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of XTry :
+You can add more semantic to your effects by making use of the proxy types `Xeither`, `Xtry`, `Xopt`, respectively indicating "a formal union type", "something that can crash", "the presence or absence of an element".  
+Those types resolves as an Xeffect, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of Xtry :
 
 ```python
-from xfp import XTry
+from xfp import Xtry
 
 def should_raise(x):
     if x > 10:
@@ -98,11 +98,11 @@ def should_raise(x):
     else:
         return x
 
-r1 = XTry.from_unsafe(lambda: should_raise(15)) # Xeffect.left(Exception("too much"))
-r2 = XTry.from_unsafe(lambda: should_raise(8))  # Xeffect.right(8)
+r1 = Xtry.from_unsafe(lambda: should_raise(15)) # Xeffect.left(Exception("too much"))
+r2 = Xtry.from_unsafe(lambda: should_raise(8))  # Xeffect.right(8)
 
 # a decorator is provided to automatically convert your functions
-@XTry.safed
+@Xtry.safed
 def safed_function(x):
     return should_raise(x)
 
@@ -114,10 +114,54 @@ r5: Xeffect[Exception, Int] = Xeffect.Success(3)
 
 # You can pattern match an expression depending on its pathway
 match r3:
-    case XTry.Success(value):
+    case Xtry.Success(value):
         print(value)
-    case XTry.Failure(exception):
+    case Xtry.Failure(exception):
         print(f"Something went wrong : {e}")
+```
+
+### Effect chaining
+
+You will often have to deal with multiple effects at once. To avoid the vanilla triangle of doom that would cause such dealing, xfp provides a convenient way to process them altogether.  
+Let's illustrate it with a mock use case : a table computing and writing from three different sources : 
+
+```python
+from xfp import safed, curry, Xeffect
+
+@safed
+def load_table(table_name: str) -> DataFrame:
+    pass
+
+@curry
+@safed
+def write_table(table_name: str, table: DataFrame) -> None:
+    pass
+
+def process(t1: DataFrame, t2: DataFrame, t3: DataFrame) -> DataFrame:
+    pass
+
+# 'Vanilla' xfp processing
+
+load_table('db1.tb1').flat_map(
+    lambda t1: load_table('db2.tb2').flat_map(
+        lambda t2:load_table('db3.tb3').flat_map(
+            lambda t3: write_table('db1.tb4')(process(t1, t2, t3))
+        )
+    )
+)
+
+# Xfp effect chaining
+
+Xeffect.fors(lambda:
+    [
+        write_table('db1.tb4')(process(t1, t2, t3))
+        for t1, t2, t3
+        in zip(
+            load_table('db1.tb1'),
+            load_table('db2.tb2'),
+            load_table('db3.tb3')
+        )
+    ])
 ```
 
 # HOW TO CONTRIBUTE

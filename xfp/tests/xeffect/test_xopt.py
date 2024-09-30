@@ -1,25 +1,25 @@
-from xfp import XOpt, Xeffect, XFXBranch
+from xfp import Xopt, Xeffect, XFXBranch
 
 
 def test_from_optional_lift_some():
     input = 3
-    expected = XOpt.Some(3)
-    actual = XOpt.from_optional(input)
+    expected = Xopt.Some(3)
+    actual = Xopt.from_optional(input)
 
     assert actual == expected
 
 
 def test_from_optional_lift_none():
     input = None
-    expected = XOpt.Empty
-    actual = XOpt.from_optional(input)
+    expected = Xopt.Empty
+    actual = Xopt.from_optional(input)
 
     assert actual == expected
 
 
-def test_xopt_instantiate_xeffect():
-    some = XOpt.Some(3)
-    empty = XOpt.Empty
+def test_Xopt_instantiate_xeffect():
+    some = Xopt.Some(3)
+    empty = Xopt.Empty
 
     assert isinstance(some, Xeffect)
     assert isinstance(empty, Xeffect)
@@ -29,7 +29,7 @@ def test_xopt_instantiate_xeffect():
 
 def test_some_can_be_pattern_match():
     match Xeffect(3, XFXBranch.RIGHT):
-        case XOpt.Some(v):
+        case Xopt.Some(v):
             assert v == 3
         case _:
             assert False
@@ -37,7 +37,7 @@ def test_some_can_be_pattern_match():
 
 def test_empty_can_be_pattern_match():
     match Xeffect(None, XFXBranch.LEFT):
-        case XOpt.Empty:
+        case Xopt.Empty:
             assert True
         case _:
             assert False
@@ -45,7 +45,7 @@ def test_empty_can_be_pattern_match():
 
 def test_empty_do_not_false_positive():
     match Xeffect(Exception("not empty"), XFXBranch.LEFT):
-        case XOpt.Empty:
+        case Xopt.Empty:
             assert False
         case _:
             assert True

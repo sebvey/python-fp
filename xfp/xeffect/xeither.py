@@ -6,7 +6,7 @@ P = ParamSpec("P")
 X = TypeVar("X")
 
 
-class XEither:
+class Xeither:
     """Common tools to instantiate and pattern match Xeffect.
 
     ### Provides
@@ -18,19 +18,19 @@ class XEither:
 
     ```python
         regular_effect: Xeffect[None, Any] = Xeffect(None, XFXBranch.LEFT)
-        either_effect: Xeffect[Any, Int] = XEither.Right(3)
+        either_effect: Xeffect[Any, Int] = Xeither.Right(3)
 
         match either_effect:
-            case XEither.Right(value):
+            case Xeither.Right(value):
                 print(value)
-            case XEither.Left(_):
+            case Xeither.Left(_):
                 print("no value")
 
         # You can also pattern match regular Xeffect with Left/Right
         match regular_effect:
-            case XEither.Right(value):
+            case Xeither.Right(value):
                 print(value)
-            case XEither.Left(_):
+            case Xeither.Left(_):
                 print("no value")
     ```
     """

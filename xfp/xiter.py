@@ -4,7 +4,7 @@ import itertools
 from typing import Callable, Iterable, Iterator, Any, cast
 from collections.abc import Iterable as ABCIterable
 
-from xfp import Xeffect, Xlist, XTry
+from xfp import Xeffect, Xlist, Xtry
 from .utils import E
 
 
@@ -130,7 +130,7 @@ class Xiter[X: E]:
         Does not consume the i-1 first elements, but evaluate them
         Wrap the potential error in an effect
         """
-        return cast(Xeffect[IndexError, X], XTry.from_unsafe(lambda: self.get(i)))
+        return cast(Xeffect[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
 
     def head(self) -> X:
         """Alias for get(0)."""
@@ -159,7 +159,7 @@ class Xiter[X: E]:
 
         Wrap the potential error in an effect.
         """
-        return cast(Xeffect[IndexError, "Xiter[X]"], XTry.from_unsafe(self.tail))
+        return cast(Xeffect[IndexError, "Xiter[X]"], Xtry.from_unsafe(self.tail))
 
     def map(self, f: Callable[[X], E]) -> "Xiter[E]":
         """Return a new iterator, with f applied to each future element.

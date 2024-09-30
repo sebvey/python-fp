@@ -1,9 +1,9 @@
-from xfp import XEither, Xeffect, XFXBranch
+from xfp import Xeither, Xeffect, XFXBranch
 
 
-def test_xeither_instantiate_xeffect():
-    right = XEither.Right(3)
-    left = XEither.Left(2)
+def test_Xeither_instantiate_xeffect():
+    right = Xeither.Right(3)
+    left = Xeither.Left(2)
 
     assert isinstance(right, Xeffect)
     assert isinstance(left, Xeffect)
@@ -13,7 +13,7 @@ def test_xeither_instantiate_xeffect():
 
 def test_right_can_be_pattern_match():
     match Xeffect(3, XFXBranch.RIGHT):
-        case XEither.Right(v):
+        case Xeither.Right(v):
             assert v == 3
         case _:
             assert False
@@ -21,7 +21,7 @@ def test_right_can_be_pattern_match():
 
 def test_left_can_be_pattern_match():
     match Xeffect(2, XFXBranch.LEFT):
-        case XEither.Left(v):
+        case Xeither.Left(v):
             assert v == 2
         case _:
             assert False
