@@ -1,5 +1,5 @@
 # Warning : import order matters
-from xfp.xeffect import Xeffect, XFXBranch, XeffectError, Xeither, Xopt, Xtry
+from xfp.xresult import Xresult, XFXBranch, XresultError, Xeither, Xopt, Xtry
 from xfp.xlist import Xlist
 from xfp.xiter import Xiter
 from xfp.utils import curry, curry_method, tupled
@@ -7,9 +7,9 @@ from xfp.utils import curry, curry_method, tupled
 __all__ = [
     "Xiter",
     "Xlist",
-    "Xeffect",
+    "Xresult",
     "XFXBranch",
-    "XeffectError",
+    "XresultError",
     "Xeither",
     "Xopt",
     "Xtry",

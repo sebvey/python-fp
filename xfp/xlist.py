@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 from typing import Iterable, Iterator, Callable, Any, cast
 from collections.abc import Iterable as ABCIterable
 
-from xfp import Xeffect, Xtry
+from xfp import Xresult, Xtry
 from .utils import E, curry_method, id
 
 
@@ -78,18 +78,18 @@ class Xlist[X: E]:
             )
         return self.__data[i]
 
-    def get_fx(self, i: int) -> Xeffect[IndexError, X]:
+    def get_fx(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
 
-        Wrap the potential error in an effect.
+        Wrap the potential error in an Xresult.
         """
-        return cast(Xeffect[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
+        return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
 
     def head(self) -> X:
         """Alias for get(0)."""
         return self.get(0)
 
-    def head_fx(self) -> Xeffect[IndexError, X]:
+    def head_fx(self) -> Xresult[IndexError, X]:
         """Alias for get_fx(0)."""
         return self.get_fx(0)
 
@@ -104,12 +104,12 @@ class Xlist[X: E]:
             raise IndexError("<tail> operation not allowed on empty list")
         return Xlist(self.__data[1:])
 
-    def tail_fx(self) -> Xeffect[IndexError, "Xlist[X]"]:
+    def tail_fx(self) -> Xresult[IndexError, "Xlist[X]"]:
         """Return the Xlist / its first element.
 
-        Wrap the potential error in an effect.
+        Wrap the potential error in an Xresult.
         """
-        return cast(Xeffect[IndexError, "Xlist[X]"], Xtry.from_unsafe(self.tail))
+        return cast(Xresult[IndexError, "Xlist[X]"], Xtry.from_unsafe(self.tail))
 
     def map(self, f: Callable[[X], E]) -> "Xlist[E]":
         """Return a new Xlist with the function f applied to each element.
@@ -177,7 +177,7 @@ class Xlist[X: E]:
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xlist[E]":
         """Return the result of map and then flatten.
 
-        Exists as homogenisation with Xeffect.flat_map
+        Exists as homogenisation with Xresult.flat_map
 
         ### Usage
 
@@ -333,10 +333,10 @@ class Xlist[X: E]:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
 
-    def reduce_fx(self, f: Callable[[X, X], X]) -> Xeffect[IndexError, X]:
+    def reduce_fx(self, f: Callable[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
-        Wrap the potential error in an effect.
+        Wrap the potential error in an Xresult.
 
         ### Keyword Arguments
 
@@ -345,12 +345,12 @@ class Xlist[X: E]:
         ### Usage
 
         ```python
-            assert Xlist([1, 2, 3]).reduce(lambda x, y: x + y) == Xeffect.right(6)
-            assert Xlist(["1", "2", "3"]).reduce(lambda x, y: x + y) == Xeffect.right("321")
-            assert Xlist([]).reduce(lambda x, y: x + y) == Xeffect.left(IndexError("<reduce> operation not allowed on empty list"))
+            assert Xlist([1, 2, 3]).reduce(lambda x, y: x + y) == Xresult.right(6)
+            assert Xlist(["1", "2", "3"]).reduce(lambda x, y: x + y) == Xresult.right("321")
+            assert Xlist([]).reduce(lambda x, y: x + y) == Xresult.left(IndexError("<reduce> operation not allowed on empty list"))
         ```
         """
-        return cast(Xeffect[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
+        return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
 
     def zip(self, other: Iterable[E]) -> "Xlist[tuple[X, E]]":
         """Zip this Xlist with another iterable."""

@@ -1,59 +1,22 @@
-# XFP
+---
+layout: page
+title: Quick Start
+permalink: /quickstart/
+nav_order: 1
+---
 
-![Python](https://img.shields.io/badge/python-3.12-blue.svg)
-[![Coverage Status](https://coveralls.io/repos/github/sebvey/python-fp/badge.svg?branch=dev)](https://coveralls.io/github/sebvey/python-fp?branch=dev)
-[![PyPI version](https://badge.fury.io/py/xfp.svg)](https://badge.fury.io/py/xfp)
+<h1 style="font-weight: bold">Quick Start</h1>
 
-Since Python 3.0 `map`, `filter` & co (but more accurately even since Python 2 list comprehension), new versions of the language keep appending more and more functional elements, last in date being Generics, Union typing or Pattern Matching.  
-However although functional programming in its roughest form is possible in Python, it fails in our opinion to keep itself nice and readable.
-```python
-# Look this awful little chunk of code, how cute it is <3
+<h2>Install Xfp</h2>
 
-initial_value = ["oh", "look", "an", "array", "to", "process", "!"]
-camel_cased = map(lambda chain: [chain[0].upper()] + chain[1:], initial_value)
-only_long_word = filter(lambda x: len(x) > 2, camel_cased)
-output = reduce(lambda x, y: x + " " + y, only_long_word)
-
-assert output == "Look Array Process"
+You can install Xfp from PyPI via:
+```shell
+pip install --upgrade xfp
 ```
 
-This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts. 
+and then start using it in your python code : 
 
-
-
-
-Github repository [HERE](https://github.com/sebvey/python-fp/)
-
-# WHY
-
-While python provides today some tools from functional languages (such as map, filter, ...), it fails as making its syntax functional-friendly. For example, multiple mapping/filtering requires a lot of intermediate values with few addition to code readability or robustess. Moreover some paradigms are missing to fully benefits from monadic behavior (map/flat_map/filter/foreach/...).  
-
-The goal is to :
-- add functional syntax to make functional python code edible
-- add tools to complete the functionalities provided by python
-- respect python strengthes : time to market, readability, ...
-
-In order to achieve all of this, we propose a functional API adapted for python, taking into account its strengthes and weaknesses to enrich the language without twisting it too much.  
-
-# QUICK START
-
-xfp is plublished on PyPI [HERE](https://pypi.org/project/xfp/), easy to install with your package manager.
-
-## How to run the demos
-Some demos are provided in the `demo` folder. Each one is in a separate
-subfolder.  
-
-For simplicity :
-- main code is in the `main.py` file
-- eventual modules are in the same folder and used in `main.py` with relative imports
-
-**To run the demos (here the xlist one):**
-- make sure xfp is installed on your python environment (eg `cd python-fp && pip install .`)
-- Run the demo from the root of the repo :`python -m demo.xiter.main`
-
-## How to use in your project
-
-### Use with Collections
+## Use with Collections
 
 To use XFP on a collection, starts with creating a new Xlist :
 ```python
@@ -81,7 +44,7 @@ def under_eight(x: int) -> bool:
 )
 ```
 
-### Side-effects handling
+## Side-effects handling
 
 Functional behaviors requires proper encapsulation of 'not a value' meaning (for example, None or raise Exception).  
 Those ecapsulations are modelised in xfp through the Xresult class. It basically encapsulates a union type under two pathways, either LEFT or RIGHT, in a container. Think of this container as a 'list with one element'. Its API is homogene with the collection one.
@@ -99,9 +62,9 @@ r2 = Xresult(3, XFXBranch.LEFT)
 )
 ```
 
-### Results chaining
+## Results chaining
 
-You will often have to deal with multiple effects at once. To avoid the vanilla triangle of doom that would cause such dealing, xfp provides a convenient way to handle them altogether.  
+You will often have to deal with multiple effects at once. To avoid the vanilla triangle of doom that would cause such dealing, xfp provides a convenient way to process them altogether.  
 Let's illustrate it with a mock use case. A table computing and writing from three different sources : 
 
 ```python
@@ -141,9 +104,9 @@ Xresult.fors(lambda:
     ])
 ```
 
-### Quality of life
+## Quality of life
 
-#### Util functions
+### Util functions
 
 In functional programming, the operation consisting in transforming the function f in g (see below) is called curryfiction : 
 ```python
@@ -172,7 +135,7 @@ def f(i: int, j: str) -> Xlist[str]:
 Xlist(["a", "b", "c"]).flat_map(f(3))
 ```
 
-#### Xeither, Xtry, Xopt
+### Xeither, Xtry, Xopt
 
 You can add more semantic to your results by making use of the proxy types `Xeither`, `Xtry`, `Xopt`, respectively indicating "a formal union type", "something that can crash", "the presence or absence of an element".  
 Those types resolves as an Xresult, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of Xtry :
@@ -207,36 +170,3 @@ match r3:
     case Xtry.Failure(exception):
         print(f"Something went wrong : {e}")
 ```
-
-
-# HOW TO CONTRIBUTE
-
-## Setup
-- clone the repo
-- install poetry
-- install compatible python version (from 3.12), eg. `pyenv install 3.12.4`
-- install the project : `poetry install`
-- set up the git hook scripts (linter / formatter): `pre-commit install` 
-
--> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
-
-## Linter / formatter = ruff
-Ruff is hooked on pre-commit as linter and formatter.  
-More here : https://github.com/astral-sh/ruff
-
-## Pre-commit
-More info : https://pre-commit.com/
-
-## CI/CD (Github)
-
-- Main branch : no pushes, only merges from branches that pass tests
-- github action `pytest-action` is setup to run pytest on each push
-- **TODO** : auto deploy to PyPI
-
-# HOW TO PUBLISH TO PYPI
-
-By now, pypi credentials (token) have to be configured locally with :  
-`poetry config pypi-token.pypi <token>`
-
-To publish locally (from given branch) :
-`poetry build && poetry publish`
