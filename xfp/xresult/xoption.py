@@ -1,22 +1,22 @@
 from dataclasses import dataclass
 from typing import Any
-from xfp.xeffect._xeffect import Xeffect, XFXBranch
-from xfp.xeffect.xeither import Xeither
+from xfp.xresult._xresult import Xresult, XFXBranch
+from xfp.xresult.xeither import Xeither
 
 
 class Xopt:
-    """Common tools to instantiate and pattern match Xeffect[None, X].
+    """Common tools to instantiate and pattern match Xresult[None, X].
 
     ### Provides
 
     - methods to formalize Optional values
-    - value Empty and type Some, interpretables as Xeffect, and usable as Xeffect pattern matching
+    - value Empty and type Some, interpretables as Xresult, and usable as Xresult pattern matching
 
     ### Usage
 
     ```python
-        regular_effect: Xeffect[None, Any] = Xeffect(None, XFXBranch.LEFT)
-        optional_effect: Xeffect[None, Int] = Xopt.from_optional(3)
+        regular_effect: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
+        optional_effect: Xresult[None, Int] = Xopt.from_optional(3)
 
         match optional_effect:
             case Xopt.Some(value):
@@ -24,7 +24,7 @@ class Xopt:
             case Xopt.Empty:
                 print("no value")
 
-        # You can also pattern match regular Xeffect with Some/Empty
+        # You can also pattern match regular Xresult with Some/Empty
         match regular_effect:
             case Xopt.Some(value):
                 print(value)
@@ -34,8 +34,8 @@ class Xopt:
     """
 
     @classmethod
-    def from_optional[X](cls, value: None | X) -> Xeffect[None, X]:
-        """Return an Xeffect from an optional value.
+    def from_optional[X](cls, value: None | X) -> Xresult[None, X]:
+        """Return an Xresult from an optional value.
 
         value:
         - X    -- Return a Xopt.Some
@@ -47,19 +47,19 @@ class Xopt:
             case _:
                 return cls.Some(value)
 
-    Empty: Xeffect[None, Any] = Xeither.Left(None)
+    Empty: Xresult[None, Any] = Xeither.Left(None)
 
-    class XeffectMeta(type):
-        """Metaclass to interprets Some as an Xeffect[None, X].
+    class XresultMeta(type):
+        """Metaclass to interprets Some as an Xresult[None, X].
 
-        Overrides the instanceof in order to enable pattern matching between Some and Xeffect.
+        Overrides the instanceof in order to enable pattern matching between Some and Xresult.
         """
 
         def __instancecheck__(self, instance):
             return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Some[X](Xeffect[None, X], metaclass=XeffectMeta):
+    class Some[X](Xresult[None, X], metaclass=XresultMeta):
         """Specific effect holding a value, with alternate path being None.
 
         Can also act as an extractor in pattern matching.

@@ -1,25 +1,25 @@
 from dataclasses import dataclass
 from typing import Any, Callable, ParamSpec, TypeVar
-from xfp.xeffect._xeffect import Xeffect, XFXBranch
-from xfp.xeffect.xeither import Xeither
+from xfp.xresult._xresult import Xresult, XFXBranch
+from xfp.xresult.xeither import Xeither
 
 P = ParamSpec("P")
 X = TypeVar("X")
 
 
 class Xtry:
-    """Common tools to instantiate and pattern match Xeffect[Exception, X].
+    """Common tools to instantiate and pattern match Xresult[Exception, X].
 
     ### Provides
 
     - methods to secure failable functions
-    - types Success and Failure, instantiable as Xeffect, and usable as Xeffect pattern matching
+    - types Success and Failure, instantiable as Xresult, and usable as Xresult pattern matching
 
     ### Usage
 
     ```python
-        regular_effect: Xeffect[Exception, Any] = Xeffect(Exception("Something went wrong"), XFXBranch.LEFT)
-        try_effect: Xeffect[Exception, Int] = Xtry.Success(3)
+        regular_effect: Xresult[Exception, Any] = Xresult(Exception("Something went wrong"), XFXBranch.LEFT)
+        try_effect: Xresult[Exception, Int] = Xtry.Success(3)
 
         match try_effect:
             case Xtry.Success(value):
@@ -27,7 +27,7 @@ class Xtry:
             case Xtry.Failure(e):
                 raise e
 
-        # You can also pattern match regular Xeffect with Success/Failure
+        # You can also pattern match regular Xresult with Success/Failure
         match regular_effect:
             case Xtry.Success(value):
                 print(value)
@@ -37,8 +37,8 @@ class Xtry:
     """
 
     @classmethod
-    def from_unsafe(cls, f: Callable[[], X]) -> Xeffect[Exception, X]:
-        """Return the result of a function as an Xeffect.
+    def from_unsafe(cls, f: Callable[[], X]) -> Xresult[Exception, X]:
+        """Return the result of a function as an Xresult.
 
         Execute the callable and catch the result :
         - Callable returns -- wrap the result in a RIGHT
@@ -52,7 +52,7 @@ class Xtry:
                     raise Exception("error")
                 return 3
 
-            a: Xeffect[Exception, int] = Xtry.from_unsafe(lambda: unsafe_function("foo"))
+            a: Xresult[Exception, int] = Xtry.from_unsafe(lambda: unsafe_function("foo"))
         ```
         """
         try:
@@ -61,7 +61,7 @@ class Xtry:
             return cls.Failure(e)
 
     @classmethod
-    def safed(cls, f: Callable[P, X]) -> Callable[P, Xeffect[Exception, X]]:
+    def safed(cls, f: Callable[P, X]) -> Callable[P, Xresult[Exception, X]]:
         """Return a new function being f with the side effect wrapped.
 
         Used as a decorator for quickly converting unsafe code into safe one.
@@ -76,19 +76,19 @@ class Xtry:
                     raise Exception("error")
                 return 3
 
-            a: Xeffect[Exception, int] = unsafe_function("foo")
+            a: Xresult[Exception, int] = unsafe_function("foo")
         ```
         """
 
-        def inner(*args: P.args, **kwargs: P.kwargs) -> Xeffect[Exception, X]:
+        def inner(*args: P.args, **kwargs: P.kwargs) -> Xresult[Exception, X]:
             return cls.from_unsafe(lambda: f(*args, **kwargs))
 
         return inner
 
-    class XeffectFailureMeta(type):
-        """Metaclass to interprets Failure as an Xeffect[Exception, Any].
+    class XresultFailureMeta(type):
+        """Metaclass to interprets Failure as an Xresult[Exception, Any].
 
-        Overrides the instanceof in order to enable pattern matching between Failure and Xeffect.
+        Overrides the instanceof in order to enable pattern matching between Failure and Xresult.
         """
 
         def __instancecheck__(self, instance):
@@ -97,7 +97,7 @@ class Xtry:
             )
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Failure[Y: Exception](Xeffect[Y, Any], metaclass=XeffectFailureMeta):
+    class Failure[Y: Exception](Xresult[Y, Any], metaclass=XresultFailureMeta):
         """Specific effect holding an exception.
 
         Can also act as an extractor in pattern matching.
@@ -109,17 +109,17 @@ class Xtry:
         def __init__(self, value):
             super().__init__(value, XFXBranch.LEFT)
 
-    class XeffectSuccessMeta(type):
-        """Metaclass to interprets Success as an Xeffect[Any, X].
+    class XresultSuccessMeta(type):
+        """Metaclass to interprets Success as an Xresult[Any, X].
 
-        Overrides the instanceof in order to enable pattern matching between Success and Xeffect.
+        Overrides the instanceof in order to enable pattern matching between Success and Xresult.
         """
 
         def __instancecheck__(self, instance):
             return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Success[X](Xeffect[Exception, X], metaclass=XeffectSuccessMeta):
+    class Success[X](Xresult[Exception, X], metaclass=XresultSuccessMeta):
         """Specific effect holding a value, with alternate path being an exception.
 
         Can also act as an extractor in pattern matching.

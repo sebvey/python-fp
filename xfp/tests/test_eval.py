@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import override
 
-from xfp import Xeither, Xeffect, Xiter, Xlist, curry, tupled, Xopt
+from xfp import Xeither, Xresult, Xiter, Xlist, curry, tupled, Xopt
 
 
 class Sink[T](ABC):
@@ -91,14 +91,14 @@ def test_xiter_infinite_iterator_works_fine():
 
 
 def test_xiter_fizzbuzz():
-    def notify(frequency: int, text: str) -> Xiter[Xeffect[None, str]]:
+    def notify(frequency: int, text: str) -> Xiter[Xresult[None, str]]:
         raw = [Xopt.Empty] * (frequency - 1)
         raw.append(Xopt.Some(text))
         return Xiter([Xopt.Empty]).chain(Xiter.cycle(raw))
 
     def concat(
-        first: Xeffect[None, str], second: Xeffect[None, str]
-    ) -> Xeffect[None, str]:
+        first: Xresult[None, str], second: Xresult[None, str]
+    ) -> Xresult[None, str]:
         match (first, second):
             case (Xopt.Some(ll), Xopt.Some(rr)):
                 return Xopt.Some(ll + rr)
@@ -115,7 +115,7 @@ def test_xiter_fizzbuzz():
 
 
 def test_for_comprehension_pass():
-    result = Xeffect.fors(
+    result = Xresult.fors(
         lambda: [x + y for x, y in zip(Xeither.Right(1), Xeither.Right(2))]
     )
 
@@ -123,7 +123,7 @@ def test_for_comprehension_pass():
 
 
 def test_for_comprehension_fail():
-    result = Xeffect.fors(
+    result = Xresult.fors(
         lambda: [x + y for x, y in zip(Xeither.Right(1), Xeither.Left(2))]
     )
 
@@ -131,7 +131,7 @@ def test_for_comprehension_fail():
 
 
 def test_for_comprehension_flatten():
-    result = Xeffect.fors(
+    result = Xresult.fors(
         lambda: [
             Xeither.Left(x + y) for x, y in zip(Xeither.Right(1), Xeither.Right(2))
         ]

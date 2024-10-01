@@ -4,7 +4,7 @@ import itertools
 from typing import Callable, Iterable, Iterator, Any, cast
 from collections.abc import Iterable as ABCIterable
 
-from xfp import Xeffect, Xlist, Xtry
+from xfp import Xresult, Xlist, Xtry
 from .utils import E
 
 
@@ -100,8 +100,8 @@ class Xiter[X: E]:
         ```
         """
         a, b = tee(self)
-        self.__iter = Xiter(a).map(lambda x: deepcopy(x))
-        return Xiter(b)
+        self.__iter = Xiter(a)
+        return Xiter(b).map(lambda x: deepcopy(x))
 
     def chain(self, other: Iterable[X]) -> "Xiter[X]":
         """Proxy for itertools.chain."""
@@ -124,19 +124,19 @@ class Xiter[X: E]:
         else:
             return self.tail().get(i - 1)
 
-    def get_fx(self, i: int) -> Xeffect[IndexError, X]:
+    def get_fx(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
 
         Does not consume the i-1 first elements, but evaluate them
-        Wrap the potential error in an effect
+        Wrap the potential error in an Xresult
         """
-        return cast(Xeffect[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
+        return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
 
     def head(self) -> X:
         """Alias for get(0)."""
         return self.get(0)
 
-    def head_fx(self) -> Xeffect[IndexError, X]:
+    def head_fx(self) -> Xresult[IndexError, X]:
         """Alias for get_fx(0)."""
         return self.get_fx(0)
 
@@ -154,12 +154,12 @@ class Xiter[X: E]:
         except StopIteration:
             raise IndexError("<tail> operation not allowed on empty iterator")
 
-    def tail_fx(self) -> Xeffect[IndexError, "Xiter[X]"]:
+    def tail_fx(self) -> Xresult[IndexError, "Xiter[X]"]:
         """Return the iterator / its first element.
 
-        Wrap the potential error in an effect.
+        Wrap the potential error in an Xresult.
         """
-        return cast(Xeffect[IndexError, "Xiter[X]"], Xtry.from_unsafe(self.tail))
+        return cast(Xresult[IndexError, "Xiter[X]"], Xtry.from_unsafe(self.tail))
 
     def map(self, f: Callable[[X], E]) -> "Xiter[E]":
         """Return a new iterator, with f applied to each future element.
@@ -241,7 +241,7 @@ class Xiter[X: E]:
     def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
         """Return the result of map and then flatten.
 
-        Exists as homogenisation with Xeffect.flat_map.
+        Exists as homogenisation with Xresult.flat_map.
 
         ### Usage
 
