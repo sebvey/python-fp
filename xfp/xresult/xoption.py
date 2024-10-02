@@ -15,17 +15,17 @@ class Xopt:
     ### Usage
 
     ```python
-        regular_effect: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
-        optional_effect: Xresult[None, Int] = Xopt.from_optional(3)
+        regular_result: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
+        optional_result: Xresult[None, Int] = Xopt.from_optional(3)
 
-        match optional_effect:
+        match optional_result:
             case Xopt.Some(value):
                 print(value)
             case Xopt.Empty:
                 print("no value")
 
         # You can also pattern match regular Xresult with Some/Empty
-        match regular_effect:
+        match regular_result:
             case Xopt.Some(value):
                 print(value)
             case Xopt.Empty:
@@ -60,7 +60,7 @@ class Xopt:
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Some[X](Xresult[None, X], metaclass=XresultMeta):
-        """Specific effect holding a value, with alternate path being None.
+        """Specific result holding a value, with alternate path being None.
 
         Can also act as an extractor in pattern matching.
         """

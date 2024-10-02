@@ -18,17 +18,17 @@ class Xtry:
     ### Usage
 
     ```python
-        regular_effect: Xresult[Exception, Any] = Xresult(Exception("Something went wrong"), XFXBranch.LEFT)
-        try_effect: Xresult[Exception, Int] = Xtry.Success(3)
+        regular_result: Xresult[Exception, Any] = Xresult(Exception("Something went wrong"), XFXBranch.LEFT)
+        try_result: Xresult[Exception, Int] = Xtry.Success(3)
 
-        match try_effect:
+        match try_result:
             case Xtry.Success(value):
                 print(value)
             case Xtry.Failure(e):
                 raise e
 
         # You can also pattern match regular Xresult with Success/Failure
-        match regular_effect:
+        match regular_result:
             case Xtry.Success(value):
                 print(value)
             case Xtry.Failure(e):
@@ -98,7 +98,7 @@ class Xtry:
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Failure[Y: Exception](Xresult[Y, Any], metaclass=XresultFailureMeta):
-        """Specific effect holding an exception.
+        """Specific result holding an exception.
 
         Can also act as an extractor in pattern matching.
         """
@@ -120,7 +120,7 @@ class Xtry:
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Success[X](Xresult[Exception, X], metaclass=XresultSuccessMeta):
-        """Specific effect holding a value, with alternate path being an exception.
+        """Specific result holding a value, with alternate path being an exception.
 
         Can also act as an extractor in pattern matching.
         """

@@ -17,17 +17,17 @@ class Xeither:
     ### Usage
 
     ```python
-        regular_effect: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
-        either_effect: Xresult[Any, Int] = Xeither.Right(3)
+        regular_result: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
+        either_result: Xresult[Any, Int] = Xeither.Right(3)
 
-        match either_effect:
+        match either_result:
             case Xeither.Right(value):
                 print(value)
             case Xeither.Left(_):
                 print("no value")
 
         # You can also pattern match regular Xresult with Left/Right
-        match regular_effect:
+        match regular_result:
             case Xeither.Right(value):
                 print(value)
             case Xeither.Left(_):
@@ -46,7 +46,7 @@ class Xeither:
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Left[Y](Xresult[Y, Any], metaclass=XresultLeftMeta):
-        """Specific effect holding a LEFT.
+        """Specific result holding a LEFT.
 
         Can also act as an extractor in pattern matching.
         """
@@ -68,7 +68,7 @@ class Xeither:
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Right[X](Xresult[Any, X], metaclass=XresultRightMeta):
-        """Specific effect holding a RIGHT.
+        """Specific result holding a RIGHT.
 
         Can also act as an extractor in pattern matching.
         """
