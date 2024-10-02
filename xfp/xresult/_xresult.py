@@ -498,9 +498,9 @@ class Xresult[Y: E, X: E]:
         return self.recover_right(f)
 
     def recover_left(self, f: Callable[[X], E]) -> "Xresult[Y | E, None]":
-        """Return a new effect with is always a LEFT.
+        """Return a new Xresult with is always a LEFT.
 
-        Used to convert a RIGHT effect into a LEFT using an effectless transformation.
+        Used to convert a RIGHT result into a LEFT using an effectless transformation.
         Semantically :
         Used to fallback on a potential failure with an effectless operation.
         This is a fallback that always ends up as a 'success'.
@@ -508,7 +508,7 @@ class Xresult[Y: E, X: E]:
         ### Return
 
         - if branch == LEFT -- self
-        - otherwise         -- a new effect, having branch = LEFT, with an inherent value of f(self.value)
+        - otherwise         -- a new Xresult, having branch = LEFT, with an inherent value of f(self.value)
 
         ### Usage
 
@@ -519,9 +519,9 @@ class Xresult[Y: E, X: E]:
         )
 
     def recover_right(self, f: Callable[[Y], E]) -> "Xresult[None, E | X]":
-        """Return a new effect with is always a RIGHT.
+        """Return a new Xresult with is always a RIGHT.
 
-        Used to convert a LEFT effect into a RIGHT using an effectless transformation.
+        Used to convert a LEFT result into a RIGHT using an effectless transformation.
         Semantically :
         Used to fallback on a potential failure with an effectless operation.
         This is a fallback that always ends up as a 'success'.
@@ -529,7 +529,7 @@ class Xresult[Y: E, X: E]:
         ### Return
 
         - if branch == RIGHT -- self
-        - otherwise          -- a new effect, having branch = RIGHT, with an inherent value of f(self.value)
+        - otherwise          -- a new Xresult, having branch = RIGHT, with an inherent value of f(self.value)
 
         ### Usage
 
@@ -559,15 +559,15 @@ class Xresult[Y: E, X: E]:
     def filter_left(
         self, predicate: Callable[[Y], bool]
     ) -> "Xresult[Y, X | XresultError]":
-        """Return a new effect with the branch = RIGHT if the predicate is not met.
+        """Return a new Xresult with the branch = RIGHT if the predicate is not met.
 
-        Fill the effect with a default error mentioning the initial value in case of branch switching.
+        Fill the result with a default error mentioning the initial value in case of branch switching.
 
         ### Return
 
         - if branch != LEFT               -- self
         - if branch == LEFT and predicate -- self
-        - otherwise                       -- a new effect, having branch = RIGHT, with value = XresultError(self)
+        - otherwise                       -- a new Xresult, having branch = RIGHT, with value = XresultError(self)
 
         ### Usage
 
@@ -582,15 +582,15 @@ class Xresult[Y: E, X: E]:
     def filter_right(
         self, predicate: Callable[[X], bool]
     ) -> "Xresult[Y | XresultError, X]":
-        """Return a new effect with the branch = LEFT if the predicate is not met.
+        """Return a new Xresult with the branch = LEFT if the predicate is not met.
 
-        Fill the effect with a default error mentioning the initial value in case of branch switching.
+        Fill the result with a default error mentioning the initial value in case of branch switching.
 
         ### Return
 
         - if branch != RIGHT               -- self
         - if branch == RIGHT and predicate -- self
-        - otherwise                       -- a new effect, having branch = LEFT, with value = XresultError(self)
+        - otherwise                       -- a new Xresult, having branch = LEFT, with value = XresultError(self)
 
         ### Usage
 
