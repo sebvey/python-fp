@@ -109,16 +109,61 @@ In [Result branching](#result-branching) we started implying the existence of a 
 ```python
 
 from xfp import Xresult, XFXBranch
-from typing import Any
 import math
 
-# Xresult[None, X] formally encodes 
+# Xresult[None, X] formally encodes an optional value while keeping the power of a collection
 def partial_sqrt(i: int) -> Xresult[None, int]:
     if i >= 0:
         return Xresult(math.sqrt(i), XFXBranch.RIGHT)
     else:
         return Xresult(None, XFXBranch.LEFT)
 
+# imperative vanilla python, the user needs to have a look at the documentation to understand the behavior of the function
+def unsafe_function(i: int) -> str:
+    if i > 0:
+        return i
+    else:
+        raise Exception("break")
+
+# with XFP, the unsafe behavior is encoded in the function signature, enforcing the code auto documentation
+def unsafe_function(i: int) -> Xresult[Exception, str]:
+    # We even credit ourselves with not writing the implementation in this example
+    # since every case is visible in the return type
+    pass
 ```
 
 ## Xeither, Xtry, Xopt
+
+In the above example, you noticed some tedious notation, among them being always forced to explicitely set the branch. For the sake of simplicity, but also to improve furthermore the semantic behind the Xresult, subclasses `Xeither`, `Xopt` and `Xtry` allow to directly create certain types of Xresult.  
+You will find more information about advanced usage of those types and integration with vanilla Python in the [Pattern Matching](/python-fp/pattern_matching/) and [Wrapping Python](/python-fp/wrapping_python) sections.
+
+```python
+from xfp import Xresult, Xeither, Xopt, Xtry
+from typing import Any
+
+# Xeither reproduces a plain mechanical "or" value
+a_right: XResult[Any, int] = Xeither.Right(3)
+a_left: XResult[int, Any] = Xeither.Left(3)
+
+# Xopt reproduces an optional value, formally
+some_value: XResult[None, int] = Xopt.Some(3)
+empty_value: XResult[None, Any] = Xopt.Empty
+
+# Wtry allows you to directly bind your Xresult to Exception semantic
+success: XResult[Exception, int] = Xtry.Success(3)
+failure: XResult[Exception, Any] = Xtry.Failure(Exception("Something went wrong"))
+```
+
+Using any of them will drastically improve the readability of your Xresult usages : 
+
+```python
+from xfp import Xresult, Xtry
+
+# Now the behavior is encoded in the signature
+# AND it becomes trivial to see the outcome of each branch of the code
+def partial_sqrt(i: int) -> Xresult[Exception, int]:
+    if i >= 0:
+        return Xtry.Success(math.sqrt(i))
+    else:
+        return Xtry.Failure(Exception(f"{i} cannot be square rooted"))
+```
