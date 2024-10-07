@@ -73,13 +73,44 @@ As a collection with a unique element, Xresults are homogene with the [Collectio
 ```python
 from xfp import Xresult, XFXBranch
 
-(
-    Xresult(1, XFXBranch.RIGHT)
+def throws(x: Exception):
+    raise x
+
+start = Xresult(1, XFXBranch.RIGHT)
+stop = (
+    start
     .map_right(lambda x: x + 10)                            # XFXBranch(1 + 10, XFXBranch.RIGHT) because result is a RIGHT
     .map_left(lambda y: y * 20)                             # go-through because result is a RIGHT
     .flat_map_right(lambda x: Xresult(2, XFXBranch.LEFT))   # Xresult(2, XFXBranch.LEFT) because the initial result is a RIGHT
-    .foreach_right(print)                                   # prints 2
+    .map_left(lambda y: Exception(y))
 )
+
+stop.foreach_right(print)                                   # doesn't print anything
+stop.foreach_left(throws)                                    # raise Exception(2)
+```
+
+```mermaid
+stateDiagram
+    accTitle: Graph representation of the above transformations
+    accDescr: Represents visually the operation
+
+    start: start
+    yop: y + 10
+    xop: x + 10
+    ex: Exception(y)
+    throws: throws
+
+    res: Xresult(2, XFXBranch.LEFT)
+    print: print
+
+    start-->xop: map_right
+    start-->yop: map_left
+    yop-->ex: map_left
+    ex-->throws: foreach_left
+    xop-->res: flat_map_right
+    res-->ex: map_left
+    res-->print: foreach_right
+
 ```
 
 {: .note }
