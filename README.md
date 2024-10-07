@@ -35,6 +35,10 @@ The goal is to :
 
 In order to achieve all of this, we propose a functional API adapted for python, taking into account its strengthes and weaknesses to enrich the language without twisting it too much.  
 
+# DOCUMENTATION
+
+Please see the [full documentation](https://sebvey.github.io/python-fp/) for more information.
+
 # QUICK START
 
 xfp is plublished on PyPI [HERE](https://pypi.org/project/xfp/), easy to install with your package manager.
