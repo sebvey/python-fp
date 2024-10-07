@@ -28,30 +28,29 @@ The `from_optional` constructor allows automatic result creation, which will be 
 ### Xtry
 
 Xtry provides two ways of switching from functions that raises to functions that returns Xresult. You will use either one of them depending on if you are : 
-1. Integrating with a third-party API : 
+1. Integrating with a third-party API :  
 
-```python
+    ```python
+    import pandas as pd
+    from xfp import Xtry
 
-import pandas as pd
-from xfp import Xtry
+    tried_df: Xresult[Exception, pd.DataFrame] = Xtry.from_unsafe(lambda: pd.read_csv("may_break_file"))
+    ```
 
-tried_df: Xresult[Exception, pd.DataFrame] = Xtry.from_unsafe(lambda: pd.read_csv("may_break_file"))
-```
+2. Dealing with legacy code written imperative-style :  
 
-2. Dealing with legacy code written imperative-style :
+    ```python
+    from xfp import Xtry
 
-```python
-from xfp import Xtry
+    @Xtry.safed
+    def that_can_raise(i: int) -> str:
+        if i > 0:
+            return str(i)
+        else:
+            raise Exception("an Exception")
 
-@Xtry.safed
-def that_can_raise(i: int) -> str:
-    if i > 0:
-        return str(i)
-    else:
-        raise Exception("an Exception")
-
-result: Xresult[Exception, str] = that_can_raise(3) 
-```
+    result: Xresult[Exception, str] = that_can_raise(3) 
+    ```
 
 the `Xtry.from_unsafe` feature relies on the unparametrized lambda to lazily evaluate the code given to it. It allows to delegate its execution to the `from_unsafe` wrapper, which ensures catching any non fatal exception that can be thrown.  
 The `Xtry.safed` decorator, on the other side, automatically wrap its subject inside a `from_unsafe` on call, effectivelly changing its signature to an Xresult.
