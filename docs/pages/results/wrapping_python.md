@@ -29,6 +29,7 @@ The `from_optional` constructor allows automatic result creation, which will be 
 
 Xtry provides two ways of switching from functions that raises to functions that returns Xresult. You will use either one of them depending on if you are : 
 1. Integrating with a third-party API : 
+
 ```python
 
 import pandas as pd
@@ -36,7 +37,9 @@ from xfp import Xtry
 
 tried_df: Xresult[Exception, pd.DataFrame] = Xtry.from_unsafe(lambda: pd.read_csv("may_break_file"))
 ```
+
 2. Dealing with legacy code written imperative-style :
+
 ```python
 from xfp import Xtry
 
