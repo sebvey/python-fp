@@ -68,10 +68,13 @@ class Xiter[X: E]:
         ## Usage
 
         ```python
-            r1 = Xiter([1, 2, 3])
+            from xfp import Xiter
+
+            r1 = Xiter(range(10))
             r2 = r1.copy()
-            assert next(r1) == 1
-            assert next(r2) == 1
+            assert next(r1) == 0
+            assert next(r2) == 0
+
         ```
         """
         a, b = tee(self)
@@ -86,17 +89,24 @@ class Xiter[X: E]:
         ## Usage
 
         ```python
+            from xfp import Xiter
+            from dataclasses import dataclass
+
             @dataclass
             class A:
                 text: str
 
-            r1 = Xiter([A("hello")])
-            r2 = r1.deepcopy()
-            value1 = next(r1)
-            value2 = next(r2)
+            ori = Xiter([A("hello")])
+            deep_copy = ori.deepcopy()
+            shallow_copy = ori.copy()
 
-            value1.text = "world"
-            assert value2.text == "hello"
+            value1 = next(ori)
+            value2 = next(deep_copy)
+            value3 = next(shallow_copy)
+
+            value1.text = "world"          # 'ori' is mutated
+            assert value2.text == "hello"  # 'deep_copy' is left untouched
+            assert value3.text == "world"  # on the contrary, 'shallow_copy' still dependents on 'ori'
         ```
         """
         a, b = tee(self)
@@ -104,7 +114,12 @@ class Xiter[X: E]:
         return Xiter(b).map(lambda x: deepcopy(x))
 
     def chain(self, other: Iterable[X]) -> "Xiter[X]":
-        """Proxy for itertools.chain."""
+        """
+        Proxy for itertools.chain :
+        Return a chain object whose .__next__() method returns elements from the
+        first iterable until it is exhausted, then elements from the next
+        iterable, until all of the iterables are exhausted.
+        """
         return Xiter(itertools.chain(self, other))
 
     def get(self, i: int) -> X:
@@ -167,6 +182,8 @@ class Xiter[X: E]:
         ### Usage
 
         ```python
+            from xfp import Xiter
+
             input = Xiter([1, 2, 3])
             assert next(input) == 1
             f = lambda el: el*el
@@ -182,7 +199,9 @@ class Xiter[X: E]:
         ### Usage
 
         ```python
-            input = Xiter([1, 2, 3, 4])
+            from xfp import Xiter
+
+            input = Xiter(range(1,5))
             predicate = lambda el: el % 2 == 0
             r1 = input.filter(predicate)
             # keep only even numbers
@@ -200,17 +219,20 @@ class Xiter[X: E]:
         ### Usage
 
         ```python
-            input = Xiter([1, 2, 3])
-            statement = lambda el: println(f"This is an element of the list : ${el}")
-            input.foreach(statement)
-            # This is an element of the list : 1
-            # This is an element of the list : 2
-            # This is an element of the list : 3
+            from xfp import Xiter
 
-            input.foreach(statement) # you can reconsume the same iterator
-            # This is an element of the list : 1
-            # This is an element of the list : 2
-            # This is an element of the list : 3
+            input = Xiter(range(1,4))
+            statement = lambda el: print(f"This is an element of the range : ${el}")
+            input.foreach(statement)
+            # This is an element of the range : 1
+            # This is an element of the range : 2
+            # This is an element of the range : 3
+
+            input.foreach(statement) # you can reconsume the same iterable
+            # This is an element of the range : 1
+            # This is an element of the range : 2
+            # This is an element of the range : 3
+
         ```
         """
         [statement(e) for e in self.copy()]
@@ -221,7 +243,9 @@ class Xiter[X: E]:
         ## Usage
 
         ```python
-            # Xiter([1, 2, 3])
+            from xfp import Xiter
+
+            # All the following resulting objects are equivalent to Xiter([1,2,3])
             Xiter([1, 2, 3]).flatten()
             Xiter([[1, 2], [3]]).flatten()
             Xiter([[1, 2], 3]).flatten()
@@ -246,8 +270,10 @@ class Xiter[X: E]:
         ### Usage
 
         ```python
+            from xfp import Xiter, Xlist
+
             Xiter([1, 2, 3]).flat_map(lambda x: Xlist([(x, 4), (x, 5)]))
-            # Xiter([(1, 4), (2, 4), (3, 4), (1, 5), (2, 5), (3, 5)])
+            # equivalent to Xiter([(1, 4), (1, 5), (2, 4), (2, 5), (3, 4), (3, 5)])
         ```
         """
         return self.map(f).flatten()
