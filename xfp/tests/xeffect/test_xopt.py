@@ -1,4 +1,4 @@
-from xfp import Xopt, Xresult, XFXBranch
+from xfp import Xopt, Xresult, XRBranch
 
 
 def test_from_optional_lift_some():
@@ -23,12 +23,12 @@ def test_Xopt_instantiate_xresult():
 
     assert isinstance(some, Xresult)
     assert isinstance(empty, Xresult)
-    assert some == Xresult(3, XFXBranch.RIGHT)
-    assert empty == Xresult(None, XFXBranch.LEFT)
+    assert some == Xresult(3, XRBranch.RIGHT)
+    assert empty == Xresult(None, XRBranch.LEFT)
 
 
 def test_some_can_be_pattern_match():
-    match Xresult(3, XFXBranch.RIGHT):
+    match Xresult(3, XRBranch.RIGHT):
         case Xopt.Some(v):
             assert v == 3
         case _:
@@ -36,7 +36,7 @@ def test_some_can_be_pattern_match():
 
 
 def test_empty_can_be_pattern_match():
-    match Xresult(None, XFXBranch.LEFT):
+    match Xresult(None, XRBranch.LEFT):
         case Xopt.Empty:
             assert True
         case _:
@@ -44,7 +44,7 @@ def test_empty_can_be_pattern_match():
 
 
 def test_empty_do_not_false_positive():
-    match Xresult(Exception("not empty"), XFXBranch.LEFT):
+    match Xresult(Exception("not empty"), XRBranch.LEFT):
         case Xopt.Empty:
             assert False
         case _:

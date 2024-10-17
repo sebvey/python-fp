@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, ParamSpec, TypeVar
-from xfp.xresult._xresult import Xresult, XFXBranch
+from xfp.xresult._xresult import Xresult, XRBranch
 
 P = ParamSpec("P")
 X = TypeVar("X")
@@ -12,12 +12,12 @@ class Xeither:
     ### Provides
 
     Proxy classes to quickly instantiate LEFT and RIGHT.
-    Approximately makes Xresult(..., XFXBranch.LEFT) and Xresult(..., XFXBranch.RIGHT) independent classes.
+    Approximately makes Xresult(..., XRBranch.LEFT) and Xresult(..., XRBranch.RIGHT) independent classes.
 
     ### Usage
 
     ```python
-        regular_result: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
+        regular_result: Xresult[None, Any] = Xresult(None, XRBranch.LEFT)
         either_result: Xresult[Any, Int] = Xeither.Right(3)
 
         match either_result:
@@ -42,7 +42,7 @@ class Xeither:
         """
 
         def __instancecheck__(self, instance):
-            return isinstance(instance, Xresult) and instance.branch == XFXBranch.LEFT
+            return isinstance(instance, Xresult) and instance.branch == XRBranch.LEFT
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Left[Y](Xresult[Y, Any], metaclass=XresultLeftMeta):
@@ -55,7 +55,7 @@ class Xeither:
         value: Y
 
         def __init__(self, value):
-            super().__init__(value, XFXBranch.LEFT)
+            super().__init__(value, XRBranch.LEFT)
 
     class XresultRightMeta(type):
         """Metaclass to interprets Right as an Xresult[Any, X].
@@ -64,7 +64,7 @@ class Xeither:
         """
 
         def __instancecheck__(self, instance):
-            return isinstance(instance, Xresult) and instance.branch == XFXBranch.RIGHT
+            return isinstance(instance, Xresult) and instance.branch == XRBranch.RIGHT
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
     class Right[X](Xresult[Any, X], metaclass=XresultRightMeta):
@@ -77,4 +77,4 @@ class Xeither:
         value: X
 
         def __init__(self, value):
-            super().__init__(value, XFXBranch.RIGHT)
+            super().__init__(value, XRBranch.RIGHT)

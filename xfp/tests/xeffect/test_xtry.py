@@ -1,4 +1,4 @@
-from xfp import Xtry, Xresult, XFXBranch
+from xfp import Xtry, Xresult, XRBranch
 
 
 def test_from_unsafe_lift_success():
@@ -44,12 +44,12 @@ def test_Xtry_instantiate_xresult():
 
     assert isinstance(success, Xresult)
     assert isinstance(failure, Xresult)
-    assert success == Xresult(3, XFXBranch.RIGHT)
-    assert failure.branch == XFXBranch.LEFT
+    assert success == Xresult(3, XRBranch.RIGHT)
+    assert failure.branch == XRBranch.LEFT
 
 
 def test_success_can_be_pattern_match():
-    match Xresult(3, XFXBranch.RIGHT):
+    match Xresult(3, XRBranch.RIGHT):
         case Xtry.Success(v):
             assert v == 3
         case _:
@@ -57,7 +57,7 @@ def test_success_can_be_pattern_match():
 
 
 def test_failure_can_be_pattern_match():
-    match Xresult(Exception("fail"), XFXBranch.LEFT):
+    match Xresult(Exception("fail"), XRBranch.LEFT):
         case Xtry.Failure(e):
             assert isinstance(e, Exception) and e.args[0] == "fail"
         case _:
@@ -65,7 +65,7 @@ def test_failure_can_be_pattern_match():
 
 
 def test_empty_do_not_false_positive():
-    match Xresult(None, XFXBranch.LEFT):
+    match Xresult(None, XRBranch.LEFT):
         case Xtry.Failure(_):
             assert False
         case _:
