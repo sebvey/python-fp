@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
-from xfp.xresult._xresult import Xresult, XFXBranch
+from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
 
 
@@ -15,7 +15,7 @@ class Xopt:
     ### Usage
 
     ```python
-        regular_result: Xresult[None, Any] = Xresult(None, XFXBranch.LEFT)
+        regular_result: Xresult[None, Any] = Xresult(None, XRBranch.LEFT)
         optional_result: Xresult[None, Int] = Xopt.from_optional(3)
 
         match optional_result:
@@ -69,4 +69,4 @@ class Xopt:
         value: X
 
         def __init__(self, value):
-            super().__init__(value, XFXBranch.RIGHT)
+            super().__init__(value, XRBranch.RIGHT)

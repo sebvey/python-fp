@@ -43,22 +43,22 @@ except Exception as e:
 
 ### Type Structure
 
-`Xresult[Y, X]` can be seen as a collection of one unique element `value`, being either of type Y or X. It always holds a `branch` attribute as a semaphore of which type between X or Y is used. branch is a value of the `XFXBranch` enumeration, equals to `XFXBranch.LEFT` if the `value` is a Y or a `XFXBranch.RIGHT` if the value is a LEFT.  
+`Xresult[Y, X]` can be seen as a collection of one unique element `value`, being either of type Y or X. It always holds a `branch` attribute as a semaphore of which type between X or Y is used. branch is a value of the `XRBranch` enumeration, equals to `XRBranch.LEFT` if the `value` is a Y or a `XRBranch.RIGHT` if the value is a LEFT.  
 
 ```python
-from xfp import Xresult, XFXBranch
+from xfp import Xresult, XRBranch
 from typing import Any
 import math
 
-result1: Xresult[Any, int] = Xresult(3, XFXBranch.RIGHT)
-result2: Xresult[str, Any] = Xresult("abc", XFXBranch.LEFT)
+result1: Xresult[Any, int] = Xresult(3, XRBranch.RIGHT)
+result2: Xresult[str, Any] = Xresult("abc", XRBranch.LEFT)
 
 # this is a preview of the added semantic of returning an Xresult
 def partial_sqrt(i: int) -> Xresult[str, int]:
     if i >= 0:
-        return Xresult(math.sqrt(i), XFXBranch.RIGHT)
+        return Xresult(math.sqrt(i), XRBranch.RIGHT)
     else:
-        return Xresult(f"{i} cannot be square rooted", XFXBranch.LEFT)
+        return Xresult(f"{i} cannot be square rooted", XRBranch.LEFT)
 ```
 
 {: .note }
@@ -71,17 +71,17 @@ You may find the partial_sqrt error handling tedious. This is completely normal 
 As a collection with a unique element, Xresults are homogene with the [Collections](/python-fp/collections/) API. It means you can process the value of an Xresult using the standard `map`, `flat_map`, `filter` & co functions. However to take the branch into account, each function is divided into a "_left" and a "_right" version, each one either applying the transformation if the branch corresponds, or being a go-through otherwise.
 
 ```python
-from xfp import Xresult, XFXBranch
+from xfp import Xresult, XRBranch
 
 def throws(x: Exception):
     raise x
 
-start = Xresult(1, XFXBranch.RIGHT)
+start = Xresult(1, XRBranch.RIGHT)
 stop = (
     start
-    .map_right(lambda x: x + 10)                            # XFXBranch(1 + 10, XFXBranch.RIGHT) because result is a RIGHT
+    .map_right(lambda x: x + 10)                            # XRBranch(1 + 10, XRBranch.RIGHT) because result is a RIGHT
     .map_left(lambda y: y * 20)                             # go-through because result is a RIGHT
-    .flat_map_right(lambda x: Xresult(2, XFXBranch.LEFT))   # Xresult(2, XFXBranch.LEFT) because the initial result is a RIGHT
+    .flat_map_right(lambda x: Xresult(2, XRBranch.LEFT))   # Xresult(2, XRBranch.LEFT) because the initial result is a RIGHT
     .map_left(lambda y: Exception(y))
 )
 
@@ -100,7 +100,7 @@ stateDiagram
     ex: Exception(y)
     throws: throws
 
-    res: Xresult(2, XFXBranch.LEFT)
+    res: Xresult(2, XRBranch.LEFT)
     print: print
 
     start-->xop: map_right
@@ -124,12 +124,12 @@ The collection API provides a bunch of functions that operate on the value to ei
 `recover` holds a similar semantic as `recover_with` but with an absolute recovery method.
 
 ```python
-from xfp import Xresult, XFXBranch
+from xfp import Xresult, XRBranch
 
 (
-    Xresult("I am the wrong value", XFXBranch.LEFT)  # Let's encode an 'error' in the LEFT path
-    .recover_right(lambda err_msg: len(err_msg))     # Xresult(20, XFXBranch.RIGHT)
-    .filter_right(lambda size: size < 5)             # Xresult(XresultError(...), XFXBranch.LEFT)
+    Xresult("I am the wrong value", XRBranch.LEFT)  # Let's encode an 'error' in the LEFT path
+    .recover_right(lambda err_msg: len(err_msg))     # Xresult(20, XRBranch.RIGHT)
+    .filter_right(lambda size: size < 5)             # Xresult(XresultError(...), XRBranch.LEFT)
 )
 ```
 
@@ -139,15 +139,15 @@ In [Result branching](#result-branching) we started implying the existence of a 
 
 ```python
 
-from xfp import Xresult, XFXBranch
+from xfp import Xresult, XRBranch
 import math
 
 # Xresult[None, X] formally encodes an optional value while keeping the power of a collection
 def partial_sqrt(i: int) -> Xresult[None, int]:
     if i >= 0:
-        return Xresult(math.sqrt(i), XFXBranch.RIGHT)
+        return Xresult(math.sqrt(i), XRBranch.RIGHT)
     else:
-        return Xresult(None, XFXBranch.LEFT)
+        return Xresult(None, XRBranch.LEFT)
 
 # imperative vanilla python, the user needs to have a look at the documentation to understand the behavior of the function
 def unsafe_function(i: int) -> str:

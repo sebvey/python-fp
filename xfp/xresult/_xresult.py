@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from ..utils import E, curry_method
 
 
-class XFXBranch(Enum):
+class XRBranch(Enum):
     LEFT = auto()
     RIGHT = auto()
 
-    def invert(self) -> "XFXBranch":
-        return XFXBranch.RIGHT if self == XFXBranch.LEFT else XFXBranch.LEFT
+    def invert(self) -> "XRBranch":
+        return XRBranch.RIGHT if self == XRBranch.LEFT else XRBranch.LEFT
 
 
 @dataclass(init=False)
@@ -44,7 +44,7 @@ class Xresult[Y: E, X: E]:
 
     ### Attributes
 
-    - branch -- XFXBranch (LEFT, RIGHT), semaphore telling if the value attribute is an X (LEFT) or a Y (RIGHT)
+    - branch -- XRBranch (LEFT, RIGHT), semaphore telling if the value attribute is an X (LEFT) or a Y (RIGHT)
     - value  -- Y | X, the content of the container
 
     ### Features
@@ -64,9 +64,9 @@ class Xresult[Y: E, X: E]:
     ```python
         def f_that_breaks(should_break: bool) -> Xresult[Error, str]:
             if should_break:
-                return Xresult(Error("something went wrong", XFXBranch.LEFT))
+                return Xresult(Error("something went wrong", XRBranch.LEFT))
             else:
-                return Xresult("Everything's fine", XFXBranch.RIGHT)
+                return Xresult("Everything's fine", XRBranch.RIGHT)
     ```
 
     - catch common functions into Xresult:
@@ -87,14 +87,14 @@ class Xresult[Y: E, X: E]:
     ```python
         def returns_a_str_or_int(should_be_str: boolean) -> Xresult[str, int]:
             if should_be_str:
-                return Xresult("foo", XFXBranch.LEFT)
+                return Xresult("foo", XRBranch.LEFT)
             else:
-                return Xresult(42, XFXBranch.RIGHT)
+                return Xresult(42, XRBranch.RIGHT)
     ```
     """
 
     value: Y | X
-    branch: XFXBranch
+    branch: XRBranch
 
     def __eq__(self, value: object) -> bool:
         return (
@@ -108,7 +108,7 @@ class Xresult[Y: E, X: E]:
 
     @curry_method
     def __check_branch(
-        self, branch: XFXBranch, f: Callable[[Self], "Xresult[E, E]"]
+        self, branch: XRBranch, f: Callable[[Self], "Xresult[E, E]"]
     ) -> "Xresult[E, E]":
         if self.branch == branch:
             return f(self)
@@ -136,7 +136,7 @@ class Xresult[Y: E, X: E]:
             def __next__(selff) -> X:  # type: ignore
                 if selff.called:
                     raise StopIteration
-                if self.branch == XFXBranch.RIGHT:
+                if self.branch == XRBranch.RIGHT:
                     selff.called = True
                     return cast(X, self.value)
                 raise XresultWrapper(self.value)
@@ -156,7 +156,7 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
-            # Return Xresult(6, XFXBranch.RIGHT)
+            # Return Xresult(6, XRBranch.RIGHT)
             Xresult.fors(lambda:          # lambda to make the computation lazy
                 [
                     x + y + z             # put here your algorithm for composing effect results
@@ -169,7 +169,7 @@ class Xresult[Y: E, X: E]:
                 ]
             )
 
-            # Return Xresult(6, XFXBranch.LEFT)
+            # Return Xresult(6, XRBranch.LEFT)
             Xresult.fors(lambda:
                 [
                     Xeither.LEFT(x + y + z) # Automatically flatten the eventual effect result of the algorithm
@@ -183,7 +183,7 @@ class Xresult[Y: E, X: E]:
             )
 
             # If at least one XResult has a different branch than requested, stop at the first encountered
-            # Return Xresult(2, XFXBranch.LEFT)
+            # Return Xresult(2, XRBranch.LEFT)
             Xresult.fors(lambda:
                 [
                     x + y + z
@@ -198,9 +198,9 @@ class Xresult[Y: E, X: E]:
         ```
         """
         try:
-            return Xresult(els()[0], XFXBranch.RIGHT).flatten()
+            return Xresult(els()[0], XRBranch.RIGHT).flatten()
         except XresultWrapper as e:
-            return Xresult(e.value, XFXBranch.LEFT)
+            return Xresult(e.value, XRBranch.LEFT)
 
     def map(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
         """Alias for map_right."""
@@ -220,7 +220,7 @@ class Xresult[Y: E, X: E]:
 
         see map_right
         """
-        return self.__check_branch(XFXBranch.LEFT)(
+        return self.__check_branch(XRBranch.LEFT)(
             lambda x: Xresult(f(x.value), x.branch)
         )
 
@@ -243,14 +243,14 @@ class Xresult[Y: E, X: E]:
 
             (
                 Xresult
-                    .from_optional(3)            # Xresult(3, XFXBranch.RIGHT)
-                    .map_right(add_three)        # Xresult(6, XFXBranch.RIGHT)
-                    .map_right(pow)              # Xresult(36, XFXBranch.RIGHT)
-                    .map_right(lambda x: x - 4)  # Xresult(32, XFXBranch.RIGHT)
+                    .from_optional(3)            # Xresult(3, XRBranch.RIGHT)
+                    .map_right(add_three)        # Xresult(6, XRBranch.RIGHT)
+                    .map_right(pow)              # Xresult(36, XRBranch.RIGHT)
+                    .map_right(lambda x: x - 4)  # Xresult(32, XRBranch.RIGHT)
             )
         ```
         """
-        return self.__check_branch(XFXBranch.RIGHT)(
+        return self.__check_branch(XRBranch.RIGHT)(
             lambda x: Xresult(f(x.value), x.branch)
         )
 
@@ -270,7 +270,7 @@ class Xresult[Y: E, X: E]:
 
         see flatten_right
         """
-        return self.__check_branch(XFXBranch.LEFT)(
+        return self.__check_branch(XRBranch.LEFT)(
             lambda x: x.value if isinstance(x.value, Xresult) else x
         )
 
@@ -285,13 +285,13 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
-            assert Xresult.right(Xresult.right("example")).flatten_right() == Xresult("example", XFXBranch.RIGHT)
-            assert Xresult.right("example").flatten_right() == Xresult("example", XFXBranch.RIGHT)
-            assert Xresult.right(Xresult.from_optional(None)).flatten_right() == Xresult(None, XFXBranch.LEFT)
-            assert Xresult.right(Xresult.left("example")).flatten_right() == Xresult("example", XFXBranch.LEFT)
+            assert Xresult.right(Xresult.right("example")).flatten_right() == Xresult("example", XRBranch.RIGHT)
+            assert Xresult.right("example").flatten_right() == Xresult("example", XRBranch.RIGHT)
+            assert Xresult.right(Xresult.from_optional(None)).flatten_right() == Xresult(None, XRBranch.LEFT)
+            assert Xresult.right(Xresult.left("example")).flatten_right() == Xresult("example", XRBranch.LEFT)
         ```
         """
-        return self.__check_branch(XFXBranch.RIGHT)(
+        return self.__check_branch(XRBranch.RIGHT)(
             lambda x: x.value if isinstance(x.value, Xresult) else x
         )
 
@@ -334,21 +334,21 @@ class Xresult[Y: E, X: E]:
 
             (
                 Xresult
-                    .right(4)               # Xresult(4, XFXBranch.RIGHT)
-                    .flat_map_right(invert) # Xresult(0.25, XFXBranch.RIGHT)
-                    .flat_map_right(sqrt)   # Xresult(0.5, XFXBranch.RIGHT)
+                    .right(4)               # Xresult(4, XRBranch.RIGHT)
+                    .flat_map_right(invert) # Xresult(0.25, XRBranch.RIGHT)
+                    .flat_map_right(sqrt)   # Xresult(0.5, XRBranch.RIGHT)
             )
             (
                 Xresult
-                    .right(0)               # Xresult(0, XFXBranch.RIGHT)
-                    .flat_map_right(invert) # Xresult(ZeroDivisionError(..., XFXBranch.LEFT))
-                    .flat_map_right(sqrt)   # Xresult(ZeroDivisionError(..., XFXBranch.LEFT))
+                    .right(0)               # Xresult(0, XRBranch.RIGHT)
+                    .flat_map_right(invert) # Xresult(ZeroDivisionError(..., XRBranch.LEFT))
+                    .flat_map_right(sqrt)   # Xresult(ZeroDivisionError(..., XRBranch.LEFT))
             )
             (
                 Xresult
-                    .right(-4)              # Xresult(-4, XFXBranch.RIGHT)
-                    .flat_map_right(invert) # Xresult(-0.25, XFXBranch.RIGHT)
-                    .flat_map_right(sqrt)   # Xresult(ValueError(..., XFXBranch.LEFT))
+                    .right(-4)              # Xresult(-4, XRBranch.RIGHT)
+                    .flat_map_right(invert) # Xresult(-0.25, XRBranch.RIGHT)
+                    .flat_map_right(sqrt)   # Xresult(ValueError(..., XRBranch.LEFT))
             )
         """
         return self.map_right(f).flatten_right()
@@ -384,7 +384,7 @@ class Xresult[Y: E, X: E]:
             # wrong date -> LEFT bias returned by to_date() -> fold returns "default partition"
         ```
         """
-        if self.branch == XFXBranch.RIGHT:
+        if self.branch == XRBranch.RIGHT:
             return f(self.value)
         else:
             return default
@@ -415,8 +415,8 @@ class Xresult[Y: E, X: E]:
 
         see foreach_right
         """
-        self.__check_branch(XFXBranch.LEFT)(
-            lambda s: Xresult(statement(s.value), XFXBranch.LEFT)
+        self.__check_branch(XRBranch.LEFT)(
+            lambda s: Xresult(statement(s.value), XRBranch.LEFT)
         )
 
     def foreach_right(self, statement: Callable[[X], Any]) -> None:
@@ -439,14 +439,14 @@ class Xresult[Y: E, X: E]:
             # doesn't output anything
 
             (
-                Xresult(25, XFXBranch.RIGHT)
+                Xresult(25, XRBranch.RIGHT)
                     .foreach(lambda x: print(f"This is the left element : {x}"))
             )
             # doesn't output anything
         ```
         """
-        self.__check_branch(XFXBranch.RIGHT)(
-            lambda s: Xresult(statement(s.value), XFXBranch.RIGHT)
+        self.__check_branch(XRBranch.RIGHT)(
+            lambda s: Xresult(statement(s.value), XRBranch.RIGHT)
         )
 
     def recover_with(self, f: Callable[[Y], E]) -> "Xresult[E, X]":
@@ -481,13 +481,13 @@ class Xresult[Y: E, X: E]:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                                      # Xresult(ValueError(..., XFXBranch.LEFT))
-                    .recover_with_right(lambda _: invert(-4)) # Xresult(-0.25, XFXBranch.RIGHT)
+                sqrt(-4)                                      # Xresult(ValueError(..., XRBranch.LEFT))
+                    .recover_with_right(lambda _: invert(-4)) # Xresult(-0.25, XRBranch.RIGHT)
             )
 
             (
-                sqrt(4)                                       # Xresult(2, XFXBranch.RIGHT)
-                    .recover_with_right(lambda _: invert(-4)) # Xresult(2, XFXBranch.RIGHT)
+                sqrt(4)                                       # Xresult(2, XRBranch.RIGHT)
+                    .recover_with_right(lambda _: invert(-4)) # Xresult(2, XRBranch.RIGHT)
             )
         ```
         """
@@ -514,8 +514,8 @@ class Xresult[Y: E, X: E]:
 
         See recover_right
         """
-        return self.__check_branch(XFXBranch.RIGHT)(
-            lambda s: Xresult(f(s.value), XFXBranch.LEFT)
+        return self.__check_branch(XRBranch.RIGHT)(
+            lambda s: Xresult(f(s.value), XRBranch.LEFT)
         )
 
     def recover_right(self, f: Callable[[Y], E]) -> "Xresult[None, E | X]":
@@ -539,17 +539,17 @@ class Xresult[Y: E, X: E]:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                        # Xresult(ValueError(..., XFXBranch.LEFT))
-                    .recover_right(lambda _: 0) # Xresult(0, XFXBranch.RIGHT)
+                sqrt(-4)                        # Xresult(ValueError(..., XRBranch.LEFT))
+                    .recover_right(lambda _: 0) # Xresult(0, XRBranch.RIGHT)
             )
             (
-                sqrt(4)                         # Xresult(2, XFXBranch.RIGHT)
-                    .recover_right(lambda _: 0) # Xresult(2, XFXBranch.RIGHT)
+                sqrt(4)                         # Xresult(2, XRBranch.RIGHT)
+                    .recover_right(lambda _: 0) # Xresult(2, XRBranch.RIGHT)
             )
         ```
         """
-        return self.__check_branch(XFXBranch.LEFT)(
-            lambda s: Xresult(f(s.value), XFXBranch.RIGHT)
+        return self.__check_branch(XRBranch.LEFT)(
+            lambda s: Xresult(f(s.value), XRBranch.RIGHT)
         )
 
     def filter(self, predicate: Callable[[X], bool]) -> "Xresult[Y | XresultError, X]":
@@ -573,10 +573,10 @@ class Xresult[Y: E, X: E]:
 
         see filter_right
         """
-        return self.__check_branch(XFXBranch.LEFT)(
+        return self.__check_branch(XRBranch.LEFT)(
             lambda s: s
             if predicate(s.value)
-            else Xresult(XresultError(s), XFXBranch.RIGHT)
+            else Xresult(XresultError(s), XRBranch.RIGHT)
         )
 
     def filter_right(
@@ -598,16 +598,16 @@ class Xresult[Y: E, X: E]:
 
             (
                 Xresult
-                    .right(4)                 # Xresult(4, XFXBranch.RIGHT)
-                    .filter(lambda x: x < 10) # Xresult(4, XFXBranch.RIGHT)
-                    .filter(lambda x: x > 10) # Xresult(XresultError(Xresult.right(4, XFXBranch.LEFT)))
-                    .filter(lambda _: True)   # Xresult(XresultError(Xresult.right(4, XFXBranch.LEFT)))
-                    .filter(lambda _: False)  # Xresult(XresultError(Xresult.right(4, XFXBranch.LEFT)))
+                    .right(4)                 # Xresult(4, XRBranch.RIGHT)
+                    .filter(lambda x: x < 10) # Xresult(4, XRBranch.RIGHT)
+                    .filter(lambda x: x > 10) # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
+                    .filter(lambda _: True)   # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
+                    .filter(lambda _: False)  # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
             )
         ```
         """
-        return self.__check_branch(XFXBranch.RIGHT)(
+        return self.__check_branch(XRBranch.RIGHT)(
             lambda s: s
             if predicate(s.value)
-            else Xresult(XresultError(s), XFXBranch.LEFT)
+            else Xresult(XresultError(s), XRBranch.LEFT)
         )

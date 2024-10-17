@@ -1,4 +1,4 @@
-from xfp import XFXBranch, Xlist, tupled, Xeither
+from xfp import XRBranch, Xlist, tupled, Xeither
 import pytest
 
 
@@ -40,7 +40,7 @@ def test_xlist_head__fx_fail():
     input = Xlist([])
     actual = input.head_fx()
 
-    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
 def test_xlist_tail_fx():
@@ -55,7 +55,7 @@ def test_xlist_tail_fx_fail():
     input = Xlist([])
     actual = input.tail_fx()
 
-    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
 def test_xlist_map():
@@ -113,9 +113,9 @@ def test_xlist_sorted():
     assert actual == expected
 
 
-def test_xlist_reverse():
+def test_xlist_reversed():
     input = Xlist([4, 3, -1, 2])
-    actual = input.reverse()
+    actual = input.reversed()
     expected = Xlist([2, -1, 3, 4])
 
     assert actual == expected
@@ -138,9 +138,17 @@ def test_xlist_max():
 
 
 def test_xlist_fold():
-    input = Xlist([4, 3, -1, 2])
-    actual = input.fold(0)(lambda x, y: x + y)
-    expected = 8
+    input = Xlist(["b", "c"])
+    actual = input.fold("a")(lambda x, y: x + y)
+    expected = "abc"
+
+    assert actual == expected
+
+
+def test_xlist_fold_right():
+    input = Xlist(["c", "b"])
+    actual = input.fold_right("a")(lambda x, y: x + y)
+    expected = "abc"
 
     assert actual == expected
 
@@ -170,7 +178,7 @@ def test_xlist_empty_reduce_fx():
     input = Xlist([])
     actual = input.reduce_fx(lambda x, y: x + y)
 
-    assert isinstance(actual.value, IndexError) and actual.branch == XFXBranch.LEFT
+    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
 def test_xlist_zip():

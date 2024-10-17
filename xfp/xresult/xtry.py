@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Callable, ParamSpec, TypeVar
-from xfp.xresult._xresult import Xresult, XFXBranch
+from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
 
 P = ParamSpec("P")
@@ -18,7 +18,7 @@ class Xtry:
     ### Usage
 
     ```python
-        regular_result: Xresult[Exception, Any] = Xresult(Exception("Something went wrong"), XFXBranch.LEFT)
+        regular_result: Xresult[Exception, Any] = Xresult(Exception("Something went wrong"), XRBranch.LEFT)
         try_result: Xresult[Exception, Int] = Xtry.Success(3)
 
         match try_result:
@@ -107,7 +107,7 @@ class Xtry:
         value: Y
 
         def __init__(self, value):
-            super().__init__(value, XFXBranch.LEFT)
+            super().__init__(value, XRBranch.LEFT)
 
     class XresultSuccessMeta(type):
         """Metaclass to interprets Success as an Xresult[Any, X].
@@ -129,4 +129,4 @@ class Xtry:
         value: X
 
         def __init__(self, value):
-            super().__init__(value, XFXBranch.RIGHT)
+            super().__init__(value, XRBranch.RIGHT)

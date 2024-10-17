@@ -60,13 +60,13 @@ match previous_result:
 The plain Xresult type can also be used in pattern matching :
 
 ```python
-from xfp import Xeffect, XFXBranch
+from xfp import Xeffect, XRBranch
 
 previous_result: Xeffect[Exception, str] = Xtry.Success("everything's right") # mock a previous result here
 
 match previous_result:
-    case Xresult(value, XFXBranch.RIGHT):
+    case Xresult(value, XRBranch.RIGHT):
         print(value)
-    case Xresult(e, XFXBranch.LEFT):
+    case Xresult(e, XRBranch.LEFT):
         print("Something's wrong")
 ```

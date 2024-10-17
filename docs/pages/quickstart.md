@@ -51,8 +51,8 @@ Those ecapsulations are modelised in xfp through the Xresult class. It basically
 ```python
 from xfp import Xresult
 
-r1 = Xresult(1, XFXBranch.RIGHT)
-r2 = Xresult(3, XFXBranch.LEFT)
+r1 = Xresult(1, XRBranch.RIGHT)
+r2 = Xresult(3, XRBranch.LEFT)
 
 (
     r1

@@ -69,7 +69,7 @@ Note that `get`, `head` and `tail` function also exists in a "_fx" version that 
 ```python
 from xfp import Xlist
 
-Xlist([]).head_fx() # Xresult(IndexError(...), XFXBranch.LEFT)
+Xlist([]).head_fx() # Xresult(IndexError(...), XRBranch.LEFT)
 ```
 
 ### Aggregating methods
