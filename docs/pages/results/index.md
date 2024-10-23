@@ -10,7 +10,7 @@ nav_order: 99
 {: .further-reading }
 Effects handling in XFP are based on the functional pattern [railway oriented programming](https://naveenkumarmuguda.medium.com/railway-oriented-programming-a-powerful-functional-programming-pattern-ab454e467f31)
 
-As you may see in [Functional Programming in Python](/python-fp/functional_programming/), a good practice is to encode semantic in your funtions signatures. XFP provides a unique way to encode different semantics at once through its Xresult type. 
+As you may see in [Functional Programming in Python](/python-fp/functional_programming/), a good practice is to encode semantic in your functions signatures. XFP provides a unique way to encode different semantics at once through its Xresult type. 
 
 ## What is an effect
 
@@ -81,12 +81,12 @@ stop = (
     start
     .map_right(lambda x: x + 10)                            # XRBranch(1 + 10, XRBranch.RIGHT) because result is a RIGHT
     .map_left(lambda y: y * 20)                             # go-through because result is a RIGHT
-    .flat_map_right(lambda x: Xresult(2, XRBranch.LEFT))   # Xresult(2, XRBranch.LEFT) because the initial result is a RIGHT
+    .flat_map_right(lambda x: Xresult(2, XRBranch.LEFT))    # Xresult(2, XRBranch.LEFT) because the initial result is a RIGHT
     .map_left(lambda y: Exception(y))
 )
 
 stop.foreach_right(print)                                   # doesn't print anything
-stop.foreach_left(throws)                                    # raise Exception(2)
+stop.foreach_left(throws)                                   # raise Exception(2)
 ```
 
 ```mermaid
@@ -173,16 +173,17 @@ from xfp import Xresult, Xeither, Xopt, Xtry
 from typing import Any
 
 # Xeither reproduces a plain mechanical "or" value
-a_right: XResult[Any, int] = Xeither.Right(3)
-a_left: XResult[int, Any] = Xeither.Left(3)
+a_right: Xresult[Any, int] = Xeither.Right(3)
+a_left: Xresult[int, Any] = Xeither.Left(3)
 
 # Xopt reproduces an optional value, formally
-some_value: XResult[None, int] = Xopt.Some(3)
-empty_value: XResult[None, Any] = Xopt.Empty
+some_value: Xresult[None, int] = Xopt.Some(3)
+empty_value: Xresult[None, Any] = Xopt.Empty
 
-# Wtry allows you to directly bind your Xresult to Exception semantic
-success: XResult[Exception, int] = Xtry.Success(3)
-failure: XResult[Exception, Any] = Xtry.Failure(Exception("Something went wrong"))
+# Xtry allows you to directly bind your Xresult to Exception semantic
+success: Xresult[Exception, int] = Xtry.Success(3)
+failure: Xresult[Exception, Any] = Xtry.Failure(Exception("Something went wrong"))
+
 ```
 
 Using any of them will drastically improve the readability of your Xresult usages : 
