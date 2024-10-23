@@ -23,7 +23,7 @@ Look at the specific documentation of each collection type for further informati
 
 ### Transforming your data
 
-When using the collection API, you can alter the the collection using standard transformations.  
+When using the collection API, you can alter the collection using standard transformations.  
 `map` provides a way to apply a transformation on each element of the collection.  
 `filter` eliminates keep only elements of a collection that feat the given predicate.  
 `flatten` explodes eventual other iterable existing inside the collection.  
@@ -64,19 +64,19 @@ concatenate(Xlist([1, 2, 3]))   # returns 321
 Xlist([1, 2, 3]).foreach(print) # display every element of the list
 ```
 
-Note that `get`, `head` and `tail` function also exists in a "_fx" version that returns a LEFT [Xresult](/python-fp/results/) instead of raising an Error on empty list : 
+Note that `get`, `head` and `tail` function also exists in a "_fr" version that returns a LEFT [Xresult](/python-fp/results/) instead of raising an Error on empty list : 
 
 ```python
 from xfp import Xlist
 
-Xlist([]).head_fx() # Xresult(IndexError(...), XRBranch.LEFT)
+Xlist([]).head_fr() # Xresult(IndexError(...), XRBranch.LEFT)
 ```
 
 ### Aggregating methods
 
 Aggregation of lists is also facilitated using XFP.  
 `fold`, `fold_left` and `fold_right` exist to aggregate a collection into an accumulator, providing its initial state.  
-`reduce` is a shorthand for `fold` with the initial accumulator state being set with the list's first element (therefore it fails on empty list. Note that an "_fx" version also exists).  
+`reduce` is a shorthand for `fold` with the initial accumulator state being set with the list's first element (therefore it fails on empty list. Note that an "_fr" version also exists).  
 `min` and `max` are shorthand for `reduce(lambda x, y: x if x < y else y)` (respectively `>`).  
 
 ```python
