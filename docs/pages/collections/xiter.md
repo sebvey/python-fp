@@ -22,7 +22,7 @@ Since Xiter is a lazy collection, it makes it able to store infinite collections
 from xfp import Xiter
 
 Xiter.cycle([1, 2, 3]) # Xiter([1, 2, 3, 1, 2, 3, 1, 2, ...])
-Xiter.repeat([1])      # Xiter([1, 1, 1, ...])
+Xiter.repeat(1)      # Xiter([1, 1, 1, ...])
 ```
 
 ## About evaluation
