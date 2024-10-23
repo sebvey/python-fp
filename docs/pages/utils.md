@@ -52,7 +52,7 @@ class Accumulator:
         return r
 
 
-acc = Acumulator()
+acc = Accumulator()
 
 Xlist([1, 2, 3]).map(acc.mult_and_acc(3)) # Xlist([3, 6, 9])
 assert acc.sum == 18
@@ -65,6 +65,7 @@ Another useful functionalities for our functions parameters is grouping them int
 ```python
 from xfp import Xlist, tupled
 from typing import Callable
+
 def add(i: int, j: int) -> int:
     return i + j
 
@@ -78,4 +79,3 @@ r = (
     .map(tupled(add)) # same as .map(tupled_add)
 )
 ```
-
