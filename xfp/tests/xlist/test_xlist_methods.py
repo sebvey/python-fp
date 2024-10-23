@@ -28,32 +28,32 @@ def test_xlist_tail_fail():
         Xlist([]).tail()
 
 
-def test_xlist_head_fx():
+def test_xlist_head_fr():
     input = Xlist([1, 2, 3, 4])
-    actual = input.head_fx()
+    actual = input.head_fr()
     expected = Xeither.Right(1)
 
     assert actual == expected
 
 
-def test_xlist_head__fx_fail():
+def test_xlist_head__fr_fail():
     input = Xlist([])
-    actual = input.head_fx()
+    actual = input.head_fr()
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
-def test_xlist_tail_fx():
+def test_xlist_tail_fr():
     input = Xlist([1, 2, 3, 4])
-    actual = input.tail_fx()
+    actual = input.tail_fr()
     expected = Xeither.Right(Xlist([2, 3, 4]))
 
     assert actual == expected
 
 
-def test_xlist_tail_fx_fail():
+def test_xlist_tail_fr_fail():
     input = Xlist([])
-    actual = input.tail_fx()
+    actual = input.tail_fr()
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
@@ -166,17 +166,17 @@ def test_xlist_empty_reduce():
         _ = Xlist([]).reduce(lambda x, y: x + y)
 
 
-def test_xlist_reduce_fx():
+def test_xlist_reduce_fr():
     input = Xlist([4, 3, -1, 2])
-    actual = input.reduce_fx(lambda x, y: x + y)
+    actual = input.reduce_fr(lambda x, y: x + y)
     expected = Xeither.Right(8)
 
     assert actual == expected
 
 
-def test_xlist_empty_reduce_fx():
+def test_xlist_empty_reduce_fr():
     input = Xlist([])
-    actual = input.reduce_fx(lambda x, y: x + y)
+    actual = input.reduce_fr(lambda x, y: x + y)
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
