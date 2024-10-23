@@ -78,7 +78,7 @@ class Xlist[X: E]:
             )
         return self.__data[i]
 
-    def get_fx(self, i: int) -> Xresult[IndexError, X]:
+    def get_fr(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
 
         Wrap the potential error in an Xresult.
@@ -89,9 +89,9 @@ class Xlist[X: E]:
         """Alias for get(0)."""
         return self.get(0)
 
-    def head_fx(self) -> Xresult[IndexError, X]:
-        """Alias for get_fx(0)."""
-        return self.get_fx(0)
+    def head_fr(self) -> Xresult[IndexError, X]:
+        """Alias for get_fr(0)."""
+        return self.get_fr(0)
 
     def tail(self) -> "Xlist[X]":
         """Return the Xlist except its first element.
@@ -104,7 +104,7 @@ class Xlist[X: E]:
             raise IndexError("<tail> operation not allowed on empty list")
         return Xlist(self.__data[1:])
 
-    def tail_fx(self) -> Xresult[IndexError, "Xlist[X]"]:
+    def tail_fr(self) -> Xresult[IndexError, "Xlist[X]"]:
         """Return the Xlist except its first element.
 
         Wrap the potential error in an Xresult.
@@ -358,7 +358,7 @@ class Xlist[X: E]:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
 
-    def reduce_fx(self, f: Callable[[X, X], X]) -> Xresult[IndexError, X]:
+    def reduce_fr(self, f: Callable[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         Wrap the potential error in an Xresult.
@@ -370,10 +370,11 @@ class Xlist[X: E]:
         ### Usage
 
         ```python
-            assert Xlist([1, 2, 3]).reduce_fx(lambda x, y: x + y) == Xtry.Success(6)
-            assert Xlist(["1", "2", "3"]).reduce_fx(lambda x, y: x + y) == Xtry.Success("123")
-            # TODO - ASSERT FAILS
-            assert Xlist([]).reduce_fx(lambda x, y: x + y) == Xtry.Failure(IndexError("<reduce> operation not allowed on empty list"))
+            from xfp import Xlist, Xtry
+
+            Xlist([1, 2, 3]).reduce_fr(lambda x, y: x + y)       # -> Xtry.Success(6)
+            Xlist(["1", "2", "3"]).reduce_fr(lambda x, y: x + y) # -> Xtry.Success("123")
+            Xlist([]).reduce_fr(lambda x, y: x + y)              # -> Xtry.Failure(IndexError("<reduce> operation not allowed on empty list"))
 
         ```
         """
