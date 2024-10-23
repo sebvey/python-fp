@@ -9,8 +9,10 @@ However although functional programming in its roughest form is possible in Pyth
 ```python
 # Look this awful little chunk of code, how cute it is <3
 
+from functools import reduce
+
 initial_value = ["oh", "look", "an", "array", "to", "process", "!"]
-camel_cased = map(lambda chain: [chain[0].upper()] + chain[1:], initial_value)
+camel_cased = map(lambda chain: str(chain[0].upper()) + chain[1:], initial_value)
 only_long_word = filter(lambda x: len(x) > 2, camel_cased)
 output = reduce(lambda x, y: x + " " + y, only_long_word)
 
@@ -33,7 +35,7 @@ The goal is to :
 - add tools to complete the functionalities provided by python
 - respect python strengthes : time to market, readability, ...
 
-In order to achieve all of this, we propose a functional API adapted for python, taking into account its strengthes and weaknesses to enrich the language without twisting it too much.  
+In order to achieve all of this, we propose a functional API adapted for python, taking into account its strengths and weaknesses to enrich the language without twisting it too much.  
 
 # DOCUMENTATION
 
@@ -95,12 +97,18 @@ from xfp import Xresult
 r1 = Xresult(1, XRBranch.RIGHT)
 r2 = Xresult(3, XRBranch.LEFT)
 
+from xfp import Xresult, XRBranch
+
+r1 = Xresult(1, XRBranch.RIGHT)
+r2 = Xresult(3, XRBranch.LEFT)
+
 (
     r1
-    .map_right(lambda x: x + 3)                        # Xresult.right(4)
-    .flat_map_right(lambda x: r2.map(lambda y: x + y)) # Xresult.left(7)
-    .filter_left(lambda x: x < 5)                      # Xresult.right(XresultError(...)) 
+    .map_right(lambda x: x + 3)                        # XRBranch.RIGHT : 4
+    .flat_map_right(lambda x: r2.map(lambda y: x + y)) # XRBranch.LEFT : 3
+    .filter_left(lambda x: x > 5)                      # XRBranch.RIGHT : XresultError(...)
 )
+
 ```
 
 ### Results chaining
@@ -109,7 +117,7 @@ You will often have to deal with multiple effects at once. To avoid the vanilla 
 Let's illustrate it with a mock use case. A table computing and writing from three different sources : 
 
 ```python
-from xfp import safed, curry, Xresult
+from xfp import Xresult
 
 def load_table(table_name: str) -> Xresult[Exception, DataFrame]:
     pass
@@ -170,10 +178,14 @@ from xfp import Xlist, curry
 # the effective signature of f becomes def f(i: int) -> Callable[[str], Xlist[str]]
 @curry
 def f(i: int, j: str) -> Xlist[str]:
-    pass
+    return i * j
 
 # notice the usage of only one parameter in f
-Xlist(["a", "b", "c"]).flat_map(f(3))
+(
+    Xlist(["a", "b", "c"])
+    .flat_map(f(3))
+    .foreach(print)
+)
 ```
 
 #### Xeither, Xtry, Xopt
@@ -182,7 +194,7 @@ You can add more semantic to your results by making use of the proxy types `Xeit
 Those types resolves as an Xresult, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of Xtry :
 
 ```python
-from xfp import Xtry
+from xfp import Xtry, Xresult
 
 def should_raise(x):
     if x > 10:
@@ -190,26 +202,26 @@ def should_raise(x):
     else:
         return x
 
-r1 = Xtry.from_unsafe(lambda: should_raise(15)) # Xresult.left(Exception("too much"))
-r2 = Xtry.from_unsafe(lambda: should_raise(8))  # Xresult.right(8)
+r1 = Xtry.from_unsafe(lambda: should_raise(15)) # Xtry.Failure(Exception("too much"))
+r2 = Xtry.from_unsafe(lambda: should_raise(8))  # Xtry.Success(8)
 
 # a decorator is provided to automatically convert your functions
 @Xtry.safed
 def safed_function(x):
     return should_raise(x)
 
-r3: Xresult[Exception, Int] = safed_function(15) # Xresult.left(Exception("too much"))
-r4: Xresult[Exception, Int] = safed_function(8)  # Xresult.right(8)
+r3: Xresult[Exception, int] = safed_function(15) # Xtry.Failure(Exception("too much"))
+r4: Xresult[Exception, int] = safed_function(8)  # Xtry.Success(8)
 
 # Constructors are also available
-r5: Xresult[Exception, Int] = Xresult.Success(3)
+r5: Xresult[Exception, int] = Xtry.Success(3)
 
 # You can pattern match an expression depending on its pathway
 match r3:
     case Xtry.Success(value):
         print(value)
     case Xtry.Failure(exception):
-        print(f"Something went wrong : {e}")
+        print(f"Something went wrong : {exception}")
 ```
 
 
