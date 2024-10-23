@@ -92,11 +92,6 @@ def under_eight(x: int) -> bool:
 Functional behaviors requires proper encapsulation of 'not a value' meaning (for example, None or raise Exception).  
 Those ecapsulations are modelised in xfp through the Xresult class. It basically encapsulates a union type under two pathways, either LEFT or RIGHT, in a container. Think of this container as a 'list with one element'. Its API is homogene with the collection one.
 ```python
-from xfp import Xresult
-
-r1 = Xresult(1, XRBranch.RIGHT)
-r2 = Xresult(3, XRBranch.LEFT)
-
 from xfp import Xresult, XRBranch
 
 r1 = Xresult(1, XRBranch.RIGHT)

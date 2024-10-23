@@ -16,8 +16,10 @@ However although functional programming in its roughest form is possible in Pyth
 ```python
 # Look this awful little chunk of code, how cute it is <3
 
+from functools import reduce
+
 initial_value = ["oh", "look", "an", "array", "to", "process", "!"]
-camel_cased = map(lambda chain: [chain[0].upper()] + chain[1:], initial_value)
+camel_cased = map(lambda chain: str(chain[0].upper()) + chain[1:], initial_value)
 only_long_word = filter(lambda x: len(x) > 2, camel_cased)
 output = reduce(lambda x, y: x + " " + y, only_long_word)
 
@@ -25,5 +27,3 @@ assert output == "Look Array Process"
 ```
 
 This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts. 
-
-
