@@ -62,9 +62,9 @@ class Xresult[Y: E, X: E]:
     - directly returns Xresult in your own functions:
 
     ```python
-        def f_that_breaks(should_break: bool) -> Xresult[Error, str]:
+        def f_that_breaks(should_break: bool) -> Xresult[Exception, str]:
             if should_break:
-                return Xresult(Error("something went wrong", XRBranch.LEFT))
+                return Xresult(Exception("something went wrong"), XRBranch.LEFT)
             else:
                 return Xresult("Everything's fine", XRBranch.RIGHT)
     ```
@@ -242,7 +242,7 @@ class Xresult[Y: E, X: E]:
                 return i * i
 
             (
-                Xresult
+                Xopt
                     .from_optional(3)            # Xresult(3, XRBranch.RIGHT)
                     .map_right(add_three)        # Xresult(6, XRBranch.RIGHT)
                     .map_right(pow)              # Xresult(36, XRBranch.RIGHT)
@@ -287,7 +287,7 @@ class Xresult[Y: E, X: E]:
         ```python
             assert Xresult.right(Xresult.right("example")).flatten_right() == Xresult("example", XRBranch.RIGHT)
             assert Xresult.right("example").flatten_right() == Xresult("example", XRBranch.RIGHT)
-            assert Xresult.right(Xresult.from_optional(None)).flatten_right() == Xresult(None, XRBranch.LEFT)
+            assert Xresult.right(Xopt.from_optional(None)).flatten_right() == Xresult(None, XRBranch.LEFT)
             assert Xresult.right(Xresult.left("example")).flatten_right() == Xresult("example", XRBranch.LEFT)
         ```
         """
@@ -324,29 +324,32 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
-            @Xresult.safed
+            from xfp import Xtry
+            import math
+
+            @Xtry.safed
             def invert(i: float) -> float:
                 return 1 / i
 
-            @Xresult.safed
+            @Xtry.safed
             def sqrt(i: float) -> float:
                 return math.sqrt(i)
 
             (
-                Xresult
-                    .right(4)               # Xresult(4, XRBranch.RIGHT)
+                Xtry
+                    .Success(4)             # Xresult(4, XRBranch.RIGHT)
                     .flat_map_right(invert) # Xresult(0.25, XRBranch.RIGHT)
                     .flat_map_right(sqrt)   # Xresult(0.5, XRBranch.RIGHT)
             )
             (
-                Xresult
-                    .right(0)               # Xresult(0, XRBranch.RIGHT)
+                Xtry
+                    .Success(0)              # Xresult(0, XRBranch.RIGHT)
                     .flat_map_right(invert) # Xresult(ZeroDivisionError(..., XRBranch.LEFT))
                     .flat_map_right(sqrt)   # Xresult(ZeroDivisionError(..., XRBranch.LEFT))
             )
             (
-                Xresult
-                    .right(-4)              # Xresult(-4, XRBranch.RIGHT)
+                Xtry
+                    .Success(-4)            # Xresult(-4, XRBranch.RIGHT)
                     .flat_map_right(invert) # Xresult(-0.25, XRBranch.RIGHT)
                     .flat_map_right(sqrt)   # Xresult(ValueError(..., XRBranch.LEFT))
             )
@@ -368,11 +371,14 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
+            from xfp import Xtry
+            from datetime import date
+
             def load_dated_partition(partition_value: date) -> str:
                 return "actual partition"
 
 
-            @Xresult.safed
+            @Xtry.safed
             def to_date(str_date: str) -> date:
                 print(date.fromisoformat(str_date))
                 return date.fromisoformat(str_date)
@@ -394,7 +400,10 @@ class Xresult[Y: E, X: E]:
 
         ### Usage
         ```python
-            @Xresult.safed
+            from xfp import Xtry
+            from datetime import date
+
+            @Xtry.safed
             def to_date(str_date: str) -> date:
                 return date.fromisoformat(str_date)
 
@@ -424,23 +433,31 @@ class Xresult[Y: E, X: E]:
 
         ### Usage
         ```python
+            from xfp import Xresult,XRBranch,Xopt
+
             (
-                Xresult
+                Xopt
                     .from_optional(25)
-                    .foreach(lambda x: print(f"This is the left element : {x}"))
+                    .foreach(lambda x: print(f"This is an element of the list : {x}"))
             )
             # This is an element of the list : 25
 
             (
-                Xresult
+                Xopt
                     .from_optional(None)
-                    .foreach(lambda x: print(f"This is the left element : {x}"))
+                    .foreach(lambda x: print(f"This is the element : {x}"))
             )
             # doesn't output anything
 
             (
-                Xresult(25, XRBranch.RIGHT)
-                    .foreach(lambda x: print(f"This is the left element : {x}"))
+                Xresult(42, XRBranch.RIGHT)
+                    .foreach(lambda x: print(f"This is the right element : {x}"))
+            )
+            # This is the right element : 42
+
+            (
+                Xresult(666, XRBranch.LEFT)
+                    .foreach(lambda x: print(f"This is the right element : {x}"))
             )
             # doesn't output anything
         ```
@@ -472,16 +489,19 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
-            @Xresult.safed
+            from xfp import Xtry
+            import math
+
+            @Xtry.safed
             def invert(i: float) -> float:
                 return 1 / i
 
-            @Xresult.safed
+            @Xtry.safed
             def sqrt(i: float) -> float:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                                      # Xresult(ValueError(..., XRBranch.LEFT))
+                sqrt(-4)                                      # Xresult(ValueError(...), XRBranch.LEFT)
                     .recover_with_right(lambda _: invert(-4)) # Xresult(-0.25, XRBranch.RIGHT)
             )
 
@@ -502,8 +522,8 @@ class Xresult[Y: E, X: E]:
 
         Used to convert a RIGHT result into a LEFT using an effectless transformation.
         Semantically :
-        Used to fallback on a potential failure with an effectless operation.
-        This is a fallback that always ends up as a 'success'.
+        Used to fallback of a potential success with an effectless operation.
+        This is a fallback that always ends up as a 'failure'.
 
         ### Return
 
@@ -523,7 +543,7 @@ class Xresult[Y: E, X: E]:
 
         Used to convert a LEFT result into a RIGHT using an effectless transformation.
         Semantically :
-        Used to fallback on a potential failure with an effectless operation.
+        Used to fallback of a potential failure with an effectless operation.
         This is a fallback that always ends up as a 'success'.
 
         ### Return
@@ -534,17 +554,20 @@ class Xresult[Y: E, X: E]:
         ### Usage
 
         ```python
-            @Xresult.safed
+            from xfp import Xtry
+            import math
+
+            @Xtry.safed
             def sqrt(i: float) -> float:
                 return math.sqrt(i)
 
             (
-                sqrt(-4)                        # Xresult(ValueError(..., XRBranch.LEFT))
+                sqrt(-4)                        # Xresult(ValueError(...), XRBranch.LEFT)
                     .recover_right(lambda _: 0) # Xresult(0, XRBranch.RIGHT)
             )
             (
                 sqrt(4)                         # Xresult(2, XRBranch.RIGHT)
-                    .recover_right(lambda _: 0) # Xresult(2, XRBranch.RIGHT)
+                    .recover_right(lambda _: 0) # Xresult(2.0, XRBranch.RIGHT)
             )
         ```
         """
@@ -600,9 +623,11 @@ class Xresult[Y: E, X: E]:
                 Xresult
                     .right(4)                 # Xresult(4, XRBranch.RIGHT)
                     .filter(lambda x: x < 10) # Xresult(4, XRBranch.RIGHT)
-                    .filter(lambda x: x > 10) # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
-                    .filter(lambda _: True)   # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
-                    .filter(lambda _: False)  # Xresult(XresultError(Xresult.right(4, XRBranch.LEFT)))
+                    .filter(lambda x: x > 10) # Xresult(
+                                              #   XresultError(Xresult(4,XRBranch.RIGHT)),
+                                              #   XRBranch.LEFT
+                                              # )
+                    .filter(lambda _: True)   # no change, we are now on the LEFT branch
             )
         ```
         """
