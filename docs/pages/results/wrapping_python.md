@@ -15,7 +15,7 @@ both to lift results into Xresult and then to process multiple Xresult alltogeth
 
 XFP provides a simple and straightforward method to infer the branch of an optional value while creating a result.
 ```python
-from xfp import Xopt
+from xfp import Xopt, Xresult
 
 python_optional: None | int = None
 maybe: Xresult[None, int] = Xopt.from_optional(python_optional)
@@ -32,7 +32,7 @@ Xtry provides two ways of switching from functions that raises to functions that
 
     ```python
     import pandas as pd
-    from xfp import Xtry
+    from xfp import Xtry, Xresult
 
     tried_df: Xresult[Exception, pd.DataFrame] = Xtry.from_unsafe(lambda: pd.read_csv("may_break_file"))
     ```
@@ -40,7 +40,7 @@ Xtry provides two ways of switching from functions that raises to functions that
 2. Dealing with legacy code written imperative-style :  
 
     ```python
-    from xfp import Xtry
+    from xfp import Xtry, Xresult
 
     @Xtry.safed
     def that_can_raise(i: int) -> str:
@@ -49,7 +49,7 @@ Xtry provides two ways of switching from functions that raises to functions that
         else:
             raise Exception("an Exception")
 
-    result: Xresult[Exception, str] = that_can_raise(3) 
+    result: Xresult[Exception, str] = that_can_raise(3)
     ```
 
 the `Xtry.from_unsafe` feature relies on the unparametrized lambda to lazily evaluate the code given to it. It allows to delegate its execution to the `from_unsafe` wrapper, which ensures catching any non fatal exception that can be thrown.  
