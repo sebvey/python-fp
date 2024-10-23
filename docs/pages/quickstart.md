@@ -49,16 +49,16 @@ def under_eight(x: int) -> bool:
 Functional behaviors requires proper encapsulation of 'not a value' meaning (for example, None or raise Exception).  
 Those ecapsulations are modelised in xfp through the Xresult class. It basically encapsulates a union type under two pathways, either LEFT or RIGHT, in a container. Think of this container as a 'list with one element'. Its API is homogene with the collection one.
 ```python
-from xfp import Xresult
+from xfp import Xresult, XRBranch
 
 r1 = Xresult(1, XRBranch.RIGHT)
 r2 = Xresult(3, XRBranch.LEFT)
 
 (
     r1
-    .map_right(lambda x: x + 3)                        # Xresult.right(4)
-    .flat_map_right(lambda x: r2.map(lambda y: x + y)) # Xresult.left(7)
-    .filter_left(lambda x: x < 5)                      # Xresult.right(XresultError(...)) 
+    .map_right(lambda x: x + 3)                        # XRBranch.RIGHT : 4
+    .flat_map_right(lambda x: r2.map(lambda y: x + y)) # XRBranch.LEFT : 3
+    .filter_left(lambda x: x > 5)                      # XRBranch.RIGHT : XresultError(...)
 )
 ```
 
@@ -68,7 +68,7 @@ You will often have to deal with multiple effects at once. To avoid the vanilla 
 Let's illustrate it with a mock use case. A table computing and writing from three different sources : 
 
 ```python
-from xfp import safed, curry, Xresult
+from xfp import Xresult
 
 def load_table(table_name: str) -> Xresult[Exception, DataFrame]:
     pass
@@ -102,6 +102,7 @@ Xresult.fors(lambda:
             load_table('db3.tb3')
         )
     ])
+
 ```
 
 ## Quality of life
@@ -110,7 +111,7 @@ Xresult.fors(lambda:
 
 In functional programming, the operation consisting in transforming the function f in g (see below) is called curryfiction : 
 ```python
-fromp xfp import Xlist
+from xfp import Xlist
 def f(i: int, j: str) -> Xlist[str]:
     pass
 
@@ -129,10 +130,14 @@ from xfp import Xlist, curry
 # the effective signature of f becomes def f(i: int) -> Callable[[str], Xlist[str]]
 @curry
 def f(i: int, j: str) -> Xlist[str]:
-    pass
+    return i * j
 
 # notice the usage of only one parameter in f
-Xlist(["a", "b", "c"]).flat_map(f(3))
+(
+    Xlist(["a", "b", "c"])
+    .flat_map(f(3))
+    .foreach(print)
+)
 ```
 
 ### Xeither, Xtry, Xopt
@@ -141,7 +146,7 @@ You can add more semantic to your results by making use of the proxy types `Xeit
 Those types resolves as an Xresult, but can be used by themselves in pattern matching, and provide tooling revolving around their semantics. Example of Xtry :
 
 ```python
-from xfp import Xtry
+from xfp import Xtry, Xresult
 
 def should_raise(x):
     if x > 10:
@@ -149,24 +154,24 @@ def should_raise(x):
     else:
         return x
 
-r1 = Xtry.from_unsafe(lambda: should_raise(15)) # Xresult.left(Exception("too much"))
-r2 = Xtry.from_unsafe(lambda: should_raise(8))  # Xresult.right(8)
+r1 = Xtry.from_unsafe(lambda: should_raise(15)) # Xtry.Failure(Exception("too much"))
+r2 = Xtry.from_unsafe(lambda: should_raise(8))  # Xtry.Success(8)
 
 # a decorator is provided to automatically convert your functions
 @Xtry.safed
 def safed_function(x):
     return should_raise(x)
 
-r3: Xresult[Exception, Int] = safed_function(15) # Xresult.left(Exception("too much"))
-r4: Xresult[Exception, Int] = safed_function(8)  # Xresult.right(8)
+r3: Xresult[Exception, int] = safed_function(15) # Xtry.Failure(Exception("too much"))
+r4: Xresult[Exception, int] = safed_function(8)  # Xtry.Success(8)
 
 # Constructors are also available
-r5: Xresult[Exception, Int] = Xresult.Success(3)
+r5: Xresult[Exception, int] = Xtry.Success(3)
 
 # You can pattern match an expression depending on its pathway
 match r3:
     case Xtry.Success(value):
         print(value)
     case Xtry.Failure(exception):
-        print(f"Something went wrong : {e}")
+        print(f"Something went wrong : {exception}")
 ```
