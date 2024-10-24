@@ -114,9 +114,9 @@ class Xiter[X: E]:
         return Xiter(b).map(lambda x: deepcopy(x))
 
     def chain(self, other: Iterable[X]) -> "Xiter[X]":
-        """
-        Proxy for itertools.chain :
-        Return a chain object whose .__next__() method returns elements from the
+        """Proxy for itertools.chain.
+
+        Return a chain object whose `.__next__()` method returns elements from the
         first iterable until it is exhausted, then elements from the next
         iterable, until all of the iterables are exhausted.
         """
@@ -125,7 +125,7 @@ class Xiter[X: E]:
     def get(self, i: int) -> X:
         """Return the i-th element of the Xlist.
 
-        Does not consume the i-1 first elements, but evaluate them
+        Does not consume the i-1 first elements, but evaluate them.
 
         ### Raise
 
@@ -142,8 +142,8 @@ class Xiter[X: E]:
     def get_fx(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
 
-        Does not consume the i-1 first elements, but evaluate them
-        Wrap the potential error in an Xresult
+        Does not consume the i-1 first elements, but evaluate them.
+        Wrap the potential error in an Xresult.
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
 
