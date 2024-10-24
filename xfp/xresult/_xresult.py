@@ -522,7 +522,7 @@ class Xresult[Y: E, X: E]:
 
         Used to convert a RIGHT result into a LEFT using an effectless transformation.
         Semantically :
-        Used to fallback of a potential success with an effectless operation.
+        Used to fallback from a potential success with an effectless operation.
         This is a fallback that always ends up as a 'failure'.
 
         ### Return
@@ -543,7 +543,7 @@ class Xresult[Y: E, X: E]:
 
         Used to convert a LEFT result into a RIGHT using an effectless transformation.
         Semantically :
-        Used to fallback of a potential failure with an effectless operation.
+        Used to fallback from a potential failure with an effectless operation.
         This is a fallback that always ends up as a 'success'.
 
         ### Return
