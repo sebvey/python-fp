@@ -4,7 +4,7 @@ name: gh-pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["wiki"]
+    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -45,11 +45,11 @@ jobs:
       - name: Install poetry env
         run: poetry install
       - name: Generate API documentation (1)
-        run: "poetry run pdoc -o docs/reference --search xfp xfp.xresult" 
+        run: "poetry run pdoc -o docs/reference --search xfp xfp.xresult"
       - name: Generate API documentation (2)
-        run: "rm docs/reference/index.html" 
+        run: "rm docs/reference/index.html"
       - name: Generate API documentation (3)
-        run: "echo  $'---\ntitle: Reference\npermalink: /reference/\nnav_order: 2\n---\n' >> docs/reference/index.html" 
+        run: "echo  $'---\ntitle: Reference\npermalink: /reference/\nnav_order: 2\n---\n' >> docs/reference/index.html"
       - name: Generate API documentation (4)
         run: "cat docs/reference/xfp.html >> docs/reference/index.html"
       - name: Generate API documentation (5)
