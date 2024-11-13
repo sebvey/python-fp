@@ -39,6 +39,10 @@ def test_xiter_deepcopy():
     assert next(r2) == 1
 
 
+def test_xiter_get():
+    assert Xiter.cycle(Xiter([1, 2, 3])).get(4) == 2
+
+
 def test_xiter_deepcopy_is_deep():
     @dataclass
     class A:

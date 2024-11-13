@@ -134,7 +134,7 @@ class Xiter[X: E]:
         __copy = self.copy()
 
         try:
-            for _ in range(i - 1):
+            for _ in range(i):
                 next(__copy)
             return next(__copy)
         except StopIteration:
