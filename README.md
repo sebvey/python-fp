@@ -226,7 +226,7 @@ match r3:
 - clone the repo
 - install poetry
 - install compatible python version (from 3.12), eg. `pyenv install 3.12.4`
-- install the project : `poetry install`
+- install the project and activate the virtual environment: `poetry install && poetry shell`
 - set up the git hook scripts (linter / formatter): `pre-commit install` 
 
 -> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
