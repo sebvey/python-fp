@@ -123,21 +123,22 @@ class Xiter[X: E]:
         return Xiter(itertools.chain(self, other))
 
     def get(self, i: int) -> X:
-        """Return the i-th element of the Xlist.
+        """Return the i-th element of the Xiter.
 
         Does not consume the i-1 first elements, but evaluate them.
 
         ### Raise
 
-        - IndexError -- if the list is shorter than i
+        - IndexError -- if the Xiter is shorter than i
         """
-        if i == 0:
-            try:
-                return next(self.copy())
-            except StopIteration:
-                raise IndexError("<next> operation not allowed on empty iterator")
-        else:
-            return self.tail().get(i - 1)
+        __copy = self.copy()
+
+        try:
+            for _ in range(i - 1):
+                next(__copy)
+            return next(__copy)
+        except StopIteration:
+            raise IndexError(f"Xiter has less than {i} element(s)")
 
     def get_fx(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
