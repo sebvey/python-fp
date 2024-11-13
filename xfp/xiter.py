@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import tee
 import itertools
-from typing import Callable, Iterable, Iterator, Any, cast
+from typing import Callable, Iterable, Iterator, Any, cast, overload
 from collections.abc import Iterable as ABCIterable
 
 from xfp import Xresult, Xlist, Xtry
@@ -59,6 +59,26 @@ class Xiter[X: E]:
         Exists to enable [] syntax
         """
         return self.get(i)
+
+    def takewhile(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+        """Return a new iterator that stops yielding elements when predicate = False.
+
+        Do not consume the original iterator.
+
+        Useful to limit an infinite Xiter with a predicate.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import itertools
+
+            infinite_xiter = Xiter(itertools.count(start=0,step=2))  # -> Xiter([0,2,4,6,8,...])
+            until_xiter = infinite_xiter.takewhile(lambda x: x<6)    # -> Xiter([0,2,4])
+        ```
+        """
+
+        return Xiter(itertools.takewhile(predicate, self.copy().__iter))
 
     def copy(self):
         """Return a new Xiter, tee-ed from self.
@@ -214,7 +234,7 @@ class Xiter[X: E]:
     def foreach(self, statement: Callable[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the iterator.
 
-        Do not consume the original iterator
+        Do not consume the original iterator.
 
         ### Usage
 
@@ -277,6 +297,78 @@ class Xiter[X: E]:
         ```
         """
         return self.map(f).flatten()
+
+    def take(self, n: int) -> "Xiter[E]":
+        """Return a new iterator limited to the first 'n' elements.
+        Return a copy if the original iterator has less than 'n' elements.
+        Return an empty Xiter if n is negative.
+
+        Do not consume the original iterator.
+
+        ### Usage
+
+        ```python
+                from xfp import Xiter
+                import itertools
+
+                infinite_xiter = Xiter(itertools.repeat(42))  # -> Xiter([42,42,42,...])
+                until_xiter = infinite_xiter.take(3)          # -> Xiter([42,42])
+            ```
+        """
+
+        return Xiter(self.slice(n))
+
+    def takeuntil(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+        """Return a new iterator that stops yielding elements when predicate = True.
+
+        Do not consume the original iterator.
+
+        Useful to limit an infinite Xiter with a predicate.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import itertools
+
+            infinite_xiter = Xiter(itertools.count(start=0,step=2))  # -> Xiter([0,2,4,6,8,...])
+            until_xiter = infinite_xiter.takeuntil(lambda x: x >=6)  # -> Xiter([0,2,4])
+        ```
+        """
+
+        return self.takewhile(lambda x: not predicate(x))
+
+    @overload
+    def slice(self, stop: int | None, /): ...
+
+    @overload
+    def slice(self, start: int | None, stop: int | None, step: int | None = 1, /): ...
+
+    def slice(self, *args):
+        """Return an new Xiter with selected elements from the Xiter.
+        Works like sequence slicing but does not support negative values
+        for start, stop, or step.
+
+        Do not consume the original iterator.
+
+        If start is zero or None, iteration starts at zero.
+        Otherwise, elements from the iterable are skipped until start is reached.
+
+        If stop is None, iteration continues until the input is exhausted,
+        if at all. Otherwise, it stops at the specified position.
+
+        If step is None, the step defaults to one.
+        Elements are returned consecutively unless step is set higher than
+        one which results in items being skipped.
+        """
+        __iter_copy = self.copy()
+
+        if len(args) not in (1, 2, 3):
+            raise TypeError(
+                "slice expected from 1 to 3 positional arguments: 'stop' | 'start' 'stop' ['step']"
+            )
+
+        return Xiter(itertools.islice(__iter_copy, *args))
 
     def zip(self, other: Iterable[E]) -> "Xiter[tuple[X, E]]":
         """Zip this iterator with another iterable."""

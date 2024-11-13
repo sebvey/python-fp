@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import itertools
 
 import pytest
 from xfp import XRBranch, Xeither, Xiter, tupled
@@ -126,6 +127,42 @@ def test_xiter_map():
     assert compare(actual, expected)
 
 
+def test_xiter_slice_copy():
+    input = Xiter(range(0, 10))
+    _ = input.slice(4)
+    assert compare(input, Xiter(range(0, 10)))
+
+
+def test_xiter_slice_stop_arg():
+    input = Xiter(range(0, 10))
+    assert compare(input.slice(4), Xiter(range(4)))
+
+
+def test_xiter_slice_stop_none_arg():
+    input = Xiter(range(0, 10))
+    assert compare(input.slice(None), Xiter(range(0, 10)))
+
+
+def test_xiter_slice_start_stop_args():
+    input = Xiter(range(0, 10))
+    assert compare(input.slice(1, 7), Xiter(range(1, 7)))
+
+
+def test_xiter_slice_start_stop_step_args():
+    input = Xiter(range(0, 100))
+    assert compare(input.slice(1, 60, 3), Xiter(range(1, 60, 3)))
+
+
+def test_xiter_slice_start_stop_step_none_args():
+    input = Xiter(range(0, 100))
+    assert compare(input.slice(None, None, None), Xiter(range(0, 100)))
+
+
+def test_xiter_slice_too_many_args():
+    with pytest.raises(TypeError):
+        Xiter([1]).slice(1, 2, 3, 4)
+
+
 def test_xiter_tail():
     input = Xiter([1, 2, 3])
     assert compare(input.tail(), Xiter([2, 3]))
@@ -149,6 +186,22 @@ def test_xiter_tail_fx_fail():
     input = Xiter([])
     actual = input.tail_fx()
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
+
+
+def test_xiter_takewhile():
+    input = Xiter(itertools.count(0, 1))
+    actual = input.takewhile(lambda x: x < 10)
+    expected = Xiter(range(10))
+    assert compare(actual, expected)
+    assert next(input) == 0
+
+
+def test_xiter_takeuntil():
+    input = Xiter(itertools.count(0, 1))
+    actual = input.takeuntil(lambda x: x >= 10)
+    expected = Xiter(range(10))
+    assert compare(actual, expected)
+    assert next(input) == 0
 
 
 def test_xiter_zip():
