@@ -65,18 +65,6 @@ def test_xiter_head_fail():
         Xiter([]).head()
 
 
-def test_xiter_tail():
-    input = Xiter([1, 2, 3])
-    assert compare(input.tail(), Xiter([2, 3]))
-    assert compare(input.tail(), Xiter([2, 3]))
-    assert compare(input, Xiter([1, 2, 3]))
-
-
-def test_xiter_tail_fail():
-    with pytest.raises(IndexError):
-        Xiter([]).tail()
-
-
 def test_xiter_head_fx():
     input = Xiter([1, 2, 3])
     assert input.head_fx() == Xeither.Right(1)
@@ -84,29 +72,24 @@ def test_xiter_head_fx():
     assert next(input) == 1
 
 
-def test_xiter_head_fail_fx():
+def test_xiter_head_fx_fail():
     input = Xiter([])
     actual = input.head_fx()
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
-def test_xiter_tail_fx():
-    input = Xiter([1, 2, 3])
-    assert compare(input.tail(), Xiter([2, 3]))
-    assert compare(input.tail(), Xiter([2, 3]))
-    assert compare(input, Xiter([1, 2, 3]))
+def test_xiter_filter():
+    input = Xiter(range(1, 10, 1))
+    actual = input.filter(lambda x: x % 2 == 0)
+    expected = Xiter(range(2, 10, 2))
+
+    assert compare(actual, expected)
 
 
-def test_xiter_tail_fail_fx():
-    input = Xiter([])
-    actual = input.tail_fx()
-    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
-
-
-def test_xiter_map():
-    input = Xiter([1, 2, 3, 4])
-    actual = input.map(lambda x: (x - 1) * -1)
-    expected = Xiter([0, -1, -2, -3])
+def test_xiter_flat_map():
+    input = Xiter([1, 2])
+    actual = input.flat_map(lambda x: [x, x**2])
+    expected = Xiter([1, 1, 2, 4])
 
     assert compare(actual, expected)
 
@@ -135,20 +118,37 @@ def test_xiter_flatten_mixed():
     assert compare(actual, expected)
 
 
-def test_xiter_flat_map():
-    input = Xiter([1, 2])
-    actual = input.flat_map(lambda x: [x, x**2])
-    expected = Xiter([1, 1, 2, 4])
+def test_xiter_map():
+    input = Xiter([1, 2, 3, 4])
+    actual = input.map(lambda x: (x - 1) * -1)
+    expected = Xiter([0, -1, -2, -3])
 
     assert compare(actual, expected)
 
 
-def test_xiter_filter():
-    input = Xiter(range(1, 10, 1))
-    actual = input.filter(lambda x: x % 2 == 0)
-    expected = Xiter(range(2, 10, 2))
+def test_xiter_tail():
+    input = Xiter([1, 2, 3])
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input, Xiter([1, 2, 3]))
 
-    assert compare(actual, expected)
+
+def test_xiter_tail_fail():
+    with pytest.raises(IndexError):
+        Xiter([]).tail()
+
+
+def test_xiter_tail_fx():
+    input = Xiter([1, 2, 3])
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input.tail(), Xiter([2, 3]))
+    assert compare(input, Xiter([1, 2, 3]))
+
+
+def test_xiter_tail_fx_fail():
+    input = Xiter([])
+    actual = input.tail_fx()
+    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
 def test_xiter_zip():
