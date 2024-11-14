@@ -3,6 +3,7 @@ import itertools
 
 import pytest
 from xfp import XRBranch, Xeither, Xiter, tupled
+from xfp.xlist import Xlist
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
@@ -10,6 +11,15 @@ def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
         if i != j:
             return False
     return True
+
+
+def test_xiter__init__not_iterable():
+    with pytest.raises(TypeError):
+        Xiter(123)
+
+
+def test_xiter__repr__defined():
+    assert repr(Xiter([1, 2, 3])).startswith("<list_iterator")
 
 
 def test_xiter_copy():
@@ -206,6 +216,13 @@ def test_xiter_takeuntil():
     expected = Xiter(range(10))
     assert compare(actual, expected)
     assert next(input) == 0
+
+
+def test_xiter_to_xlist():
+    input = Xiter(range(5))
+    assert input.to_Xlist() == Xlist([0, 1, 2, 3, 4])
+    with pytest.raises(StopIteration):
+        next(input) == 0
 
 
 def test_xiter_zip():
