@@ -118,7 +118,7 @@ def test_map_should_transform_items():
 
 
 # Which value should be associated is an unenforced behavior and may be subject to change
-# However, consistence is key and the same value should be returned each time
+# However, consistence is key (pun intended) and the same value should be returned each time
 def test_map_should_keep_only_one_key_if_collision():
     xdict = Xdict({"a": "a", "b": "c", "c": "c"})
     iterations = range(0, 20)
