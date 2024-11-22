@@ -379,6 +379,6 @@ class Xiter[X: E]:
     def to_Xlist(self) -> "Xlist[X]":
         """Return an Xlist being the evaluated version of self.
 
-        Consume the original iterator.
+        Do not consume the original iterator.
         """
-        return Xlist(self)
+        return Xlist(self.copy())
