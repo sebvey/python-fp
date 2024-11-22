@@ -220,8 +220,7 @@ def test_xiter_takeuntil():
 def test_xiter_to_xlist():
     input = Xiter(range(5))
     assert input.to_Xlist() == Xlist([0, 1, 2, 3, 4])
-    with pytest.raises(StopIteration):
-        next(input) == 0
+    assert next(input) == 0
 
 
 def test_xiter_zip():
