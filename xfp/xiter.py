@@ -73,8 +73,10 @@ class Xiter[X: E]:
             from xfp import Xiter
             import itertools
 
-            infinite_xiter = Xiter(itertools.count(start=0,step=2))  # -> Xiter([0,2,4,6,8,...])
-            until_xiter = infinite_xiter.takewhile(lambda x: x<6)    # -> Xiter([0,2,4])
+            until_xiter = (
+                Xiter(itertools.count(start=0,step=2))  # -> Xiter([0,2,4,6,8,...])
+                .takewhile(lambda x: x<6)               # -> Xiter([0,2,4])
+            )
         ```
         """
 
