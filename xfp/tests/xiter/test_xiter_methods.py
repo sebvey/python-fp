@@ -2,8 +2,7 @@ from dataclasses import dataclass
 import itertools
 
 import pytest
-from xfp import XRBranch, Xeither, Xiter, tupled
-from xfp.xlist import Xlist
+from xfp import tupled, XRBranch, Xeither, Xiter, Xlist
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
@@ -141,7 +140,7 @@ def test_xiter_map():
     assert compare(actual, expected)
 
 
-def test_xiter_slice_copy():
+def test_xiter_slice_does_not_copy():
     input = Xiter(range(0, 10))
     _ = input.slice(4)
     assert compare(input, Xiter(range(0, 10)))
