@@ -17,7 +17,13 @@ from collections.abc import Iterable as ABCIterable
 @runtime_checkable
 class ABCDict[Y, X](Protocol):
     @abstractmethod
+    def __getitem__(self, key: Y, /) -> X: ...
+    # Mixin methods
     def items(self) -> ABCIterable[tuple[Y, X]]: ...
+    def keys(self) -> ABCIterable[Y]: ...
+    def values(self) -> ABCIterable[X]: ...
+    def __contains__(self, key: object, /) -> bool: ...
+    def __eq__(self, other: object, /) -> bool: ...
 
 
 class Xdict[Y: E, X: E]:
@@ -26,15 +32,15 @@ class Xdict[Y: E, X: E]:
         """Return a new Xdict built from an iterable.
 
         The iterable must contain couples of <key, values>. In case of key duplication
-        in the parameter list, the last associated value is kept.
+        in the parameters list, the last associated value is kept.
 
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        xdict = Xdict.from_list([("a", 1), ("b", 2), ("a", 3)])
-        assert xdict == Xdict({"a": 3, "b": 2})
+            xdict = Xdict.from_list([("a", 1), ("b", 2), ("a", 3)])
+            assert xdict == Xdict({"a": 3, "b": 2})
         ```
         """
         return cls({k: v for k, v in iterable})
@@ -68,6 +74,10 @@ class Xdict[Y: E, X: E]:
     def __repr__(self) -> str:
         """Return the representation of the underlying data"""
         return f"Xdict({repr(self.__data)})"
+
+    def __contains__(self, key: Any) -> bool:
+        """Return the presence of the key in the xdict keyset."""
+        return key in self.keys()
 
     def __getitem__(self, i: Y) -> X:
         """Alias for get(i).
@@ -107,17 +117,17 @@ class Xdict[Y: E, X: E]:
         ### Raises
 
         - IndexError : if the key is not found in the Xdict and no default is provided
-        - AttributeError : if the method is called with an unspecified set of parameter (signature not found in overload)
+        - AttributeError : if the method is called with an unspecified set of parameters (signature not found in overload)
         """
         match args:
             case [y] if y in self.keys():
                 return self.__data.get(y)
             case [y]:
-                raise IndexError(f"Key not found in in Xdict : {y}")
+                raise IndexError(f"Key not found in Xdict : {y}")
             case [y, default]:
                 return self.__data.get(y, default)
             case _:
-                raise AttributeError("Wrong set of parameter for <get> method")
+                raise AttributeError("Wrong set of parameters for <get> method")
 
     def get_fr(self, y: Y, /) -> Xresult[IndexError, X]:
         """Return the value associated with a given key.
@@ -132,18 +142,18 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict, Xtry
+            from xfp import Xdict, Xtry
 
-        match Xdict({"a": 1}).get_fr("b"):
-            case Xtry.Success(value):
-                print(f"we found {value} in Xdict")
-            case Xtry.Failure(e):
-                print(f"Error: {e}")
+            match Xdict({"a": 1}).get_fr("b"):
+                case Xtry.Success(value):
+                    print(f"we found {value} in Xdict")
+                case Xtry.Failure(e):
+                    print(f"Error: {e}")
         ```
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(y)))
 
-    def set_item(self, key: Y, value: E) -> "Xdict[Y, X | E]":
+    def updated(self, key: Y, value: E) -> "Xdict[Y, X | E]":
         """Return a new Xdict, with an updated couple (key: Y, value: E).
 
         Upsert a new `value` at `key`.
@@ -151,15 +161,15 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1}).set_item("b", 2) == Xdict({"a": 1, "b": 2})
-        assert Xdict({"a": 1}).set_item("a", 2) == Xdict({"a": 2})
+            assert Xdict({"a": 1}).updated("b", 2) == Xdict({"a": 1, "b": 2})
+            assert Xdict({"a": 1}).updated("a", 2) == Xdict({"a": 2})
         ```
         """
         return self.union(Xdict({key: value}))
 
-    def del_item(self, key: Y) -> "Xdict[Y, X]":
+    def removed(self, key: Y) -> "Xdict[Y, X]":
         """Return a new Xdict, with the given key deleted.
 
         Filter the provided key if found.
@@ -168,10 +178,10 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 2}).del_item("b") == Xdict({"a": 1})
-        assert Xdict({"a": 1}).del_item("b") == Xdict({"a": 1})
+            assert Xdict({"a": 1, "b": 2}).removed("b") == Xdict({"a": 1})
+            assert Xdict({"a": 1}).removed("b") == Xdict({"a": 1})
         ```
         """
         return self.filter(lambda y, _: y is not key)
@@ -179,15 +189,15 @@ class Xdict[Y: E, X: E]:
     def union(self, other: ABCDict[E, E]) -> "Xdict[Y | E, X | E]":
         """Return a new Xdict, being the merge of self and a given one.
 
-        Works as if multiple set_items are done successively.
+        Works as if multiple updateds are done successively.
         It means if a key is present in both Xdict, the `other` Xdict has priority.
 
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 2}).union(Xdict({"a": 3, "c": 4})) == Xdict({"a": 3, "b": 2, "c": 4})
+            assert Xdict({"a": 1, "b": 2}).union(Xdict({"a": 3, "c": 4})) == Xdict({"a": 3, "b": 2, "c": 4})
         ```
         """
         return self.from_list(list(self.items()) + list(other.items()))
@@ -215,12 +225,12 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 2}).map(lambda y, x: (f"{y}{y}", x * 10)) == Xdict({"aa": 10, "bb": 20})
+            assert Xdict({"a": 1, "b": 2}).map(lambda y, x: (f"{y}{y}", x * 10)) == Xdict({"aa": 10, "bb": 20})
 
-        collisioned = Xdict({"a": 1, "b": 2}).map(lambda _, x: ("c", x * 10))
-        assert collisioned == Xdict({"c": 20}) or collisioned == Xdict({"c": 10}) # but it will always return the same
+            collisioned = Xdict({"a": 1, "b": 2}).map(lambda _, x: ("c", x * 10))
+            assert collisioned == Xdict({"c": 20}) or collisioned == Xdict({"c": 10}) # but it will always return the same
         ```
         """
         return self.from_list(self.items().map(tupled(f)))
@@ -236,12 +246,12 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 2}).map_keys(lambda y: f"{y}{y}") == Xdict({"aa": 1, "bb": 2})
+            assert Xdict({"a": 1, "b": 2}).map_keys(lambda y: f"{y}{y}") == Xdict({"aa": 1, "bb": 2})
 
-        collisioned = Xdict({"a": 1, "b": 2}).map(lambda _: "c")
-        assert collisioned == Xdict({"c": 2}) or collisioned == Xdict({"c": 1}) # but it will always return the same
+            collisioned = Xdict({"a": 1, "b": 2}).map(lambda _: "c")
+            assert collisioned == Xdict({"c": 2}) or collisioned == Xdict({"c": 1}) # but it will always return the same
         ```
         """
         return self.map(lambda y, x: (f(y), x))
@@ -254,9 +264,9 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 2}).map_values(lambda x: x * 10) == Xdict({"a": 10, "b": 20})
+            assert Xdict({"a": 1, "b": 2}).map_values(lambda x: x * 10) == Xdict({"a": 10, "b": 20})
         ```
         """
         return self.map(lambda y, x: (y, f(x)))
@@ -270,9 +280,9 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": "a", "b": "c"}).filter(lambda y, x: y == x) == Xdict({"a": "a"})
+            assert Xdict({"a": "a", "b": "c"}).filter(lambda y, x: y == x) == Xdict({"a": "a"})
         ```
         """
         return self.from_list(self.items().filter(tupled(predicate)))
@@ -286,9 +296,9 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 20}).filter(lambda y: y in ["a", "c"]) == Xdict({"a": 1})
+            assert Xdict({"a": 1, "b": 20}).filter(lambda y: y in ["a", "c"]) == Xdict({"a": 1})
         ```
         """
         return self.filter(lambda y, _: predicate(y))
@@ -302,9 +312,9 @@ class Xdict[Y: E, X: E]:
         ### Usage
 
         ```python
-        from xfp import Xdict
+            from xfp import Xdict
 
-        assert Xdict({"a": 1, "b": 20}).filter(lambda x: x < 10) == Xdict({"a": 1})
+            assert Xdict({"a": 1, "b": 20}).filter(lambda x: x < 10) == Xdict({"a": 1})
         ```
         """
         return self.filter(lambda _, x: predicate(x))

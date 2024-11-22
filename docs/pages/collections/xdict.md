@@ -61,12 +61,12 @@ This enables to lift the Xlist functionalities to the Xdict, while letting the u
 ## Extended API
 
 Xdict revolves around its (key, value) structure to add indexed search and update methods :
-- `set_item` returns a new Xdict, with an value upserted.
-- `del_item` returns a new Xdict, with a couple (key, value) deleted when the key is found.
+- `updated` returns a new Xdict, with an value upserted.
+- `removed` returns a new Xdict, with a couple (key, value) deleted when the key is found.
 
 ```python
 from xfp import Xdict
 
-assert Xdict({"a": 1}).set_item("b", 2) == Xdict({"a": 1, "b": 2})
-assert Xdict({"a": 1, "b": 2}).del_item("b") == Xdict({"a": 1})
+assert Xdict({"a": 1}).updated("b", 2) == Xdict({"a": 1, "b": 2})
+assert Xdict({"a": 1, "b": 2}).removed("b") == Xdict({"a": 1})
 ```

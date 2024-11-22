@@ -19,6 +19,18 @@ def test_len_should_return_the_number_of_keys(xdict):
     assert len(xdict) == len(xdict.keys())
 
 
+def test_contains_should_be_true_if_key_is_in_keyset():
+    assert "a" in Xdict({"a": 1})
+
+
+def test_contains_should_be_false_otherwise():
+    assert "a" not in Xdict({"b": 1})
+
+
+def test_contains_should_be_false_if_uncomparable():
+    assert 34 not in Xdict({"b": 1})
+
+
 def test_getitem_should_return_the_value_associated():
     input = Xdict({"a": 1})
     assert input["a"] == 1
@@ -59,21 +71,21 @@ def test_get_fr_should_wrap_failure():
 @given(st_xdict, st.characters(), st.integers())
 def test_set_and_del_should_be_invert(xdict, key, value):
     assume(key not in xdict.keys())
-    result = xdict.set_item(key, value).del_item(key)
+    result = xdict.updated(key, value).removed(key)
     assert result == xdict
 
 
-def test_set_item_should_union_a_single_element():
+def test_updated_should_union_a_single_element():
     input = Xdict({"a": 1, "b": 4})
-    result = input.set_item("b", 2)
+    result = input.updated("b", 2)
     expected = Xdict({"a": 1, "b": 2})
 
     assert result == expected
 
 
-def test_del_item_should_filter_using_equality_predicate():
+def test_removed_should_filter_using_equality_predicate():
     input = Xdict({"a": 1, "b": 2})
-    result = input.del_item("b")
+    result = input.removed("b")
     expected = Xdict({"a": 1})
 
     assert result == expected
