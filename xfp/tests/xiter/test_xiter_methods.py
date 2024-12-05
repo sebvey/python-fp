@@ -14,7 +14,7 @@ def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
 
 def test_xiter__init__not_iterable():
     with pytest.raises(TypeError):
-        Xiter(123)
+        Xiter(123)  # type: ignore
 
 
 def test_xiter__repr__defined():
@@ -79,16 +79,16 @@ def test_xiter_head_fail():
         Xiter([]).head()
 
 
-def test_xiter_head_fx():
+def test_xiter_head_fr():
     input = Xiter([1, 2, 3])
-    assert input.head_fx() == Xeither.Right(1)
-    assert input.head_fx() == Xeither.Right(1)
+    assert input.head_fr() == Xeither.Right(1)
+    assert input.head_fr() == Xeither.Right(1)
     assert next(input) == 1
 
 
-def test_xiter_head_fx_fail():
+def test_xiter_head_fr_fail():
     input = Xiter([])
-    actual = input.head_fx()
+    actual = input.head_fr()
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
@@ -173,7 +173,7 @@ def test_xiter_slice_start_stop_step_none_args():
 
 def test_xiter_slice_too_many_args():
     with pytest.raises(TypeError):
-        Xiter([1]).slice(1, 2, 3, 4)
+        Xiter([1]).slice(1, 2, 3, 4)  # type: ignore
 
 
 def test_xiter_tail():
@@ -188,16 +188,16 @@ def test_xiter_tail_fail():
         Xiter([]).tail()
 
 
-def test_xiter_tail_fx():
+def test_xiter_tail_fr():
     input = Xiter([1, 2, 3])
     assert compare(input.tail(), Xiter([2, 3]))
     assert compare(input.tail(), Xiter([2, 3]))
     assert compare(input, Xiter([1, 2, 3]))
 
 
-def test_xiter_tail_fx_fail():
+def test_xiter_tail_fr_fail():
     input = Xiter([])
-    actual = input.tail_fx()
+    actual = input.tail_fr()
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
