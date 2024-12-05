@@ -92,6 +92,20 @@ def test_xiter_head_fr_fail():
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
+def test_xiter_append():
+    input = Xiter([1])
+    actual = input.append(2)
+    expected = Xiter([1, 2])
+    assert compare(actual, expected)
+
+
+def test_xiter_prepend():
+    input = Xiter([1])
+    actual = input.prepend(2)
+    expected = Xiter([2, 1])
+    assert compare(actual, expected)
+
+
 def test_xiter_filter():
     input = Xiter(range(1, 10, 1))
     actual = input.filter(lambda x: x % 2 == 0)

@@ -58,6 +58,27 @@ def test_xlist_tail_fr_fail():
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
+def test_xlist_append():
+    input = Xlist([1])
+    actual = input.append(2)
+    expected = Xlist([1, 2])
+    assert actual == expected
+
+
+def test_xlist_prepend():
+    input = Xlist([1])
+    actual = input.prepend(2)
+    expected = Xlist([2, 1])
+    assert actual == expected
+
+
+def test_xlist_insert():
+    input = Xlist([1, 3, 4, 5, 6])
+    actual = input.insert(2, 2)
+    expected = Xlist([1, 3, 2, 4, 5, 6])
+    assert actual == expected
+
+
 def test_xlist_map():
     input = Xlist([1, 2, 3, 4])
     actual = input.map(lambda x: (x - 1) * -1)
