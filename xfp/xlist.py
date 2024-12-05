@@ -150,7 +150,7 @@ class Xlist[X: E]:
             from xfp import Xlist
 
             input = Xlist([1, 2, 3])
-            statement = lambda el: print(f"This is an element of the list : ${el}")
+            statement = lambda el: print(f"This is an element of the list : {el}")
             input.foreach(statement)
             # This is an element of the list : 1
             # This is an element of the list : 2
