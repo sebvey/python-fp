@@ -3,6 +3,7 @@ from itertools import tee
 import itertools
 from typing import Callable, Iterable, Iterator, Any, cast, overload
 from collections.abc import Iterable as ABCIterable
+from deprecation import deprecated
 
 from xfp import Xresult, Xlist, Xtry
 from .utils import E
@@ -82,7 +83,7 @@ class Xiter[X: E]:
 
         return Xiter(itertools.takewhile(predicate, self.copy().__iter))
 
-    def copy(self):
+    def copy(self) -> "Xiter[X]":
         """Return a new Xiter, tee-ed from self.
 
         Used to make a shallow copy of the iterator, functional style.
@@ -103,7 +104,7 @@ class Xiter[X: E]:
         self.__iter = a
         return Xiter(b)
 
-    def deepcopy(self):
+    def deepcopy(self) -> "Xiter[X]":
         """Return a new Xiter, with both iterator and elements distincts from self.
 
         Used to make a deep copy of the iterator, functional style.
@@ -162,7 +163,7 @@ class Xiter[X: E]:
         except StopIteration:
             raise IndexError(f"Xiter has less than {i} element(s)")
 
-    def get_fx(self, i: int) -> Xresult[IndexError, X]:
+    def get_fr(self, i: int) -> Xresult[IndexError, X]:
         """Return the i-th element of the Xlist.
 
         Does not consume the i-1 first elements, but evaluate them.
@@ -170,13 +171,27 @@ class Xiter[X: E]:
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(i)))
 
+    @deprecated("1.1.0", "2.0.0", details="Use get_fr instead")
+    def get_fx(self, i: int) -> Xresult[IndexError, X]:
+        """Return the i-th element of the Xlist.
+
+        Does not consume the i-1 first elements, but evaluate them.
+        Wrap the potential error in an Xresult.
+        """
+        return self.get_fr(i)
+
     def head(self) -> X:
         """Alias for get(0)."""
         return self.get(0)
 
+    def head_fr(self) -> Xresult[IndexError, X]:
+        """Alias for get_fr(0)."""
+        return self.get_fr(0)
+
+    @deprecated("1.1.0", "2.0.0", details="Use head_fr instead")
     def head_fx(self) -> Xresult[IndexError, X]:
         """Alias for get_fx(0)."""
-        return self.get_fx(0)
+        return self.head_fr()
 
     def tail(self) -> "Xiter[X]":
         """Return the iterator / its first element.
@@ -192,12 +207,20 @@ class Xiter[X: E]:
         except StopIteration:
             raise IndexError("<tail> operation not allowed on empty iterator")
 
-    def tail_fx(self) -> Xresult[IndexError, "Xiter[X]"]:
+    def tail_fr(self) -> Xresult[IndexError, "Xiter[X]"]:
         """Return the iterator / its first element.
 
         Wrap the potential error in an Xresult.
         """
         return cast(Xresult[IndexError, "Xiter[X]"], Xtry.from_unsafe(self.tail))
+
+    @deprecated("1.1.0", "2.0.0", details="Use tail_fr instead")
+    def tail_fx(self) -> Xresult[IndexError, "Xiter[X]"]:
+        """Return the iterator / its first element.
+
+        Wrap the potential error in an Xresult.
+        """
+        return self.tail_fr()
 
     def map(self, f: Callable[[X], E]) -> "Xiter[E]":
         """Return a new iterator, with f applied to each future element.
