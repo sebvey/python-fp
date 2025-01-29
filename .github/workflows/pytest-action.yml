@@ -6,19 +6,18 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - name: Install poetry
-      run: pipx install poetry
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "0.5.24"
     - name: Set up python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version-file: "pyproject.toml"
         architecture: 'x64'
-        cache: 'poetry'
-    - name: Install poetry env
-      run: poetry install
+    - name: Install the project
+      run: uv sync --no-dev --group test
     - name: run pytest
-      run: poetry run pytest --cov-report lcov --cov=xfp xfp/tests/ -v
+      run: uv run pytest --cov-report lcov --cov=xfp tests/ -v
     - name: Coveralls GitHub Action
       uses: coverallsapp/github-action@v2.3.0
-
-            
