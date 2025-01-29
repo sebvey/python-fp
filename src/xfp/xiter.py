@@ -221,14 +221,15 @@ class Xiter[X: E]:
         Wrap the potential error in an Xresult.
         """
         return self.tail_fr()
-    def append(self, el: E) -> "Xiter[X | E]":
+
+    def appended(self, el: E) -> "Xiter[X | E]":
         """Return a new iterator with el appended.
 
         After exhaustion of self, the next `next` call will return `el`.
         """
         return self.chain([el])
 
-    def prepend(self, el: E) -> "Xiter[X | E]":
+    def prepended(self, el: E) -> "Xiter[X | E]":
         """Return a new iterator with el prepended.
 
         Before iterating over self, the first `next` call will return `el`.

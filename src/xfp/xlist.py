@@ -111,19 +111,19 @@ class Xlist[X: E]:
         """
         return cast(Xresult[IndexError, "Xlist[X]"], Xtry.from_unsafe(self.tail))
 
-    def append(self, el: E) -> "Xlist[X | E]":
+    def appended(self, el: E) -> "Xlist[X | E]":
         """Return a new Xlist with el appended at its end."""
         newlist = self.copy()
         newlist.__data.append(el)
         return newlist
 
-    def prepend(self, el: E) -> "Xlist[X | E]":
+    def prepended(self, el: E) -> "Xlist[X | E]":
         """Return a new Xlist with el prepended at index 0."""
         newlist = self.copy()
         newlist.__data.insert(0, el)
         return newlist
 
-    def insert(self, i: int, el: E) -> "Xlist[X | E]":
+    def inserted(self, i: int, el: E) -> "Xlist[X | E]":
         """Return a new Xlist with el inserted before position i."""
         newlist = self.copy()
         newlist.__data.insert(i, el)
