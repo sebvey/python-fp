@@ -3,7 +3,7 @@ from hypothesis import given, strategies as st
 import pytest
 
 from xfp import Xdict, Xlist
-from ...xdict import ABCDict
+from xfp.xdict import ABCDict
 
 st_dict = st.dictionaries(st.text(), st.integers())
 st_xdict = st.builds(Xdict, st_dict)

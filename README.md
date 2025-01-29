@@ -19,12 +19,9 @@ output = reduce(lambda x, y: x + " " + y, only_long_word)
 assert output == "Look Array Process"
 ```
 
-This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts. 
+This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts.
 
-
-
-
-Github repository [HERE](https://github.com/sebvey/python-fp/)
+Github repository: [python-fp](https://github.com/sebvey/python-fp/)
 
 # WHY
 
@@ -219,17 +216,15 @@ match r3:
         print(f"Something went wrong : {exception}")
 ```
 
-
 # HOW TO CONTRIBUTE
 
 ## Setup
 - clone the repo
-- install poetry
-- install compatible python version (from 3.12), eg. `pyenv install 3.12.4`
-- install the project and activate the virtual environment: `poetry install && poetry shell`
-- set up the git hook scripts (linter / formatter): `pre-commit install` 
+- install uv
+- install the project: `uv sync --all-groups`
+- set up the git hook scripts (linter / formatter): `uv run pre-commit install` 
 
--> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
+-> uv installs xfp package in editable mode, so that xfp is available as a package in the environment and editable.  
 
 ## Linter / formatter = ruff
 Ruff is hooked on pre-commit as linter and formatter.  
@@ -238,16 +233,18 @@ More here : https://github.com/astral-sh/ruff
 ## Pre-commit
 More info : https://pre-commit.com/
 
-## CI/CD (Github)
+## Github CI/CD
 
-- Main branch : no pushes, only merges from branches that pass tests
+**Main branch protection rule:**
+- Require a pull request before merging
+- Require pytest tests to pass before merge
+
+**Documentation build/deployment:**
+- github action `gh-pages` is setup to build and deploy documentation
+- deployment is done in `github-pages` environment, only allowed for the main branch
+
+**Tests:**
 - github action `pytest-action` is setup to run pytest on each push
+
+**PyPI Publishment:**
 - **TODO** : auto deploy to PyPI
-
-# HOW TO PUBLISH TO PYPI
-
-By now, pypi credentials (token) have to be configured locally with :  
-`poetry config pypi-token.pypi <token>`
-
-To publish locally (from given branch) :
-`poetry build && poetry publish`
