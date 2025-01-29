@@ -222,6 +222,20 @@ class Xiter[X: E]:
         """
         return self.tail_fr()
 
+    def appended(self, el: E) -> "Xiter[X | E]":
+        """Return a new iterator with el appended.
+
+        After exhaustion of self, the next `next` call will return `el`.
+        """
+        return self.chain([el])
+
+    def prepended(self, el: E) -> "Xiter[X | E]":
+        """Return a new iterator with el prepended.
+
+        Before iterating over self, the first `next` call will return `el`.
+        """
+        return Xiter([el]).chain(self)
+
     def map(self, f: Callable[[X], E]) -> "Xiter[E]":
         """Return a new iterator, with f applied to each future element.
 
