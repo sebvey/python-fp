@@ -1,6 +1,6 @@
 from inspect import signature
 from functools import partial
-from typing import TypeVar, ParamSpec, cast, Concatenate, Callable, Any
+from typing import TypeVar, ParamSpec, cast, Concatenate, Any
 
 # fmt: off
 from xfp.stubs import F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22
@@ -19,30 +19,37 @@ def id[E](e: E) -> E:
     return e
 
 
-def _curry(f: Callable[Concatenate[A, P], T]) -> Callable[[A], Any]:
+def _curry(f: F1[Concatenate[A, P], T]) -> F1[[A], Any]:
     if len(signature(f).parameters) == 1:
-        return cast(Callable[[A], T], f)
+        return cast(F1[[A], T], f)
     else:
 
-        def g(x: A) -> Callable:
-            return curry(cast(Callable, partial(f, x)))
+        def g(x: A) -> F1:
+            return curry(cast(F1[P, T], partial(f, x)))
 
         return g
 
 
-def _curry_method(f: Callable[Concatenate[Self, A, P], T]) -> Callable[[Self, A], Any]:
+def _curry_method(f: F1[Concatenate[Self, A, P], T]) -> F1[[Self, A], Any]:
     if len(signature(f).parameters) == 2:
-        return cast(Callable[[Self, A], T], f)
+        return cast(F1[[Self, A], T], f)
     else:
 
-        def g(self: Self, x: A) -> Callable:
-            return curry(cast(Callable, partial(f, self, x)))
+        def g(self: Self, x: A) -> F1:
+            return curry(cast(F1[P, T], partial(f, self, x)))
 
         return g
+
+
+def _tupled[Out](f: F1[P, Out]) -> F1[[tuple], Out]:
+    def g(*args: P.args) -> Out:
+        return f(*args)
+
+    return g
 
 
 # fmt: off
-def curry(f: Callable[Concatenate[A, P], T]) -> Callable[[A], Any]: return _curry(f)
+def curry(f: F1[Concatenate[A, P], T]) -> F1[[A], Any]: return _curry(f)
 def curry0[Out](f: F1[[], Out])                                                                                                                                                                                                                                                      -> F0[Out]: return f
 def curry1[In1, Out](f: F1[[In1], Out])                                                                                                                                                                                                                                              -> F1[[In1], Out]: return _curry(f)
 def curry2[In1, In2, Out](f: F1[[In1, In2], Out])                                                                                                                                                                                                                                    -> F2[[In1], [In2], Out]: return _curry(f)
@@ -70,7 +77,7 @@ def curry22[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13,
 
 
 # fmt: off
-def curry_method(f: Callable[Concatenate[Self, A, P], T]) -> Callable[[Self, A], Any]: return _curry_method(f)
+def curry_method(f: F1[Concatenate[Self, A, P], T]) -> F1[[Self, A], Any]: return _curry_method(f)
 def curry_method0[Self, Out](f: F1[[Self], Out])                                                                                                                                                                                                                                                        -> F1[[Self], Out]: return f
 def curry_method1[Self, In1, Out](f: F1[[Self, In1], Out])                                                                                                                                                                                                                                              -> F1[[Self, In1], Out]: return _curry_method(f)
 def curry_method2[Self, In1, In2, Out](f: F1[[Self, In1, In2], Out])                                                                                                                                                                                                                                    -> F2[[Self, In1], [In2], Out]: return _curry_method(f)
@@ -97,8 +104,28 @@ def curry_method22[Self, In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11
 # fmt: on
 
 
-def tupled(f: Callable[..., T]) -> Callable[[tuple], T]:
-    def g(t: tuple) -> T:
-        return f(*t)
-
-    return g
+# fmt: off
+def tupled[Out](f: F1[..., Out])                                                                                                                                                                                                                                                      -> F1[[tuple], Out]: return _tupled(f) 
+def tupled1[In1, Out](f: F1[[In1], Out])                                                                                                                                                                                                                                              -> F1[[tuple[In1]], Out]: return _tupled(f)
+def tupled2[In1, In2, Out](f: F1[[In1, In2], Out])                                                                                                                                                                                                                                    -> F1[[tuple[In1, In2]], Out]: return _tupled(f)
+def tupled3[In1, In2, In3, Out](f: F1[[In1, In2, In3], Out])                                                                                                                                                                                                                          -> F1[[tuple[In1, In2, In3]], Out]: return _tupled(f)
+def tupled4[In1, In2, In3, In4, Out](f: F1[[In1, In2, In3, In4], Out])                                                                                                                                                                                                                -> F1[[tuple[In1, In2, In3, In4]], Out]: return _tupled(f)
+def tupled5[In1, In2, In3, In4, In5, Out](f: F1[[In1, In2, In3, In4, In5], Out])                                                                                                                                                                                                      -> F1[[tuple[In1, In2, In3, In4, In5]], Out]: return _tupled(f)
+def tupled6[In1, In2, In3, In4, In5, In6, Out](f: F1[[In1, In2, In3, In4, In5, In6], Out])                                                                                                                                                                                            -> F1[[tuple[In1, In2, In3, In4, In5, In6]], Out]: return _tupled(f)
+def tupled7[In1, In2, In3, In4, In5, In6, In7, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7], Out])                                                                                                                                                                                  -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7]], Out]: return _tupled(f)
+def tupled8[In1, In2, In3, In4, In5, In6, In7, In8, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8], Out])                                                                                                                                                                        -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8]], Out]: return _tupled(f)
+def tupled9[In1, In2, In3, In4, In5, In6, In7, In8, In9, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9], Out])                                                                                                                                                              -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9]], Out]: return _tupled(f)
+def tupled10[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10], Out])                                                                                                                                                 -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10]], Out]: return _tupled(f)
+def tupled11[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11], Out])                                                                                                                                     -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11]], Out]: return _tupled(f)
+def tupled12[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12], Out])                                                                                                                         -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12]], Out]: return _tupled(f)
+def tupled13[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13], Out])                                                                                                             -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13]], Out]: return _tupled(f)
+def tupled14[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14], Out])                                                                                                 -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14]], Out]: return _tupled(f)
+def tupled15[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15], Out])                                                                                     -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15]], Out]: return _tupled(f)
+def tupled16[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16], Out])                                                                         -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16]], Out]: return _tupled(f)
+def tupled17[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17], Out])                                                             -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17]], Out]: return _tupled(f)
+def tupled18[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18], Out])                                                 -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18]], Out]: return _tupled(f)
+def tupled19[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19], Out])                                     -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19]], Out]: return _tupled(f)
+def tupled20[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20], Out])                         -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20]], Out]: return _tupled(f)
+def tupled21[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21], Out])             -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21]], Out]: return _tupled(f)
+def tupled22[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, In22, Out](f: F1[[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, In22], Out]) -> F1[[tuple[In1, In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, In22]], Out]: return _tupled(f)
+# fmt: on
