@@ -3,7 +3,7 @@ from itertools import tee
 import itertools
 from typing import Callable, Iterable, Iterator, Any, cast, overload
 from collections.abc import Iterable as ABCIterable
-from deprecation import deprecated
+from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
 from .utils import E

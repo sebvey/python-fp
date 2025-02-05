@@ -599,7 +599,7 @@ class Xresult[Y: E, X: E]:
         return self.__check_branch(XRBranch.LEFT)(
             lambda s: s
             if predicate(s.value)
-            else Xresult(XresultError(s), XRBranch.RIGHT)
+            else Xresult[Y, XresultError](XresultError(s), XRBranch.RIGHT)
         )
 
     def filter_right(
@@ -634,5 +634,5 @@ class Xresult[Y: E, X: E]:
         return self.__check_branch(XRBranch.RIGHT)(
             lambda s: s
             if predicate(s.value)
-            else Xresult(XresultError(s), XRBranch.LEFT)
+            else Xresult[Y, XresultError](XresultError(s), XRBranch.LEFT)
         )
