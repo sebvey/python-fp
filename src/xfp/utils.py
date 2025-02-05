@@ -25,7 +25,7 @@ def _curry(f: F1[Concatenate[A, P], T]) -> F1[[A], Any]:
     else:
 
         def g(x: A) -> F1:
-            return curry(cast(F1[P, T], partial(f, x)))
+            return curry(cast(F1, partial(f, x)))
 
         return g
 
@@ -36,16 +36,13 @@ def _curry_method(f: F1[Concatenate[Self, A, P], T]) -> F1[[Self, A], Any]:
     else:
 
         def g(self: Self, x: A) -> F1:
-            return curry(cast(F1[P, T], partial(f, self, x)))
+            return curry(cast(F1, partial(f, self, x)))
 
         return g
 
 
-def _tupled[Out](f: F1[P, Out]) -> F1[[tuple], Out]:
-    def g(*args: P.args) -> Out:
-        return f(*args)
-
-    return g
+def _tupled[Out](f: F1[..., Out]) -> F1[[tuple], Out]:
+    return lambda args: f(*args)
 
 
 # fmt: off
