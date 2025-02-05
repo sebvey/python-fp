@@ -1,7 +1,8 @@
-from typing import Callable, Any, Iterator, Self, cast
+from typing import Any, Iterator, Never, cast
 from enum import Enum, auto
 from dataclasses import dataclass
-from ..utils import E, curry_method
+from xfp.utils import curry_method2
+from xfp.stubs import F0, F1
 
 
 class XRBranch(Enum):
@@ -13,10 +14,10 @@ class XRBranch(Enum):
 
 
 @dataclass(init=False)
-class XresultError(Exception):
-    xresult: "Xresult[E, E]"
+class XresultError[T, U](Exception):
+    xresult: "Xresult[T, U]"
 
-    def __init__(self, xresult: "Xresult[E, E]"):
+    def __init__(self, xresult: "Xresult[T, U]"):
         self.xresult = xresult
         super().__init__(f"Auto generated error for initial result {self.xresult}")
 
@@ -32,8 +33,12 @@ class XresultWrapper[X](Exception):
         )
 
 
+type XresultLikeR[Y, X] = X | Xresult[Y, X]
+type XresultLikeL[Y, X] = Y | Xresult[Y, X]
+
+
 @dataclass(frozen=True)
-class Xresult[Y: E, X: E]:
+class Xresult[Y, X]:
     """Encapsulate Union type in container.
 
     Semantically, Xresult helps managing unpure types, such as :
@@ -106,15 +111,6 @@ class Xresult[Y: E, X: E]:
     def __repr__(self) -> str:
         return f"{self.branch} : {self.value}"
 
-    @curry_method
-    def __check_branch(
-        self, branch: XRBranch, f: Callable[[Self], "Xresult[E, E]"]
-    ) -> "Xresult[E, E]":
-        if self.branch == branch:
-            return f(self)
-        else:
-            return self
-
     def __iter__(self) -> Iterator[X]:
         """Return a tri-state iterator of this Xresult.
 
@@ -133,7 +129,7 @@ class Xresult[Y: E, X: E]:
             def __init__(self):
                 self.called = False
 
-            def __next__(selff) -> X:  # type: ignore
+            def __next__(selff) -> X:
                 if selff.called:
                     raise StopIteration
                 if self.branch == XRBranch.RIGHT:
@@ -144,7 +140,7 @@ class Xresult[Y: E, X: E]:
         return Internal()
 
     @staticmethod
-    def fors(els: Callable[[], list[E]]) -> "Xresult[Any, E]":
+    def fors[T, U](els: F0[list[XresultLikeR[T, U]]]) -> "Xresult[T, U]":
         """Return the Xresult computed in a list comprehension of zipped Xresult.
 
         Used as a complement of __iter__ to compose multiple results together.
@@ -198,15 +194,18 @@ class Xresult[Y: E, X: E]:
         ```
         """
         try:
-            return Xresult(els()[0], XRBranch.RIGHT).flatten()
+            if isinstance(value := els()[0], Xresult):
+                return value
+            else:
+                return Xresult(value, XRBranch.RIGHT)
         except XresultWrapper as e:
             return Xresult(e.value, XRBranch.LEFT)
 
-    def map(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
+    def map[T](self, f: F1[[X], T]) -> "Xresult[Y, T]":
         """Alias for map_right."""
         return self.map_right(f)
 
-    def map_left(self, f: Callable[[Y], E]) -> "Xresult[E, X]":
+    def map_left[T](self, f: F1[[Y], T]) -> "Xresult[T, X]":
         """Return either itself or a new Xresult (LEFT) containing the result of f.
 
         Is mainly used to chain effect free operations.
@@ -220,11 +219,13 @@ class Xresult[Y: E, X: E]:
 
         see map_right
         """
-        return self.__check_branch(XRBranch.LEFT)(
-            lambda x: Xresult(f(x.value), x.branch)
-        )
+        match self:
+            case Xresult(value, XRBranch.LEFT):
+                return Xresult[T, Never](f(cast(Y, value)), XRBranch.LEFT)
+            case _:
+                return cast(Xresult[Never, X], self)
 
-    def map_right(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
+    def map_right[T](self, f: F1[[X], T]) -> "Xresult[Y, T]":
         """Return either itself or a new Xresult (RIGHT) containing the result of f.
 
         ### Return
@@ -250,15 +251,21 @@ class Xresult[Y: E, X: E]:
             )
         ```
         """
-        return self.__check_branch(XRBranch.RIGHT)(
-            lambda x: Xresult(f(x.value), x.branch)
-        )
+        match self:
+            case Xresult(value, XRBranch.RIGHT):
+                return Xresult[Never, T](f(cast(X, value)), XRBranch.RIGHT)
+            case _:
+                return cast(Xresult[Y, Never], self)
 
-    def flatten(self) -> "Xresult[E, E]":
+    def flatten[YS, T, XS](
+        self: "Xresult[YS, XresultLikeR[T, XS]]",
+    ) -> "Xresult[YS | T, XS]":
         """Alias for flatten_right."""
         return self.flatten_right()
 
-    def flatten_left(self) -> "Xresult[E, E]":
+    def flatten_left[YS, T, XS](
+        self: "Xresult[XresultLikeL[YS, T], XS]",
+    ) -> "Xresult[YS, XS | T]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
         ### Return
@@ -270,11 +277,15 @@ class Xresult[Y: E, X: E]:
 
         see flatten_right
         """
-        return self.__check_branch(XRBranch.LEFT)(
-            lambda x: x.value if isinstance(x.value, Xresult) else x
-        )
+        match self:
+            case Xresult(value, XRBranch.LEFT) if isinstance(value, Xresult):
+                return cast(Xresult[YS, T], value)
+            case _:
+                return cast(Xresult[YS, XS], self)
 
-    def flatten_right(self) -> "Xresult[E, E]":
+    def flatten_right[YS, T, XS](
+        self: "Xresult[YS, XresultLikeR[T, XS]]",
+    ) -> "Xresult[YS | T, XS]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
         ### Return
@@ -291,15 +302,19 @@ class Xresult[Y: E, X: E]:
             assert Xresult.right(Xresult.left("example")).flatten_right() == Xresult("example", XRBranch.LEFT)
         ```
         """
-        return self.__check_branch(XRBranch.RIGHT)(
-            lambda x: x.value if isinstance(x.value, Xresult) else x
-        )
+        match self:
+            case Xresult(value, XRBranch.RIGHT) if isinstance(value, Xresult):
+                return cast(Xresult[T, XS], value)
+            case _:
+                return cast(Xresult[YS, XS], self)
 
-    def flat_map(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
+    def flat_map[T, U](self, f: F1[[X], XresultLikeR[T, U]]) -> "Xresult[Y | T, U]":
         """Alias for flat_map_right."""
         return self.flat_map_right(f)
 
-    def flat_map_left(self, f: Callable[[Y], E]) -> "Xresult[E, X]":
+    def flat_map_left[T, U](
+        self, f: F1[[Y], XresultLikeL[T, U]]
+    ) -> "Xresult[T, X | U]":
         """Return the result of map_left then flatten.
 
         ### Return
@@ -313,7 +328,9 @@ class Xresult[Y: E, X: E]:
         """
         return self.map_left(f).flatten_left()
 
-    def flat_map_right(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
+    def flat_map_right[T, U](
+        self, f: F1[[X], XresultLikeR[T, U]]
+    ) -> "Xresult[Y | T, U]":
         """Return the result of map_right then flatten.
 
         ### Return
@@ -356,8 +373,8 @@ class Xresult[Y: E, X: E]:
         """
         return self.map_right(f).flatten_right()
 
-    @curry_method
-    def fold(self, default: E, f: Callable[[Y | X], E]) -> E:
+    @curry_method2
+    def fold[T, U](self, default: T, f: F1[[X], U]) -> T | U:
         """Return default if branch != RIGHT, otherwise f(self.value).
 
         Exists as homogenisation with Xlist.fold
@@ -391,11 +408,11 @@ class Xresult[Y: E, X: E]:
         ```
         """
         if self.branch == XRBranch.RIGHT:
-            return f(self.value)
+            return f(cast(X, self.value))
         else:
             return default
 
-    def get_or_else(self, default: Y | X) -> Y | X:
+    def get_or_else[T](self, default: T) -> X | T:
         """Shorthand for self.fold(default)(id)
 
         ### Usage
@@ -413,22 +430,21 @@ class Xresult[Y: E, X: E]:
         """
         return self.fold(default)(lambda x: x)
 
-    def foreach(self, statement: Callable[[X], Any]) -> None:
+    def foreach(self, statement: F1[[X], Any]) -> None:
         """Alias for foreach_right."""
         self.foreach_right(statement)
 
-    def foreach_left(self, statement: Callable[[Y], Any]) -> None:
+    def foreach_left(self, statement: F1[[Y], Any]) -> None:
         """Do the statement procedure to the underlying value if self is a LEFT.
 
         ### Usage
 
         see foreach_right
         """
-        self.__check_branch(XRBranch.LEFT)(
-            lambda s: Xresult(statement(s.value), XRBranch.LEFT)
-        )
+        if self.branch == XRBranch.LEFT:
+            statement(cast(Y, self.value))
 
-    def foreach_right(self, statement: Callable[[X], Any]) -> None:
+    def foreach_right(self, statement: F1[[X], Any]) -> None:
         """Do the statement procedure to the underlying value if self is a RIGHT.
 
         ### Usage
@@ -462,16 +478,17 @@ class Xresult[Y: E, X: E]:
             # doesn't output anything
         ```
         """
-        self.__check_branch(XRBranch.RIGHT)(
-            lambda s: Xresult(statement(s.value), XRBranch.RIGHT)
-        )
+        if self.branch == XRBranch.RIGHT:
+            statement(cast(X, self.value))
 
-    def recover_with(self, f: Callable[[Y], E]) -> "Xresult[E, X]":
+    def recover_with[T, U](self, f: F1[[Y], XresultLikeR[T, U]]) -> "Xresult[T, X | U]":
         """Alias for recover_with_right."""
         return self.recover_with_right(f)
 
-    def recover_with_left(self, f: Callable[[X], E]) -> "Xresult[Y, E]":
-        """Return the result of the flat_map on the opposite branch.
+    def recover_with_left[T, U](
+        self, f: F1[[X], XresultLikeL[T, U]]
+    ) -> "Xresult[Y | T, U]":
+        """Return itself, mapped on the right side, flattened on the left side.
 
         See flat_map_right
 
@@ -479,10 +496,20 @@ class Xresult[Y: E, X: E]:
 
         See recover_with_right
         """
-        return self.flat_map_right(f)
+        match self:
+            case Xresult(_, XRBranch.LEFT):
+                return cast(Xresult[Y, Never], self)
+            case _:
+                return (
+                    v
+                    if isinstance((v := f(cast(X, self.value))), Xresult)
+                    else Xresult(v, XRBranch.LEFT)
+                )
 
-    def recover_with_right(self, f: Callable[[Y], E]) -> "Xresult[E, X]":
-        """Return the result of the flat_map on the opposite branch.
+    def recover_with_right[T, U](
+        self, f: F1[[Y], XresultLikeR[T, U]]
+    ) -> "Xresult[T, X | U]":
+        """Return itself, mapped on the left side, flattened on the right side.
 
         See flat_map_left
 
@@ -511,13 +538,21 @@ class Xresult[Y: E, X: E]:
             )
         ```
         """
-        return self.flat_map_left(f)
+        match self:
+            case Xresult(_, XRBranch.RIGHT):
+                return cast(Xresult[Never, X], self)
+            case _:
+                return (
+                    v
+                    if isinstance((v := f(cast(Y, self.value))), Xresult)
+                    else Xresult(v, XRBranch.RIGHT)
+                )
 
-    def recover(self, f: Callable[[Y], E]) -> "Xresult[None, E |X]":
+    def recover[T](self, f: F1[[Y], T]) -> "Xresult[Never, X | T]":
         """Alias for recover_right."""
         return self.recover_right(f)
 
-    def recover_left(self, f: Callable[[X], E]) -> "Xresult[Y | E, None]":
+    def recover_left[T](self, f: F1[[X], T]) -> "Xresult[Y | T, Never]":
         """Return a new Xresult with is always a LEFT.
 
         Used to convert a RIGHT result into a LEFT using an effectless transformation.
@@ -534,11 +569,13 @@ class Xresult[Y: E, X: E]:
 
         See recover_right
         """
-        return self.__check_branch(XRBranch.RIGHT)(
-            lambda s: Xresult(f(s.value), XRBranch.LEFT)
-        )
+        match self.branch:
+            case XRBranch.LEFT:
+                return Xresult[T, Never](f(cast(X, self.value)), XRBranch.LEFT)
+            case _:
+                return cast(Xresult[Y, Never], self)
 
-    def recover_right(self, f: Callable[[Y], E]) -> "Xresult[None, E | X]":
+    def recover_right[T](self, f: F1[[Y], T]) -> "Xresult[Never, T | X]":
         """Return a new Xresult with is always a RIGHT.
 
         Used to convert a LEFT result into a RIGHT using an effectless transformation.
@@ -571,17 +608,17 @@ class Xresult[Y: E, X: E]:
             )
         ```
         """
-        return self.__check_branch(XRBranch.LEFT)(
-            lambda s: Xresult(f(s.value), XRBranch.RIGHT)
-        )
+        match self.branch:
+            case XRBranch.RIGHT:
+                return Xresult[Never, T](f(cast(Y, self.value)), XRBranch.RIGHT)
+            case _:
+                return cast(Xresult[Never, X], self)
 
-    def filter(self, predicate: Callable[[X], bool]) -> "Xresult[Y | XresultError, X]":
+    def filter(self, predicate: F1[[X], bool]) -> "Xresult[Y | XresultError, X]":
         """Alias for filter_right."""
         return self.filter_right(predicate)
 
-    def filter_left(
-        self, predicate: Callable[[Y], bool]
-    ) -> "Xresult[Y, X | XresultError]":
+    def filter_left(self, predicate: F1[[Y], bool]) -> "Xresult[Y, X | XresultError]":
         """Return a new Xresult with the branch = RIGHT if the predicate is not met.
 
         Fill the result with a default error mentioning the initial value in case of branch switching.
@@ -596,15 +633,13 @@ class Xresult[Y: E, X: E]:
 
         see filter_right
         """
-        return self.__check_branch(XRBranch.LEFT)(
-            lambda s: s
-            if predicate(s.value)
-            else Xresult[Y, XresultError](XresultError(s), XRBranch.RIGHT)
-        )
+        match self.map_left(predicate):
+            case Xresult(True, XRBranch.LEFT):
+                return self
+            case _:
+                return Xresult[Y, XresultError](XresultError(self), XRBranch.RIGHT)
 
-    def filter_right(
-        self, predicate: Callable[[X], bool]
-    ) -> "Xresult[Y | XresultError, X]":
+    def filter_right(self, predicate: F1[[X], bool]) -> "Xresult[Y | XresultError, X]":
         """Return a new Xresult with the branch = LEFT if the predicate is not met.
 
         Fill the result with a default error mentioning the initial value in case of branch switching.
@@ -631,8 +666,8 @@ class Xresult[Y: E, X: E]:
             )
         ```
         """
-        return self.__check_branch(XRBranch.RIGHT)(
-            lambda s: s
-            if predicate(s.value)
-            else Xresult[Y, XresultError](XresultError(s), XRBranch.LEFT)
-        )
+        match self.map_right(predicate):
+            case Xresult(True, XRBranch.RIGHT):
+                return self
+            case _:
+                return Xresult[XresultError, X](XresultError(self), XRBranch.LEFT)
