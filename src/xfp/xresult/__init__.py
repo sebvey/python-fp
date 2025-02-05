@@ -4,4 +4,13 @@ from xfp.xresult.xoption import Xopt
 from xfp.xresult.xtry import Xtry
 
 
-__all__ = ["Xresult", "XRBranch", "XresultError", "Xeither", "Xopt", "Xtry"]
+__all__ = [
+    "Xresult",
+    "XRBranch",
+    "XresultError",
+    "XresultLikeR",
+    "XresultLikeL",
+    "Xeither",
+    "Xopt",
+    "Xtry",
+]

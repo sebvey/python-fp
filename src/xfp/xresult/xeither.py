@@ -1,9 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, ParamSpec, TypeVar
+from typing import Never
 from xfp.xresult._xresult import Xresult, XRBranch
-
-P = ParamSpec("P")
-X = TypeVar("X")
 
 
 class Xeither:
@@ -36,7 +33,7 @@ class Xeither:
     """
 
     class XresultLeftMeta(type):
-        """Metaclass to interprets Left as an Xresult[Any, X].
+        """Metaclass to interprets Left as an Xresult[Y, Never].
 
         Overrides the instanceof in order to enable pattern matching between Left and Xresult.
         """
@@ -45,7 +42,7 @@ class Xeither:
             return isinstance(instance, Xresult) and instance.branch == XRBranch.LEFT
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Left[Y](Xresult[Y, Any], metaclass=XresultLeftMeta):
+    class Left[Y](Xresult[Y, Never], metaclass=XresultLeftMeta):
         """Specific result holding a LEFT.
 
         Can also act as an extractor in pattern matching.
@@ -58,7 +55,7 @@ class Xeither:
             super().__init__(value, XRBranch.LEFT)
 
     class XresultRightMeta(type):
-        """Metaclass to interprets Right as an Xresult[Any, X].
+        """Metaclass to interprets Right as an Xresult[Never, X].
 
         Overrides the instanceof in order to enable pattern matching between Right and Xresult.
         """
@@ -67,7 +64,7 @@ class Xeither:
             return isinstance(instance, Xresult) and instance.branch == XRBranch.RIGHT
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Right[X](Xresult[Any, X], metaclass=XresultRightMeta):
+    class Right[X](Xresult[Never, X], metaclass=XresultRightMeta):
         """Specific result holding a RIGHT.
 
         Can also act as an extractor in pattern matching.

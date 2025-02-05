@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Never
 from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
 
@@ -47,7 +47,7 @@ class Xopt:
             case _:
                 return cls.Some(value)
 
-    Empty: Xresult[None, Any] = Xeither.Left(None)
+    Empty: Xresult[None, Never] = Xeither.Left(None)
 
     class XresultMeta(type):
         """Metaclass to interprets Some as an Xresult[None, X].
@@ -59,7 +59,7 @@ class Xopt:
             return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Some[X](Xresult[None, X], metaclass=XresultMeta):
+    class Some[X](Xresult[Never, X], metaclass=XresultMeta):
         """Specific result holding a value, with alternate path being None.
 
         Can also act as an extractor in pattern matching.
