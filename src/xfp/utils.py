@@ -15,7 +15,7 @@ type E = Any
 type Unused = None
 
 
-def id[E](e: E) -> E:
+def id(e: Any) -> Any:
     return e
 
 
