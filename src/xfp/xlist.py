@@ -1,14 +1,29 @@
 # from _typeshed import SupportsRichComparison # not available ...
 
 from copy import copy, deepcopy
-from typing import Iterable, Iterator, Callable, Any, cast
+from typing import Any, Iterable, Iterator, Protocol, cast
 from collections.abc import Iterable as ABCIterable
 
 from xfp import Xresult, Xtry
-from .utils import E, curry_method, id
+from xfp.stubs import F1
+from xfp.utils import curry_method2, id
+
+type XlistLite[X] = X | Iterable[X]
+type XlistLike[X] = X | Xlist[X]
 
 
-class Xlist[X: E]:
+class _SupportsDunderLT(Protocol):
+    def __lt__(self, other: Any, /) -> bool: ...
+
+
+class _SupportsDunderGT(Protocol):
+    def __gt__(self, other: Any, /) -> bool: ...
+
+
+type _Comparable = _SupportsDunderGT | _SupportsDunderLT
+
+
+class Xlist[X]:
     """Enhance Lists (eager) with functional behaviors.
 
     This class provides common behaviors used for declarative programming.
@@ -111,7 +126,7 @@ class Xlist[X: E]:
         """
         return cast(Xresult[IndexError, "Xlist[X]"], Xtry.from_unsafe(self.tail))
 
-    def map(self, f: Callable[[X], E]) -> "Xlist[E]":
+    def map[Y](self, f: F1[[X], Y]) -> "Xlist[Y]":
         """Return a new Xlist with the function f applied to each element.
 
         ### Usage
@@ -126,7 +141,7 @@ class Xlist[X: E]:
         """
         return Xlist([f(el) for el in self])
 
-    def filter(self, predicate: Callable[[X], bool]) -> "Xlist[X]":
+    def filter(self, predicate: F1[[X], bool]) -> "Xlist[X]":
         """Return a new Xlist containing only the elements for which predicate is True.
 
         ### Usage
@@ -141,7 +156,7 @@ class Xlist[X: E]:
         """
         return Xlist([el for el in self if predicate(el)])
 
-    def foreach(self, statement: Callable[[X], Any]) -> None:
+    def foreach(self, statement: F1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the Xlist.
 
         ### Usage
@@ -159,7 +174,7 @@ class Xlist[X: E]:
         """
         [statement(e) for e in self]
 
-    def flatten(self) -> "Xlist[E]":
+    def flatten[XS](self: "Xlist[XlistLite[XS]]") -> "Xlist[XS]":
         """Return a new Xlist with one less level of nest.
 
         ### Usage
@@ -182,7 +197,7 @@ class Xlist[X: E]:
 
         return Xlist(flatten_data)
 
-    def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xlist[E]":
+    def flat_map[Y](self, f: F1[[X], XlistLite[Y]]) -> "Xlist[Y]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map
@@ -199,7 +214,7 @@ class Xlist[X: E]:
         """
         return self.map(f).flatten()
 
-    def min(self, key: Callable[[X], E] = id) -> X:
+    def min(self, key: F1[[X], _Comparable] = id) -> X:
         """Return the smallest element of the Xlist given the key criteria.
 
         ### Keyword Arguments
@@ -218,7 +233,7 @@ class Xlist[X: E]:
         """
         return min(self, key=key)
 
-    def max(self, key: Callable[[X], E] = id) -> X:
+    def max(self, key: F1[[X], _Comparable]) -> X:
         """Return the biggest element of the Xlist given the key criteria.
 
         ### Keyword Arguments
@@ -237,7 +252,9 @@ class Xlist[X: E]:
         """
         return max(self, key=key)
 
-    def sorted(self, key: Callable[[X], E] = id, reverse: bool = False) -> "Xlist[X]":
+    def sorted(
+        self, key: F1[[X], _Comparable] = id, reverse: bool = False
+    ) -> "Xlist[X]":
         """Return a new Xlist containing the same elements sorted given the key criteria.
 
         ### Keyword Arguments
@@ -264,8 +281,8 @@ class Xlist[X: E]:
         data.reverse()
         return Xlist(data)
 
-    @curry_method
-    def fold_left(self, zero: E, f: Callable[[E, X], E]) -> E:
+    @curry_method2
+    def fold_left[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
         - Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
@@ -290,13 +307,13 @@ class Xlist[X: E]:
             assert Xlist([]).fold_left(0)(lambda x, y: x + y) == 0
         ```
         """
-        acc: E = zero
+        acc: Y = zero
         for e in self:
             acc = f(acc, e)
         return acc
 
-    @curry_method
-    def fold_right(self, zero: E, f: Callable[[X, E], E]) -> E:
+    @curry_method2
+    def fold_right[Y](self, zero: Y, f: F1[[X, Y], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
         - Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
@@ -321,17 +338,17 @@ class Xlist[X: E]:
             assert Xlist([]).fold_right(0)(lambda x, y: x + y) == 0
         ```
         """
-        return self.reversed().fold_left(zero)(lambda e, t: f(e, t))
+        return self.reversed().fold_left(zero)(lambda e, t: f(t, e))
 
-    @curry_method
-    def fold(self, zero: X, f: Callable[[E, X], E]) -> E:
+    @curry_method2
+    def fold[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
         Shorthand for fold_left
         """
         return self.fold_left(zero)(f)
 
-    def reduce(self, f: Callable[[X, X], X]) -> X:
+    def reduce(self, f: F1[[X, X], X]) -> X:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         ### Raise
@@ -358,7 +375,7 @@ class Xlist[X: E]:
             raise IndexError("<reduce> operation not allowed on empty list")
         return self.tail().fold(self.head())(f)
 
-    def reduce_fr(self, f: Callable[[X, X], X]) -> Xresult[IndexError, X]:
+    def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         Wrap the potential error in an Xresult.
@@ -380,6 +397,6 @@ class Xlist[X: E]:
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
 
-    def zip(self, other: Iterable[E]) -> "Xlist[tuple[X, E]]":
+    def zip[Y](self, other: Iterable[Y]) -> "Xlist[tuple[X, Y]]":
         """Zip this Xlist with another iterable."""
         return Xlist(zip(self, other))
