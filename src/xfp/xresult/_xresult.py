@@ -22,17 +22,6 @@ class XresultError[T, U](Exception):
         super().__init__(f"Auto generated error for initial result {self.xresult}")
 
 
-@dataclass(init=False)
-class XresultWrapper[X](Exception):
-    value: X
-
-    def __init__(self, value: X):
-        self.value = value
-        super().__init__(
-            "If you see this, your Xresults chains are not correctly encapsulated in an Xresult.fors"
-        )
-
-
 @dataclass(frozen=True)
 class Xresult[Y, X]:
     """Encapsulate Union type in container.
@@ -131,12 +120,12 @@ class Xresult[Y, X]:
                 if self.branch == XRBranch.RIGHT:
                     selff.called = True
                     return cast(X, self.value)
-                raise XresultWrapper(self.value)
+                raise XresultError(self)
 
         return Internal()
 
     @staticmethod
-    def fors[T, U](els: "F0[list[U | Xresult[T, U]]]") -> "Xresult[T, U]":
+    def fors[T](els: "F0[list[T]]") -> "Xresult[XresultError, T]":
         """Return the Xresult computed in a list comprehension of zipped Xresult.
 
         Used as a complement of __iter__ to compose multiple results together.
@@ -154,19 +143,6 @@ class Xresult[Y, X]:
                     x + y + z             # put here your algorithm for composing effect results
                     for x, y, z
                     in zip(               # Chain your effects results in a zip
-                        Xeither.Right(1),
-                        Xeither.Right(2),
-                        Xeither.Right(3)
-                    )
-                ]
-            )
-
-            # Return Xresult(6, XRBranch.LEFT)
-            Xresult.fors(lambda:
-                [
-                    Xeither.LEFT(x + y + z) # Automatically flatten the eventual effect result of the algorithm
-                    for x, y, z
-                    in zip(
                         Xeither.Right(1),
                         Xeither.Right(2),
                         Xeither.Right(3)
@@ -194,8 +170,8 @@ class Xresult[Y, X]:
                 return value
             else:
                 return Xresult(value, XRBranch.RIGHT)
-        except XresultWrapper as e:
-            return Xresult(e.value, XRBranch.LEFT)
+        except XresultError as e:
+            return Xresult(e, XRBranch.LEFT)
 
     def map[T](self, f: F1[[X], T]) -> "Xresult[Y, T]":
         """Alias for map_right."""
