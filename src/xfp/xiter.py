@@ -1,15 +1,18 @@
 from copy import deepcopy
 from itertools import tee
 import itertools
-from typing import Callable, Iterable, Iterator, Any, cast, overload
+from typing import Generic, Iterable, Iterator, Any, TypeVar, cast, overload
 from collections.abc import Iterable as ABCIterable
 from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
-from .utils import E
+from xfp.types import F1
+from .utils import curry2
+
+X = TypeVar("X", covariant=True)
 
 
-class Xiter[X: E]:
+class Xiter(Generic[X]):
     """Enhance Lists (lazy) with functional behaviors.
 
     This class provides common behaviors used for declarative programming.
@@ -22,12 +25,12 @@ class Xiter[X: E]:
     """
 
     @classmethod
-    def cycle(cls, c: Iterable[X]) -> "Xiter[X]":
+    def cycle[T](cls, c: Iterable[T]) -> "Xiter[T]":
         "Proxy for itertools.cycle."
         return Xiter(itertools.cycle(c))
 
     @classmethod
-    def repeat(cls, x: X) -> "Xiter[X]":
+    def repeat[T](cls, x: T) -> "Xiter[T]":
         "Proxy for itertools.repeat."
         return Xiter(itertools.repeat(x))
 
@@ -61,7 +64,7 @@ class Xiter[X: E]:
         """
         return self.get(i)
 
-    def takewhile(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def takewhile(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator that stops yielding elements when predicate = False.
 
         Do not consume the original iterator.
@@ -134,9 +137,9 @@ class Xiter[X: E]:
         """
         a, b = tee(self)
         self.__iter = Xiter(a)
-        return Xiter(b).map(lambda x: deepcopy(x))
+        return Xiter(map(deepcopy, b))
 
-    def chain(self, other: Iterable[X]) -> "Xiter[X]":
+    def chain[Y](self, other: Iterable[Y]) -> "Xiter[X | Y]":
         """Proxy for itertools.chain.
 
         Return a chain object whose `.__next__()` method returns elements from the
@@ -222,7 +225,7 @@ class Xiter[X: E]:
         """
         return self.tail_fr()
 
-    def map(self, f: Callable[[X], E]) -> "Xiter[E]":
+    def map[Y](self, f: F1[[X], Y]) -> "Xiter[Y]":
         """Return a new iterator, with f applied to each future element.
 
         ### Usage
@@ -239,7 +242,7 @@ class Xiter[X: E]:
         """
         return Xiter(map(f, self.copy()))
 
-    def filter(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def filter(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator skipping the elements with predicate = False.
 
         ### Usage
@@ -257,7 +260,7 @@ class Xiter[X: E]:
         """
         return Xiter(filter(predicate, self.copy()))
 
-    def foreach(self, statement: Callable[[X], Any]) -> None:
+    def foreach(self, statement: F1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the iterator.
 
         Do not consume the original iterator.
@@ -283,7 +286,7 @@ class Xiter[X: E]:
         """
         [statement(e) for e in self.copy()]
 
-    def flatten(self) -> "Xiter[E]":
+    def flatten[XS](self: "Xiter[Iterable[XS]]") -> "Xiter[XS]":
         """Return a new iterator, with each element nested iterated on individually.
 
         ## Usage
@@ -300,15 +303,12 @@ class Xiter[X: E]:
 
         def result(xi):
             for el in xi:
-                if isinstance(el, ABCIterable):
-                    for inner_el in el:
-                        yield inner_el
-                else:
-                    yield el
+                for inner_el in el:
+                    yield inner_el
 
         return Xiter(result(self.copy()))
 
-    def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
+    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> "Xiter[Y]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map.
@@ -324,7 +324,7 @@ class Xiter[X: E]:
         """
         return self.map(f).flatten()
 
-    def take(self, n: int) -> "Xiter[E]":
+    def take(self, n: int) -> "Xiter[X]":
         """Return a new iterator limited to the first 'n' elements.
         Return a copy if the original iterator has less than 'n' elements.
         Return an empty Xiter if n is negative.
@@ -344,7 +344,7 @@ class Xiter[X: E]:
 
         return Xiter(self.slice(n))
 
-    def takeuntil(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def takeuntil(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator that stops yielding elements when predicate = True.
 
         Do not consume the original iterator.
@@ -362,15 +362,22 @@ class Xiter[X: E]:
         ```
         """
 
-        return self.takewhile(lambda x: not predicate(x))
+        # fixes "error: Cannot use a covariant type variable as a parameter" on lambda x: not predicate(x)
+        @curry2
+        def invert[Y](p: F1[[Y], bool], x: Y) -> bool:
+            return not p(x)
+
+        return self.takewhile(invert(predicate))
 
     @overload
-    def slice(self, stop: int | None, /): ...
+    def slice(self, stop: int | None, /) -> "Xiter[X]": ...
 
     @overload
-    def slice(self, start: int | None, stop: int | None, step: int | None = 1, /): ...
+    def slice(
+        self, start: int | None, stop: int | None, step: int | None = 1, /
+    ) -> "Xiter[X]": ...
 
-    def slice(self, *args):
+    def slice(self, *args) -> "Xiter[X]":
         """Return an new Xiter with selected elements from the Xiter.
         Works like sequence slicing but does not support negative values
         for start, stop, or step.
@@ -396,7 +403,7 @@ class Xiter[X: E]:
 
         return Xiter(itertools.islice(__iter_copy, *args))
 
-    def zip(self, other: Iterable[E]) -> "Xiter[tuple[X, E]]":
+    def zip[Y](self, other: Iterable[Y]) -> "Xiter[tuple[X, Y]]":
         """Zip this iterator with another iterable."""
         return Xiter(zip(self.copy(), other))
 
