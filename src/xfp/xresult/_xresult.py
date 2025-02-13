@@ -33,10 +33,6 @@ class XresultWrapper[X](Exception):
         )
 
 
-type XresultLikeR[Y, X] = X | Xresult[Y, X]
-type XresultLikeL[Y, X] = Y | Xresult[Y, X]
-
-
 @dataclass(frozen=True)
 class Xresult[Y, X]:
     """Encapsulate Union type in container.
@@ -140,7 +136,7 @@ class Xresult[Y, X]:
         return Internal()
 
     @staticmethod
-    def fors[T, U](els: F0[list[XresultLikeR[T, U]]]) -> "Xresult[T, U]":
+    def fors[T, U](els: "F0[list[U | Xresult[T, U]]]") -> "Xresult[T, U]":
         """Return the Xresult computed in a list comprehension of zipped Xresult.
 
         Used as a complement of __iter__ to compose multiple results together.
@@ -258,13 +254,13 @@ class Xresult[Y, X]:
                 return cast(Xresult[Y, Never], self)
 
     def flatten[YS, T, XS](
-        self: "Xresult[YS, XresultLikeR[T, XS]]",
+        self: "Xresult[YS, Xresult[T, XS]]",
     ) -> "Xresult[YS | T, XS]":
         """Alias for flatten_right."""
         return self.flatten_right()
 
     def flatten_left[YS, T, XS](
-        self: "Xresult[XresultLikeL[YS, T], XS]",
+        self: "Xresult[Xresult[YS, T], XS]",
     ) -> "Xresult[YS, XS | T]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
@@ -278,13 +274,13 @@ class Xresult[Y, X]:
         see flatten_right
         """
         match self:
-            case Xresult(value, XRBranch.LEFT) if isinstance(value, Xresult):
+            case Xresult(value, XRBranch.LEFT):
                 return cast(Xresult[YS, T], value)
             case _:
                 return cast(Xresult[YS, XS], self)
 
     def flatten_right[YS, T, XS](
-        self: "Xresult[YS, XresultLikeR[T, XS]]",
+        self: "Xresult[YS, Xresult[T, XS]]",
     ) -> "Xresult[YS | T, XS]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
@@ -303,18 +299,16 @@ class Xresult[Y, X]:
         ```
         """
         match self:
-            case Xresult(value, XRBranch.RIGHT) if isinstance(value, Xresult):
+            case Xresult(value, XRBranch.RIGHT):
                 return cast(Xresult[T, XS], value)
             case _:
                 return cast(Xresult[YS, XS], self)
 
-    def flat_map[T, U](self, f: F1[[X], XresultLikeR[T, U]]) -> "Xresult[Y | T, U]":
+    def flat_map[T, U](self, f: "F1[[X], Xresult[T, U]]") -> "Xresult[Y | T, U]":
         """Alias for flat_map_right."""
         return self.flat_map_right(f)
 
-    def flat_map_left[T, U](
-        self, f: F1[[Y], XresultLikeL[T, U]]
-    ) -> "Xresult[T, X | U]":
+    def flat_map_left[T, U](self, f: "F1[[Y], Xresult[T, U]]") -> "Xresult[T, X | U]":
         """Return the result of map_left then flatten.
 
         ### Return
@@ -328,9 +322,7 @@ class Xresult[Y, X]:
         """
         return self.map_left(f).flatten_left()
 
-    def flat_map_right[T, U](
-        self, f: F1[[X], XresultLikeR[T, U]]
-    ) -> "Xresult[Y | T, U]":
+    def flat_map_right[T, U](self, f: "F1[[X], Xresult[T, U]]") -> "Xresult[Y | T, U]":
         """Return the result of map_right then flatten.
 
         ### Return
@@ -481,12 +473,12 @@ class Xresult[Y, X]:
         if self.branch == XRBranch.RIGHT:
             statement(cast(X, self.value))
 
-    def recover_with[T, U](self, f: F1[[Y], XresultLikeR[T, U]]) -> "Xresult[T, X | U]":
+    def recover_with[T, U](self, f: "F1[[Y], Xresult[T, U]]") -> "Xresult[T, X | U]":
         """Alias for recover_with_right."""
         return self.recover_with_right(f)
 
     def recover_with_left[T, U](
-        self, f: F1[[X], XresultLikeL[T, U]]
+        self, f: "F1[[X], Xresult[T, U]]"
     ) -> "Xresult[Y | T, U]":
         """Return itself, mapped on the right side, flattened on the left side.
 
@@ -497,17 +489,13 @@ class Xresult[Y, X]:
         See recover_with_right
         """
         match self:
-            case Xresult(_, XRBranch.LEFT):
-                return cast(Xresult[Y, Never], self)
+            case Xresult(v, XRBranch.RIGHT):
+                return f(cast(X, v))
             case _:
-                return (
-                    v
-                    if isinstance((v := f(cast(X, self.value))), Xresult)
-                    else Xresult(v, XRBranch.LEFT)
-                )
+                return cast(Xresult[Y, Never], self)
 
     def recover_with_right[T, U](
-        self, f: F1[[Y], XresultLikeR[T, U]]
+        self, f: "F1[[Y], Xresult[T, U]]"
     ) -> "Xresult[T, X | U]":
         """Return itself, mapped on the left side, flattened on the right side.
 
@@ -539,14 +527,10 @@ class Xresult[Y, X]:
         ```
         """
         match self:
-            case Xresult(_, XRBranch.RIGHT):
-                return cast(Xresult[Never, X], self)
+            case Xresult(v, XRBranch.LEFT):
+                return f(cast(Y, v))
             case _:
-                return (
-                    v
-                    if isinstance((v := f(cast(Y, self.value))), Xresult)
-                    else Xresult(v, XRBranch.RIGHT)
-                )
+                return cast(Xresult[Never, X], self)
 
     def recover[T](self, f: F1[[Y], T]) -> "Xresult[Never, X | T]":
         """Alias for recover_right."""
@@ -569,9 +553,9 @@ class Xresult[Y, X]:
 
         See recover_right
         """
-        match self.branch:
-            case XRBranch.LEFT:
-                return Xresult[T, Never](f(cast(X, self.value)), XRBranch.LEFT)
+        match self:
+            case Xresult(v, XRBranch.RIGHT):
+                return Xresult(f(cast(X, v)), XRBranch.LEFT)
             case _:
                 return cast(Xresult[Y, Never], self)
 
@@ -608,9 +592,9 @@ class Xresult[Y, X]:
             )
         ```
         """
-        match self.branch:
-            case XRBranch.RIGHT:
-                return Xresult[Never, T](f(cast(Y, self.value)), XRBranch.RIGHT)
+        match self:
+            case Xresult(v, XRBranch.LEFT):
+                return Xresult(f(cast(Y, v)), XRBranch.RIGHT)
             case _:
                 return cast(Xresult[Never, X], self)
 
@@ -634,7 +618,7 @@ class Xresult[Y, X]:
         see filter_right
         """
         match self.map_left(predicate):
-            case Xresult(True, XRBranch.LEFT):
+            case Xresult(True, XRBranch.LEFT) | Xresult(_, XRBranch.RIGHT):
                 return self
             case _:
                 return Xresult[Y, XresultError](XresultError(self), XRBranch.RIGHT)
@@ -667,7 +651,7 @@ class Xresult[Y, X]:
         ```
         """
         match self.map_right(predicate):
-            case Xresult(True, XRBranch.RIGHT):
+            case Xresult(True, XRBranch.RIGHT) | Xresult(_, XRBranch.LEFT):
                 return self
             case _:
                 return Xresult[XresultError, X](XresultError(self), XRBranch.LEFT)
