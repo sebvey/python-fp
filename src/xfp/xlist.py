@@ -2,7 +2,7 @@
 
 from copy import copy, deepcopy
 from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast
-
+from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
 from xfp.types import F1
 from xfp.utils import curry_method2, id
@@ -36,7 +36,7 @@ class Xlist(Generic[X]):
     def __init__(self, iterable: Iterable[X]) -> None:
         """Construct an Xlist from an iterable."""
         match iterable:
-            case Iterable():
+            case ABCIterable():
                 self.__data = list(iterable)
             case _:
                 raise TypeError(
@@ -50,7 +50,7 @@ class Xlist(Generic[X]):
     def __eq__(self, other: object) -> bool:
         """Return the equality by comparison of inner values (and order)."""
         match other:
-            case Iterable():
+            case ABCIterable():
                 return [e for e in self] == [e for e in other]
             case _:
                 return False

@@ -128,7 +128,7 @@ def test_xlist_max() -> None:
 
 def test_xlist_fold() -> None:
     input = Xlist(["b", "c"])
-    actual = input.fold("a")(lambda x, y: x + y)
+    actual = input.fold("a")(lambda acc, el: acc + el)
     expected = "abc"
 
     assert actual == expected
@@ -136,7 +136,7 @@ def test_xlist_fold() -> None:
 
 def test_xlist_fold_right() -> None:
     input = Xlist(["c", "b"])
-    actual = input.fold_right("a")(lambda x, y: x + y)
+    actual = input.fold_right("a")(lambda el, acc: acc + el)
     expected = "abc"
 
     assert actual == expected

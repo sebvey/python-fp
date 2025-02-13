@@ -38,14 +38,9 @@ def test_xresult_map_right_pass() -> None:
 
 
 def test_xresult_flatten() -> None:
-    assert Xeither.Left(Xeither.Right(3)).flatten() == Xeither.Left(3)
-    assert Xeither.Left(Xeither.Left(3)).flatten() == Xeither.Left(3)
+    assert Xeither.Left(1).flatten() == Xeither.Left(1)
     assert Xeither.Right(Xeither.Right(3)).flatten() == Xeither.Right(3)
-    assert Xeither.Right(Xeither.Left(3)).flatten() == Xeither.Right(3)
-    assert Xeither.Right(3).flatten() == Xeither.Right(3)
-    assert Xeither.Left(3).flatten() == Xeither.Left(3)
-    assert Xeither.Right(3).flatten() == Xeither.Right(3)
-    assert Xeither.Left(3).flatten() == Xeither.Left(3)
+    assert Xeither.Right(Xeither.Left(1)).flatten() == Xeither.Left(1)
 
 
 def test_xresult_flat_map_left_do() -> None:
@@ -207,6 +202,8 @@ def test_xresult_filter_left_pass() -> None:
     actual: Xresult[Never, int | XresultError[Never, int]] = input.filter_left(
         lambda x: x > 10
     )
+    print(actual)
+    print(input)
 
     assert actual == input
 

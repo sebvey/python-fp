@@ -7,8 +7,6 @@ from xfp.xresult import (
     Xeither,
     Xopt,
     Xtry,
-    XresultLikeR,
-    XresultLikeL,
 )
 from xfp.xlist import Xlist
 from xfp.xiter import Xiter
@@ -23,8 +21,6 @@ __all__ = [
     "Xresult",
     "XRBranch",
     "XresultError",
-    "XresultLikeR",
-    "XresultLikeL",
     "Xeither",
     "Xopt",
     "Xtry",
