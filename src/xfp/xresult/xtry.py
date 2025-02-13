@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Never, ParamSpec, TypeVar
 from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
-from xfp.stubs import F0, F1
+from xfp.types import F0, F1
 
 P = ParamSpec("P")
 X = TypeVar("X")
