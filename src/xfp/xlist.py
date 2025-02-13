@@ -1,15 +1,11 @@
 # from _typeshed import SupportsRichComparison # not available ...
 
 from copy import copy, deepcopy
-from typing import Any, Iterable, Iterator, Protocol, cast
-from collections.abc import Iterable as ABCIterable
+from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast
 
 from xfp import Xresult, Xtry
-from xfp.stubs import F1
+from xfp.types import F1
 from xfp.utils import curry_method2, id
-
-type XlistLite[X] = X | Iterable[X]
-type XlistLike[X] = X | Xlist[X]
 
 
 class _SupportsDunderLT(Protocol):
@@ -22,8 +18,10 @@ class _SupportsDunderGT(Protocol):
 
 type _Comparable = _SupportsDunderGT | _SupportsDunderLT
 
+X = TypeVar("X", covariant=True)
 
-class Xlist[X]:
+
+class Xlist(Generic[X]):
     """Enhance Lists (eager) with functional behaviors.
 
     This class provides common behaviors used for declarative programming.
@@ -38,7 +36,7 @@ class Xlist[X]:
     def __init__(self, iterable: Iterable[X]) -> None:
         """Construct an Xlist from an iterable."""
         match iterable:
-            case ABCIterable():
+            case Iterable():
                 self.__data = list(iterable)
             case _:
                 raise TypeError(
@@ -52,7 +50,7 @@ class Xlist[X]:
     def __eq__(self, other: object) -> bool:
         """Return the equality by comparison of inner values (and order)."""
         match other:
-            case ABCIterable():
+            case Iterable():
                 return [e for e in self] == [e for e in other]
             case _:
                 return False
@@ -192,7 +190,7 @@ class Xlist[X]:
         """
         [statement(e) for e in self]
 
-    def flatten[XS](self: "Xlist[XlistLite[XS]]") -> "Xlist[XS]":
+    def flatten[XS](self: "Xlist[Iterable[XS]]") -> "Xlist[XS]":
         """Return a new Xlist with one less level of nest.
 
         ### Usage
@@ -202,20 +200,11 @@ class Xlist[X]:
 
             assert Xlist([1, 2, 3]).flatten() == Xlist([1, 2, 3])
             assert Xlist([[1, 2], [3]]).flatten() == Xlist([1, 2, 3])
-            assert Xlist([[1, 2], 3]).flatten() == Xlist([1, 2, 3])
         ```
         """
-        flatten_data = list()
-        for el in self:
-            if isinstance(el, ABCIterable):
-                for inner_el in el:
-                    flatten_data.append(inner_el)
-            else:
-                flatten_data.append(el)
+        return Xlist([el for els in self for el in els])
 
-        return Xlist(flatten_data)
-
-    def flat_map[Y](self, f: F1[[X], XlistLite[Y]]) -> "Xlist[Y]":
+    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> "Xlist[Y]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map
@@ -251,7 +240,7 @@ class Xlist[X]:
         """
         return min(self, key=key)
 
-    def max(self, key: F1[[X], _Comparable]) -> X:
+    def max(self, key: F1[[X], _Comparable] = id) -> X:
         """Return the biggest element of the Xlist given the key criteria.
 
         ### Keyword Arguments
@@ -356,7 +345,10 @@ class Xlist[X]:
             assert Xlist([]).fold_right(0)(lambda x, y: x + y) == 0
         ```
         """
-        return self.reversed().fold_left(zero)(lambda e, t: f(t, e))
+        acc: Y = zero
+        for e in self.reversed():
+            acc = f(e, acc)
+        return acc
 
     @curry_method2
     def fold[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:

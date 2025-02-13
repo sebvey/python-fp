@@ -1,8 +1,12 @@
-from xfp import XRBranch, Xlist, tupled, Xeither
+from typing import Never
+from xfp import XRBranch, Xlist, Xeither
 import pytest
 
+from xfp.utils import tupled2
+from xfp.xresult._xresult import Xresult
 
-def test_xlist_head():
+
+def test_xlist_head() -> None:
     input = Xlist([1, 2, 3, 4])
     actual = input.head()
     expected = 1
@@ -10,12 +14,12 @@ def test_xlist_head():
     assert actual == expected
 
 
-def test_xlist_head_fail():
+def test_xlist_head_fail() -> None:
     with pytest.raises(IndexError):
-        Xlist([]).head()
+        Xlist[Never]([]).head()
 
 
-def test_xlist_tail():
+def test_xlist_tail() -> None:
     input = Xlist([1, 2, 3, 4])
     actual = input.tail()
     expected = Xlist([2, 3, 4])
@@ -23,36 +27,36 @@ def test_xlist_tail():
     assert actual == expected
 
 
-def test_xlist_tail_fail():
+def test_xlist_tail_fail() -> None:
     with pytest.raises(IndexError):
-        Xlist([]).tail()
+        Xlist[Never]([]).tail()
 
 
-def test_xlist_head_fr():
+def test_xlist_head_fr() -> None:
     input = Xlist([1, 2, 3, 4])
     actual = input.head_fr()
-    expected = Xeither.Right(1)
+    expected: Xeither.Right[int] = Xeither.Right(1)
 
     assert actual == expected
 
 
-def test_xlist_head__fr_fail():
-    input = Xlist([])
-    actual = input.head_fr()
+def test_xlist_head__fr_fail() -> None:
+    input = Xlist[Never]([])
+    actual: Xresult[Exception, Never] = input.head_fr()
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
-def test_xlist_tail_fr():
+def test_xlist_tail_fr() -> None:
     input = Xlist([1, 2, 3, 4])
     actual = input.tail_fr()
-    expected = Xeither.Right(Xlist([2, 3, 4]))
+    expected: Xeither.Right[list[int]] = Xeither.Right(Xlist([2, 3, 4]))
 
     assert actual == expected
 
 
-def test_xlist_tail_fr_fail():
-    input = Xlist([])
+def test_xlist_tail_fr_fail() -> None:
+    input = Xlist[Never]([])
     actual = input.tail_fr()
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
@@ -79,7 +83,7 @@ def test_xlist_inserted():
     assert actual == expected
 
 
-def test_xlist_map():
+def test_xlist_map() -> None:
     input = Xlist([1, 2, 3, 4])
     actual = input.map(lambda x: (x - 1) * -1)
     expected = Xlist([0, -1, -2, -3])
@@ -87,7 +91,7 @@ def test_xlist_map():
     assert actual == expected
 
 
-def test_xlist_flatten():
+def test_xlist_flatten() -> None:
     input = Xlist([[1, 2], [3]])
     actual = input.flatten()
     expected = Xlist([1, 2, 3])
@@ -95,22 +99,7 @@ def test_xlist_flatten():
     assert actual == expected
 
 
-def test_xlist_flatten_id():
-    input = Xlist([1, 2, 3])
-    actual = input.flatten()
-
-    assert actual == input
-
-
-def test_xlist_flatten_mixed():
-    input = Xlist([[1, 2], 3])
-    actual = input.flatten()
-    expected = Xlist([1, 2, 3])
-
-    assert actual == expected
-
-
-def test_xlist_flat_map():
+def test_xlist_flat_map() -> None:
     input = Xlist([1, 2])
     actual = input.flat_map(lambda x: [x, x**2])
     expected = Xlist([1, 1, 2, 4])
@@ -118,7 +107,7 @@ def test_xlist_flat_map():
     assert actual == expected
 
 
-def test_xlist_filter():
+def test_xlist_filter() -> None:
     input = Xlist(range(1, 10, 1))
     actual = input.filter(lambda x: x % 2 == 0)
     expected = Xlist(range(2, 10, 2))
@@ -126,7 +115,7 @@ def test_xlist_filter():
     assert actual == expected
 
 
-def test_xlist_sorted():
+def test_xlist_sorted() -> None:
     input = Xlist([4, 3, 1, 2])
     actual = input.sorted()
     expected = Xlist([1, 2, 3, 4])
@@ -134,7 +123,7 @@ def test_xlist_sorted():
     assert actual == expected
 
 
-def test_xlist_reversed():
+def test_xlist_reversed() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.reversed()
     expected = Xlist([2, -1, 3, 4])
@@ -142,7 +131,7 @@ def test_xlist_reversed():
     assert actual == expected
 
 
-def test_xlist_min():
+def test_xlist_min() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.min()
     expected = -1
@@ -150,7 +139,7 @@ def test_xlist_min():
     assert actual == expected
 
 
-def test_xlist_max():
+def test_xlist_max() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.max()
     expected = 4
@@ -158,7 +147,7 @@ def test_xlist_max():
     assert actual == expected
 
 
-def test_xlist_fold():
+def test_xlist_fold() -> None:
     input = Xlist(["b", "c"])
     actual = input.fold("a")(lambda x, y: x + y)
     expected = "abc"
@@ -166,7 +155,7 @@ def test_xlist_fold():
     assert actual == expected
 
 
-def test_xlist_fold_right():
+def test_xlist_fold_right() -> None:
     input = Xlist(["c", "b"])
     actual = input.fold_right("a")(lambda x, y: x + y)
     expected = "abc"
@@ -174,7 +163,7 @@ def test_xlist_fold_right():
     assert actual == expected
 
 
-def test_xlist_reduce():
+def test_xlist_reduce() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.reduce(lambda x, y: x + y)
     expected = 8
@@ -182,28 +171,28 @@ def test_xlist_reduce():
     assert actual == expected
 
 
-def test_xlist_empty_reduce():
+def test_xlist_empty_reduce() -> None:
     with pytest.raises(IndexError):
-        _ = Xlist([]).reduce(lambda x, y: x + y)
+        _ = Xlist[int]([]).reduce(lambda x, y: x + y)
 
 
-def test_xlist_reduce_fr():
+def test_xlist_reduce_fr() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.reduce_fr(lambda x, y: x + y)
-    expected = Xeither.Right(8)
+    expected: Xresult[Never, int] = Xeither.Right(8)
 
     assert actual == expected
 
 
-def test_xlist_empty_reduce_fr():
-    input = Xlist([])
+def test_xlist_empty_reduce_fr() -> None:
+    input = Xlist[int]([])
     actual = input.reduce_fr(lambda x, y: x + y)
 
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
 
 
-def test_xlist_zip():
+def test_xlist_zip() -> None:
     in1 = Xlist([1, 2, 3])
     in2 = Xlist([4, 5])
     assert in1.zip(in2) == Xlist([(1, 4), (2, 5)])
-    assert in2.zip(in1) == in1.zip(in2).map(tupled(lambda x, y: (y, x)))
+    assert in2.zip(in1) == in1.zip(in2).map(tupled2(lambda x, y: (y, x)))
