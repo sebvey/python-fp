@@ -1,8 +1,7 @@
 from typing import Any, Iterator, Never, cast
 from enum import Enum, auto
 from dataclasses import dataclass
-from xfp.utils import curry_method2
-from xfp.types import F0, F1
+from xfp.functions import F0, F1, curry_method2
 
 
 class XRBranch(Enum):

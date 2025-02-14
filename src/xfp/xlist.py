@@ -4,8 +4,7 @@ from copy import copy, deepcopy
 from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
-from xfp.types import F1
-from xfp.utils import curry_method2, id
+from xfp.functions import F1, curry_method2, id
 
 
 class _SupportsDunderLT(Protocol):

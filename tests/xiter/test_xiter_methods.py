@@ -3,7 +3,7 @@ import itertools
 
 import pytest
 from xfp import XRBranch, Xeither, Xiter, Xlist
-from xfp.utils import tupled2
+from xfp.functions import tupled2
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:

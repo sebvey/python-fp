@@ -10,8 +10,9 @@ from typing import (
 )
 
 from xfp import Xlist, Xresult, Xtry, tupled
-from .utils import E
 from collections.abc import Iterable as ABCIterable
+
+type E = Any
 
 
 @runtime_checkable
