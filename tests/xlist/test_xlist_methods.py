@@ -2,8 +2,8 @@ from typing import Never
 from xfp import XRBranch, Xlist, Xeither
 import pytest
 
-from xfp.utils import tupled2
-from xfp.xresult._xresult import Xresult
+from xfp.functions import tupled2
+from xfp.xresult import Xresult
 
 
 def test_xlist_head() -> None:

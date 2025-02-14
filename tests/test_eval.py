@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any, override
 
 from xfp import Xeither, Xresult, Xiter, Xlist, curry, tupled, Xopt
-from xfp.utils import tupled2
-from xfp.xresult._xresult import XRBranch, XresultError
+from xfp.functions import tupled2
+from xfp.xresult import XRBranch, XresultError
 
 
 class Sink[T](ABC):

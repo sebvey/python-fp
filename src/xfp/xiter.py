@@ -6,8 +6,7 @@ from collections.abc import Iterable as ABCIterable
 from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
-from xfp.types import F1
-from .utils import curry2
+from xfp.functions import F1, curry2
 
 X = TypeVar("X", covariant=True)
 
