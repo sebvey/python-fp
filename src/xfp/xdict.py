@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from typing import (
     Any,
-    Callable,
     Iterator,
     Protocol,
     cast,
@@ -12,7 +11,7 @@ from typing import (
 from xfp import Xlist, Xresult, Xtry, tupled
 from collections.abc import Iterable as ABCIterable
 
-type E = Any
+from xfp.functions import F1
 
 
 @runtime_checkable
@@ -22,7 +21,7 @@ class ABCDict[Y, X](Protocol):
     @overload
     def get(self, key: Y, /) -> X | None: ...
     @overload
-    def get(self, key: Y, default: E, /) -> X | None | E: ...
+    def get(self, key: Y, default, /) -> Any: ...
     # Mixin methods
     def items(self) -> ABCIterable[tuple[Y, X]]: ...
     def keys(self) -> ABCIterable[Y]: ...
@@ -31,7 +30,7 @@ class ABCDict[Y, X](Protocol):
     def __eq__(self, other: object, /) -> bool: ...
 
 
-class Xdict[Y: E, X: E]:
+class Xdict[Y, X]:
     @classmethod
     def from_list(cls, iterable: ABCIterable[tuple[Y, X]]) -> "Xdict[Y, X]":
         """Return a new Xdict built from an iterable.
@@ -106,14 +105,14 @@ class Xdict[Y: E, X: E]:
         ...
 
     @overload
-    def get(self, y: Y, default: E, /) -> X | E:
+    def get[XX](self, y: Y, default: XX, /) -> X | XX:
         """Return the value associated with a given key.
 
         If the key is not found in the Xdict, return the given default instead.
         """
         ...
 
-    def get(self, *args) -> X | E:
+    def get[XX](self, *args) -> X | XX:
         """Return the value associated with a given key.
 
         Implementation for the different `get` methods.
@@ -126,7 +125,7 @@ class Xdict[Y: E, X: E]:
         """
         match args:
             case [y] if y in self.keys():
-                return self.__data.get(y)
+                return cast(X, self.__data.get(y))
             case [y]:
                 raise IndexError(f"Key not found in Xdict : {y}")
             case [y, default]:
@@ -158,7 +157,7 @@ class Xdict[Y: E, X: E]:
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(y)))
 
-    def updated(self, key: Y, value: E) -> "Xdict[Y, X | E]":
+    def updated[XX](self, key: Y, value: XX) -> "Xdict[Y, X | XX]":
         """Return a new Xdict, with an updated couple (key: Y, value: E).
 
         Upsert a new `value` at `key`.
@@ -191,7 +190,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.filter(lambda y, _: y is not key)
 
-    def union(self, other: ABCDict[E, E]) -> "Xdict[Y | E, X | E]":
+    def union[XX, YY](self, other: ABCDict[YY, XX]) -> "Xdict[Y | YY, X | XX]":
         """Return a new Xdict, being the merge of self and a given one.
 
         Works as if multiple updateds are done successively.
@@ -205,7 +204,7 @@ class Xdict[Y: E, X: E]:
             assert Xdict({"a": 1, "b": 2}).union(Xdict({"a": 3, "c": 4})) == Xdict({"a": 3, "b": 2, "c": 4})
         ```
         """
-        return self.from_list(list(self.items()) + list(other.items()))
+        return Xdict.from_list(list(self.items()) + list(other.items()))
 
     def keys(self) -> Xlist[Y]:
         """Return an Xlist of the keys of the Xdict."""
@@ -219,7 +218,7 @@ class Xdict[Y: E, X: E]:
         """Return an Xlist of the couples (key, value) of the Xdict."""
         return Xlist(self.__data.items())
 
-    def map(self, f: Callable[[Y, X], tuple[E, E]]) -> "Xdict[E, E]":
+    def map[YY, XX](self, f: F1[[Y, X], tuple[YY, XX]]) -> "Xdict[YY, XX]":
         """Return a new Xdict, after transformation of the couples (key, value) through `f`.
 
         Transform each couple with `f`, then recreate an Xdict with the result.
@@ -238,9 +237,9 @@ class Xdict[Y: E, X: E]:
             assert collisioned == Xdict({"c": 20}) or collisioned == Xdict({"c": 10}) # but it will always return the same
         ```
         """
-        return self.from_list(self.items().map(tupled(f)))
+        return Xdict.from_list(self.items().map(tupled(f)))
 
-    def map_keys(self, f: Callable[[Y], E]) -> "Xdict[E, X]":
+    def map_keys[YY](self, f: F1[[Y], YY]) -> "Xdict[YY, X]":
         """Return a new Xdict, after transformation of the keys through `f`.
 
         Transform each key with `f`, then recreate an Xdict with the result.
@@ -261,7 +260,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.map(lambda y, x: (f(y), x))
 
-    def map_values(self, f: Callable[[X], E]) -> "Xdict[Y, E]":
+    def map_values[XX](self, f: F1[[X], XX]) -> "Xdict[Y, XX]":
         """Return a new Xdict, after transformation of the values through `f`.
 
         Transform each value with `f`, then recreate an Xdict with the result.
@@ -276,7 +275,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.map(lambda y, x: (y, f(x)))
 
-    def filter(self, predicate: Callable[[Y, X], bool]) -> "Xdict[Y, X]":
+    def filter(self, predicate: F1[[Y, X], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict couples (key, value) using `predicate`.
@@ -292,7 +291,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.from_list(self.items().filter(tupled(predicate)))
 
-    def filter_keys(self, predicate: Callable[[Y], bool]) -> "Xdict[Y, X]":
+    def filter_keys(self, predicate: F1[[Y], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict keys using `predicate`.
@@ -308,7 +307,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.filter(lambda y, _: predicate(y))
 
-    def filter_values(self, predicate: Callable[[X], bool]) -> "Xdict[Y, X]":
+    def filter_values(self, predicate: F1[[X], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict values using `predicate`.
@@ -324,7 +323,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.filter(lambda _, x: predicate(x))
 
-    def foreach(self, statement: Callable[[Y, X], Any]) -> None:
+    def foreach(self, statement: F1[[Y, X], Any]) -> None:
         """Do the 'statement' procedure once for each couple (key, value) of the Xdict.
 
         ### Usage
@@ -341,7 +340,7 @@ class Xdict[Y: E, X: E]:
         """
         self.items().foreach(tupled(statement))
 
-    def foreach_keys(self, statement: Callable[[Y], Any]) -> None:
+    def foreach_keys(self, statement: F1[[Y], Any]) -> None:
         """Do the 'statement' procedure once for each key of the Xdict.
 
         ### Usage
@@ -358,7 +357,7 @@ class Xdict[Y: E, X: E]:
         """
         return self.foreach(lambda y, _: statement(y))
 
-    def foreach_values(self, statement: Callable[[X], Any]) -> None:
+    def foreach_values(self, statement: F1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each value of the Xdict.
 
         ### Usage
