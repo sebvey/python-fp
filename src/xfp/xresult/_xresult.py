@@ -230,13 +230,13 @@ class Xresult[Y, X]:
 
     def flatten[YS, T, XS](
         self: "Xresult[YS, Xresult[T, XS]]",
-    ) -> "Xresult[YS | T, XS]":
+    ) -> "Xresult[YS, Never] | Xresult[T, XS]":
         """Alias for flatten_right."""
         return self.flatten_right()
 
     def flatten_left[YS, T, XS](
         self: "Xresult[Xresult[YS, T], XS]",
-    ) -> "Xresult[YS, XS | T]":
+    ) -> "Xresult[YS, T] | Xresult[Never, XS]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
         ### Return
@@ -252,11 +252,11 @@ class Xresult[Y, X]:
             case Xresult(value, XRBranch.LEFT):
                 return cast(Xresult[YS, T], value)
             case _:
-                return cast(Xresult[YS, XS], self)
+                return cast(Xresult[Never, XS], self)
 
     def flatten_right[YS, T, XS](
         self: "Xresult[YS, Xresult[T, XS]]",
-    ) -> "Xresult[YS | T, XS]":
+    ) -> "Xresult[YS, Never] | Xresult[T, XS]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
         ### Return
@@ -277,13 +277,17 @@ class Xresult[Y, X]:
             case Xresult(value, XRBranch.RIGHT):
                 return cast(Xresult[T, XS], value)
             case _:
-                return cast(Xresult[YS, XS], self)
+                return cast(Xresult[YS, Never], self)
 
-    def flat_map[T, U](self, f: "F1[[X], Xresult[T, U]]") -> "Xresult[Y | T, U]":
+    def flat_map[T, U](
+        self, f: "F1[[X], Xresult[T, U]]"
+    ) -> "Xresult[Y, Never] | Xresult[T, U]":
         """Alias for flat_map_right."""
         return self.flat_map_right(f)
 
-    def flat_map_left[T, U](self, f: "F1[[Y], Xresult[T, U]]") -> "Xresult[T, X | U]":
+    def flat_map_left[T, U](
+        self, f: "F1[[Y], Xresult[T, U]]"
+    ) -> "Xresult[T, U] | Xresult[Never, X]":
         """Return the result of map_left then flatten.
 
         ### Return
@@ -297,7 +301,9 @@ class Xresult[Y, X]:
         """
         return self.map_left(f).flatten_left()
 
-    def flat_map_right[T, U](self, f: "F1[[X], Xresult[T, U]]") -> "Xresult[Y | T, U]":
+    def flat_map_right[T, U](
+        self, f: "F1[[X], Xresult[T, U]]"
+    ) -> "Xresult[Y, Never] | Xresult[T, U]":
         """Return the result of map_right then flatten.
 
         ### Return
@@ -448,13 +454,15 @@ class Xresult[Y, X]:
         if self.branch == XRBranch.RIGHT:
             statement(cast(X, self.value))
 
-    def recover_with[T, U](self, f: "F1[[Y], Xresult[T, U]]") -> "Xresult[T, X | U]":
+    def recover_with[T, U](
+        self, f: "F1[[Y], Xresult[T, U]]"
+    ) -> "Xresult[T, U] | Xresult[Never, X]":
         """Alias for recover_with_right."""
         return self.recover_with_right(f)
 
     def recover_with_left[T, U](
         self, f: "F1[[X], Xresult[T, U]]"
-    ) -> "Xresult[Y | T, U]":
+    ) -> "Xresult[Y, Never] | Xresult[T, U]":
         """Return itself, mapped on the right side, flattened on the left side.
 
         See flat_map_right
@@ -471,7 +479,7 @@ class Xresult[Y, X]:
 
     def recover_with_right[T, U](
         self, f: "F1[[Y], Xresult[T, U]]"
-    ) -> "Xresult[T, X | U]":
+    ) -> "Xresult[T, U] | Xresult[Never, X]":
         """Return itself, mapped on the left side, flattened on the right side.
 
         See flat_map_left
@@ -573,11 +581,15 @@ class Xresult[Y, X]:
             case _:
                 return cast(Xresult[Never, X], self)
 
-    def filter(self, predicate: F1[[X], bool]) -> "Xresult[Y | XresultError, X]":
+    def filter(
+        self, predicate: F1[[X], bool]
+    ) -> "Xresult[Y, Never] | Xresult[XresultError, X]":
         """Alias for filter_right."""
         return self.filter_right(predicate)
 
-    def filter_left(self, predicate: F1[[Y], bool]) -> "Xresult[Y, X | XresultError]":
+    def filter_left(
+        self, predicate: F1[[Y], bool]
+    ) -> "Xresult[Y, XresultError] | Xresult[Never, X]":
         """Return a new Xresult with the branch = RIGHT if the predicate is not met.
 
         Fill the result with a default error mentioning the initial value in case of branch switching.
@@ -594,11 +606,13 @@ class Xresult[Y, X]:
         """
         match self.map_left(predicate):
             case Xresult(True, XRBranch.LEFT) | Xresult(_, XRBranch.RIGHT):
-                return self
+                return cast(Xresult[Never, X], self)
             case _:
                 return Xresult[Y, XresultError](XresultError(self), XRBranch.RIGHT)
 
-    def filter_right(self, predicate: F1[[X], bool]) -> "Xresult[Y | XresultError, X]":
+    def filter_right(
+        self, predicate: F1[[X], bool]
+    ) -> "Xresult[Y, Never] | Xresult[XresultError, X]":
         """Return a new Xresult with the branch = LEFT if the predicate is not met.
 
         Fill the result with a default error mentioning the initial value in case of branch switching.
@@ -627,6 +641,6 @@ class Xresult[Y, X]:
         """
         match self.map_right(predicate):
             case Xresult(True, XRBranch.RIGHT) | Xresult(_, XRBranch.LEFT):
-                return self
+                return cast(Xresult[Y, Never], self)
             case _:
                 return Xresult[XresultError, X](XresultError(self), XRBranch.LEFT)
