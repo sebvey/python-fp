@@ -157,7 +157,7 @@ class Xdict[Y, X]:
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.get(y)))
 
-    def updated[XX](self, key: Y, value: XX) -> "Xdict[Y, X | XX]":
+    def updated[T](self, key: Y, value: T) -> "Xdict[Y, X | T]":
         """Return a new Xdict, with an updated couple (key: Y, value: E).
 
         Upsert a new `value` at `key`.
@@ -190,7 +190,7 @@ class Xdict[Y, X]:
         """
         return self.filter(lambda y, _: y is not key)
 
-    def union[XX, YY](self, other: ABCDict[YY, XX]) -> "Xdict[Y | YY, X | XX]":
+    def union[T, U](self, other: ABCDict[U, T]) -> "Xdict[Y | U, X | T]":
         """Return a new Xdict, being the merge of self and a given one.
 
         Works as if multiple updateds are done successively.
@@ -218,7 +218,7 @@ class Xdict[Y, X]:
         """Return an Xlist of the couples (key, value) of the Xdict."""
         return Xlist(self.__data.items())
 
-    def map[YY, XX](self, f: F1[[Y, X], tuple[YY, XX]]) -> "Xdict[YY, XX]":
+    def map[T, U](self, f: F1[[Y, X], tuple[U, T]]) -> "Xdict[U, T]":
         """Return a new Xdict, after transformation of the couples (key, value) through `f`.
 
         Transform each couple with `f`, then recreate an Xdict with the result.
@@ -239,7 +239,7 @@ class Xdict[Y, X]:
         """
         return Xdict.from_list(self.items().map(tupled(f)))
 
-    def map_keys[YY](self, f: F1[[Y], YY]) -> "Xdict[YY, X]":
+    def map_keys[U](self, f: F1[[Y], U]) -> "Xdict[U, X]":
         """Return a new Xdict, after transformation of the keys through `f`.
 
         Transform each key with `f`, then recreate an Xdict with the result.
@@ -260,7 +260,7 @@ class Xdict[Y, X]:
         """
         return self.map(lambda y, x: (f(y), x))
 
-    def map_values[XX](self, f: F1[[X], XX]) -> "Xdict[Y, XX]":
+    def map_values[T](self, f: F1[[X], T]) -> "Xdict[Y, T]":
         """Return a new Xdict, after transformation of the values through `f`.
 
         Transform each value with `f`, then recreate an Xdict with the result.

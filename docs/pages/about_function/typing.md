@@ -23,6 +23,8 @@ Let's use the signature of flat_map_right of [Xresult](/python-fp/results/) as a
 The noticeable feature here is a fully typed argument list, as well as return type. Moreover, XFP specific types bears additional, implicit meaning common in all the library :
 - `X` : defined class-level, it **always** represents the principal type of the collection (the collection type for Xlist, Xiter, ... and the biased side of Xresult, ...).
 - `Y` : when defined, it represents byproduct of functions (the opposite side of Xresult). If a third type is one day necessary, the by-byproduct would be `Z`, and so on.
+- `T` : As a type parameter of a method, it defines an external principal type (i.e. the product of collection given as parameter).
+- `U` : As a type parameter of a method, it defines an external byproduct.
 - `F1` : Strictly an alias for Callable, however more readable and claiming this is the lowest level function you can get (i.e. takes a value, returns a value).
 - `Xresult[Y, Never]`: when working with Xresult, a channel typed `Never`, `None` or any type of `Exception` means respectively a projection on the other side, an optional value, or a tried value
 

@@ -13,10 +13,10 @@ class XRBranch(Enum):
 
 
 @dataclass(init=False)
-class XresultError[T, U](Exception):
-    xresult: "Xresult[T, U]"
+class XresultError[Y, X](Exception):
+    xresult: "Xresult[Y, X]"
 
-    def __init__(self, xresult: "Xresult[T, U]"):
+    def __init__(self, xresult: "Xresult[Y, X]"):
         self.xresult = xresult
         super().__init__(f"Auto generated error for initial result {self.xresult}")
 
@@ -176,7 +176,7 @@ class Xresult[Y, X]:
         """Alias for map_right."""
         return self.map_right(f)
 
-    def map_left[T](self, f: F1[[Y], T]) -> "Xresult[T, X]":
+    def map_left[U](self, f: F1[[Y], U]) -> "Xresult[U, X]":
         """Return either itself or a new Xresult (LEFT) containing the result of f.
 
         Is mainly used to chain effect free operations.
@@ -192,7 +192,7 @@ class Xresult[Y, X]:
         """
         match self:
             case Xresult(value, XRBranch.LEFT):
-                return Xresult[T, Never](f(cast(Y, value)), XRBranch.LEFT)
+                return Xresult[U, Never](f(cast(Y, value)), XRBranch.LEFT)
             case _:
                 return cast(Xresult[Never, X], self)
 
@@ -228,9 +228,9 @@ class Xresult[Y, X]:
             case _:
                 return cast(Xresult[Y, Never], self)
 
-    def flatten[YS, T, XS](
-        self: "Xresult[YS, Xresult[T, XS]]",
-    ) -> "Xresult[YS, Never] | Xresult[T, XS]":
+    def flatten[YS, U, XS](
+        self: "Xresult[YS, Xresult[U, XS]]",
+    ) -> "Xresult[YS, Never] | Xresult[U, XS]":
         """Alias for flatten_right."""
         return self.flatten_right()
 
@@ -254,9 +254,9 @@ class Xresult[Y, X]:
             case _:
                 return cast(Xresult[Never, XS], self)
 
-    def flatten_right[YS, T, XS](
-        self: "Xresult[YS, Xresult[T, XS]]",
-    ) -> "Xresult[YS, Never] | Xresult[T, XS]":
+    def flatten_right[YS, U, XS](
+        self: "Xresult[YS, Xresult[U, XS]]",
+    ) -> "Xresult[YS, Never] | Xresult[U, XS]":
         """Return either self or a new flat Xresult if the underlying value is an Xresult.
 
         ### Return
@@ -275,19 +275,19 @@ class Xresult[Y, X]:
         """
         match self:
             case Xresult(value, XRBranch.RIGHT):
-                return cast(Xresult[T, XS], value)
+                return cast(Xresult[U, XS], value)
             case _:
                 return cast(Xresult[YS, Never], self)
 
     def flat_map[T, U](
-        self, f: "F1[[X], Xresult[T, U]]"
-    ) -> "Xresult[Y, Never] | Xresult[T, U]":
+        self, f: "F1[[X], Xresult[U, T]]"
+    ) -> "Xresult[Y, Never] | Xresult[U, T]":
         """Alias for flat_map_right."""
         return self.flat_map_right(f)
 
     def flat_map_left[T, U](
-        self, f: "F1[[Y], Xresult[T, U]]"
-    ) -> "Xresult[T, U] | Xresult[Never, X]":
+        self, f: "F1[[Y], Xresult[U, T]]"
+    ) -> "Xresult[U, T] | Xresult[Never, X]":
         """Return the result of map_left then flatten.
 
         ### Return
@@ -302,8 +302,8 @@ class Xresult[Y, X]:
         return self.map_left(f).flatten_left()
 
     def flat_map_right[T, U](
-        self, f: "F1[[X], Xresult[T, U]]"
-    ) -> "Xresult[Y, Never] | Xresult[T, U]":
+        self, f: "F1[[X], Xresult[U, T]]"
+    ) -> "Xresult[Y, Never] | Xresult[U, T]":
         """Return the result of map_right then flatten.
 
         ### Return
@@ -347,7 +347,7 @@ class Xresult[Y, X]:
         return self.map_right(f).flatten_right()
 
     @curry_method2
-    def fold[T, U](self, default: T, f: F1[[X], U]) -> T | U:
+    def fold[T, TT](self, default: TT, f: F1[[X], T]) -> T | TT:
         """Return default if branch != RIGHT, otherwise f(self.value).
 
         Exists as homogenisation with Xlist.fold
@@ -455,14 +455,14 @@ class Xresult[Y, X]:
             statement(cast(X, self.value))
 
     def recover_with[T, U](
-        self, f: "F1[[Y], Xresult[T, U]]"
-    ) -> "Xresult[T, U] | Xresult[Never, X]":
+        self, f: "F1[[Y], Xresult[U, T]]"
+    ) -> "Xresult[U, T] | Xresult[Never, X]":
         """Alias for recover_with_right."""
         return self.recover_with_right(f)
 
     def recover_with_left[T, U](
-        self, f: "F1[[X], Xresult[T, U]]"
-    ) -> "Xresult[Y, Never] | Xresult[T, U]":
+        self, f: "F1[[X], Xresult[U, T]]"
+    ) -> "Xresult[Y, Never] | Xresult[U, T]":
         """Return itself, mapped on the right side, flattened on the left side.
 
         See flat_map_right
@@ -478,8 +478,8 @@ class Xresult[Y, X]:
                 return cast(Xresult[Y, Never], self)
 
     def recover_with_right[T, U](
-        self, f: "F1[[Y], Xresult[T, U]]"
-    ) -> "Xresult[T, U] | Xresult[Never, X]":
+        self, f: "F1[[Y], Xresult[U, T]]"
+    ) -> "Xresult[U, T] | Xresult[Never, X]":
         """Return itself, mapped on the left side, flattened on the right side.
 
         See flat_map_left
@@ -519,7 +519,7 @@ class Xresult[Y, X]:
         """Alias for recover_right."""
         return self.recover_right(f)
 
-    def recover_left[T](self, f: F1[[X], T]) -> "Xresult[Y | T, Never]":
+    def recover_left[U](self, f: F1[[X], U]) -> "Xresult[Y | U, Never]":
         """Return a new Xresult with is always a LEFT.
 
         Used to convert a RIGHT result into a LEFT using an effectless transformation.

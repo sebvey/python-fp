@@ -168,7 +168,7 @@ class Xlist(Generic[X]):
         newlist.__data.insert(i, el)
         return newlist
 
-    def map[Y](self, f: F1[[X], Y]) -> Xlist[Y]:
+    def map[T](self, f: F1[[X], T]) -> Xlist[T]:
         """Return a new Xlist with the function f applied to each element.
 
         ### Usage
@@ -230,7 +230,7 @@ class Xlist(Generic[X]):
         """
         return Xlist([el for els in self for el in els])
 
-    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> Xlist[Y]:
+    def flat_map[T](self, f: F1[[X], Iterable[T]]) -> "Xlist[T]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map
@@ -539,6 +539,6 @@ class Xlist(Generic[X]):
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
 
-    def zip[Y](self, other: Iterable[Y]) -> Xlist[tuple[X, Y]]:
+    def zip[T](self, other: Iterable[T]) -> "Xlist[tuple[X, T]]":
         """Zip this Xlist with another iterable."""
         return Xlist(zip(self, other))
