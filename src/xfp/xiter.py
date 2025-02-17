@@ -138,7 +138,7 @@ class Xiter(Generic[X]):
         self.__iter = Xiter(a)
         return Xiter(map(deepcopy, b))
 
-    def chain[Y](self, other: Iterable[Y]) -> "Xiter[X | Y]":
+    def chain[T](self, other: Iterable[T]) -> "Xiter[X | T]":
         """Proxy for itertools.chain.
 
         Return a chain object whose `.__next__()` method returns elements from the
@@ -224,7 +224,7 @@ class Xiter(Generic[X]):
         """
         return self.tail_fr()
 
-    def map[Y](self, f: F1[[X], Y]) -> "Xiter[Y]":
+    def map[T](self, f: F1[[X], T]) -> "Xiter[T]":
         """Return a new iterator, with f applied to each future element.
 
         ### Usage
@@ -307,7 +307,7 @@ class Xiter(Generic[X]):
 
         return Xiter(result(self.copy()))
 
-    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> "Xiter[Y]":
+    def flat_map[T](self, f: F1[[X], Iterable[T]]) -> "Xiter[T]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map.
@@ -363,7 +363,7 @@ class Xiter(Generic[X]):
 
         # fixes "error: Cannot use a covariant type variable as a parameter" on lambda x: not predicate(x)
         @curry2
-        def invert[Y](p: F1[[Y], bool], x: Y) -> bool:
+        def invert[T](p: F1[[T], bool], x: T) -> bool:
             return not p(x)
 
         return self.takewhile(invert(predicate))
@@ -402,7 +402,7 @@ class Xiter(Generic[X]):
 
         return Xiter(itertools.islice(__iter_copy, *args))
 
-    def zip[Y](self, other: Iterable[Y]) -> "Xiter[tuple[X, Y]]":
+    def zip[T](self, other: Iterable[T]) -> "Xiter[tuple[X, T]]":
         """Zip this iterator with another iterable."""
         return Xiter(zip(self.copy(), other))
 
