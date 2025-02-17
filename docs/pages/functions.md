@@ -92,7 +92,7 @@ Note that the behavior is the same as curry, i.e. a generic `tupled` function ex
 
 ## Aliases
 
-The native `Callable` representation of a function with vanilla python is already verbose. In combination with multiple currying and the functional paradigms of using functions as parameters and return values, it becomes quite unusable. We provide `Fn` aliases for `Callable`, with n being the level of curryfiction. Starting with `F1` being a plain `Callable` alias. This makes [higher order function](TODO/TODO) much more usable.
+The native `Callable` representation of a function with vanilla python is already verbose. In combination with multiple currying and the functional paradigms of using functions as parameters and return values, it becomes quite unusable. We provide `Fn` aliases for `Callable`, with n being the level of curryfiction. Starting with `F1` being a plain `Callable` alias. This makes higher order function much more usable.
 
 - Notice the immediate gain as a Callable alias :  
 
