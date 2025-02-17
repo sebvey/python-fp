@@ -2,10 +2,10 @@
 layout: page
 title: Functions
 permalink: /functions/
-nav_order: 100
+nav_order: 97
 ---
 
-<h1 style="font-weight: bold">Utils</h1>
+<h1 style="font-weight: bold">Functions</h1>
 
 Functional programming isn't just about obscure concepts of collection transformations. In its purest form, it begins with working on functions (hint: it's in the name). XFP provides some utils over them to handle functions nicely and conveniently, while keeping the correctness of the typing underneath.
 
