@@ -17,6 +17,9 @@ callouts:
   warning:
     title: warning
     color: red
+  for-short:
+    title: for short
+    color: green
 
 mermaid:
   # Version of mermaid library
