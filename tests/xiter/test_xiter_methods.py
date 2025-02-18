@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 import itertools
+from typing import Never
 
 import pytest
 from xfp import XRBranch, Xeither, Xiter, Xlist
 from xfp.functions import tupled2
+from xfp.xresult._xresult import Xresult
 
 
 def compare[X](actual: Xiter[X], expected: Xiter[X]) -> bool:
@@ -184,6 +186,72 @@ def test_xiter_tail_fr_fail() -> None:
     input = Xiter[int]([])
     actual = input.tail_fr()
     assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
+
+
+def test_xiter_fold() -> None:
+    input = Xiter(["b", "c"])
+    actual = input.fold("a")(lambda acc, el: acc + el)
+    expected = "abc"
+
+    assert actual == expected
+
+
+def test_xiter_reduce() -> None:
+    input = Xiter([4, 3, -1, 2])
+    actual = input.reduce(lambda x, y: x + y)
+    expected = 8
+
+    assert actual == expected
+
+
+def test_xiter_empty_reduce() -> None:
+    with pytest.raises(IndexError):
+        _ = Xiter[int]([]).reduce(lambda x, y: x + y)
+
+
+def test_xiter_reduce_fr() -> None:
+    input = Xiter([4, 3, -1, 2])
+    actual = input.reduce_fr(lambda x, y: x + y)
+    expected: Xresult[Never, int] = Xeither.Right(8)
+
+    assert actual == expected
+
+
+def test_xiter_empty_reduce_fr() -> None:
+    input = Xiter[int]([])
+    actual = input.reduce_fr(lambda x, y: x + y)
+
+    assert isinstance(actual.value, IndexError) and actual.branch == XRBranch.LEFT
+
+
+def test_xiter_min() -> None:
+    input = Xiter([4, 3, -1, 2])
+    actual = input.min()
+    expected = -1
+
+    assert actual == expected
+
+
+def test_xiter_min_fr() -> None:
+    input = Xiter[int]([])
+    actual = input.min_fr()
+
+    assert isinstance(actual.value, ValueError)
+
+
+def test_xiter_max() -> None:
+    input = Xiter([4, 3, -1, 2])
+    actual = input.max()
+    expected = 4
+
+    assert actual == expected
+
+
+def test_xiter_max_fr() -> None:
+    input = Xiter[int]([])
+    actual = input.max_fr()
+
+    assert isinstance(actual.value, ValueError)
 
 
 def test_xiter_takewhile() -> None:

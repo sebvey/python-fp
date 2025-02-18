@@ -118,12 +118,26 @@ def test_xlist_min() -> None:
     assert actual == expected
 
 
+def test_xlist_min_fr() -> None:
+    input = Xlist[int]([])
+    actual = input.min_fr()
+
+    assert isinstance(actual.value, ValueError)
+
+
 def test_xlist_max() -> None:
     input = Xlist([4, 3, -1, 2])
     actual = input.max()
     expected = 4
 
     assert actual == expected
+
+
+def test_xlist_max_fr() -> None:
+    input = Xlist[int]([])
+    actual = input.max_fr()
+
+    assert isinstance(actual.value, ValueError)
 
 
 def test_xlist_fold() -> None:

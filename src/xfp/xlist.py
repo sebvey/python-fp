@@ -233,6 +233,10 @@ class Xlist(Generic[X]):
     def min(self: Xlist[_Comparable]) -> X:
         """Return the smallest element of the Xlist. Elements must be comparables.
 
+        ### Raise
+
+        - ValueError -- when the Xlist is empty
+
         ### Usage
 
         ```python
@@ -252,6 +256,10 @@ class Xlist(Generic[X]):
 
         - key -- the function which extrapolate a sortable from the elements of the list
 
+        ### Raise
+
+        - ValueError -- when the Xlist is empty
+
         ### Usage
 
         ```python
@@ -267,8 +275,53 @@ class Xlist(Generic[X]):
         return min(self, key=key)
 
     @overload
+    def min_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
+        """Return the smallest element of the Xlist. Elements must be comparables.
+
+        Wrap the potential failure in an Xresult.
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist, Xresult, XRBranch
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.min_fr() == Xresult("ae", XRBranch.RIGHT)
+        ```
+        """
+        ...
+
+    @overload
+    def min_fr(self, key: F1[[X], _Comparable]) -> Xresult[ValueError, X]:
+        """Return the smallest element of the Xlist given the key criteria.
+
+        Wrap the potential failure in an Xresult.
+
+        ### Argument
+
+        - key -- the function which extrapolate a sortable from the elements of the list
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.min_fr(lambda x: x[-1]) == Xresult("cc", XRBranch.RIGHT)
+        ```
+        """
+        ...
+
+    def min_fr[X](self: Xlist[X], key=None) -> X:
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.min(key)))
+
+    @overload
     def max(self: Xlist[_Comparable]) -> X:
         """Return the biggest element of the Xlist. Elements must be comparables.
+
+        ### Raise
+
+        - ValueError -- when the Xlist is empty
 
         ### Usage
 
@@ -289,6 +342,10 @@ class Xlist(Generic[X]):
 
         - key -- the function which extrapolate a sortable from the elements of the list
 
+        ### Raise
+
+        - ValueError -- when the Xlist is empty
+
         ### Usage
 
         ```python
@@ -302,6 +359,48 @@ class Xlist(Generic[X]):
 
     def max(self, key: Any = None) -> X:
         return max(self, key=key)
+
+    @overload
+    def max_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
+        """Return the biggest element of the Xlist. Elements must be comparables.
+
+        Wrap the potential failure in an Xresult.
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist, XResult, XRBranch
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.max_fr() == Xresult("cc", XRBranch.RIGHT)
+        ```
+        """
+        ...
+
+    @overload
+    def max_fr(self, key: F1[[X], _Comparable]) -> Xresult[ValueError, X]:
+        """Return the biggest element of the Xlist given the key criteria.
+
+        Wrap the potential failure in an Wresult.
+
+        ### Argument
+
+        - key -- the function which extrapolate a sortable from the elements of the list
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist, XResult, XRBranch
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.max_fr(lambda x: x[-1]) == Xresult("ae", XRBranch.RIGHT)
+        ```
+        """
+        ...
+
+    def max_fr[X](self: Xlist[X], key=None) -> X:
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.max(key)))
+
 
     @overload
     def sorted(self: Xlist[_Comparable], *, reverse: bool = False) -> Xlist[X]:
