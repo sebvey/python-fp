@@ -6,7 +6,8 @@ from collections.abc import Iterable as ABCIterable
 from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
-from xfp.functions import F1, curry2
+from xfp.functions import F1, curry2, curry_method2
+from xfp.utils import _Comparable
 
 X = TypeVar("X", covariant=True)
 
@@ -336,6 +337,192 @@ class Xiter(Generic[X]):
         ```
         """
         return self.map(f).flatten()
+
+    @curry_method2
+    def fold_left[T](self, zero: T, f: F1[[T, X], T]) -> T:
+        """Return the accumulation of the Xiter elements.
+
+        - Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
+        - Initialize the accumulator with the zero value
+        - Then from the first to the last element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
+          accumulator(n+1) = f(accumulator(n), self.data[n])
+        - Return the last state of the accumulator
+
+        ### Keyword Arguments
+
+        - zero -- initial state of the accumulator
+        - f    -- accumulation function, compute the next state of the accumulator
+
+        ### Warnings
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+
+            assert Xiter([1, 2, 3]).fold_left(0)(lambda x, y: x + y) == 6
+            assert Xiter([1, 2, 3]).fold_left(10)(lambda x, y: x + y) == 16
+            assert Xiter(["1", "2", "3"]).fold_left("")(lambda x, y: x + y) == "123"
+            assert Xiter([]).fold_left(0)(lambda x, y: x + y) == 0
+        ```
+        """
+        acc: T = zero
+        for e in self:
+            acc = f(acc, e)
+        return acc
+
+    @curry_method2
+    def fold[T](self, zero: T, f: F1[[T, X], T]) -> T:
+        """Return the accumulation of the Xiter elements.
+
+        Shorthand for fold_left
+        """
+        return self.fold_left(zero)(f)
+
+    def reduce(self, f: F1[[X, X], X]) -> X:
+        """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
+
+        ### Raise
+
+        - IndexError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - f -- accumulation function, compute the next state of the accumulator
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            assert Xiter([1, 2, 3]).reduce(lambda x, y: x + y) == 6
+            assert Xiter(["1", "2", "3"]).reduce(lambda x, y: x + y) == "123"
+            with pytest.raises(IndexError):
+                Xiter([]).reduce(lambda x, y: x + y)
+        ```
+        """
+        try:
+            h = self.head()
+        except IndexError:
+            raise IndexError("<reduce> operation not allowed on empty list")
+        return self.tail().fold(h)(f)
+
+    def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
+        """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
+
+        Wrap the potential error in an Xresult.
+
+        ### Keyword Arguments
+
+        - f -- accumulation function, compute the next state of the accumulator
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter, Xtry
+
+            Xiter([1, 2, 3]).reduce_fr(lambda x, y: x + y)       # -> Xtry.Success(6)
+            Xiter(["1", "2", "3"]).reduce_fr(lambda x, y: x + y) # -> Xtry.Success("123")
+            Xiter([]).reduce_fr(lambda x, y: x + y)              # -> Xtry.Failure(IndexError("<reduce> operation not allowed on empty list"))
+
+        ```
+        """
+        return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
+
+    def min(self, key: F1[[X], _Comparable] = id) -> X:
+        """Return the smallest element of the Xiter given the key criteria.
+
+        ### Raise
+
+        - ValueError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.min() == "ae"
+            assert input.min(lambda x: x[-1]) == "cc"
+            with pytest.raises(IndexError):
+                Xiter([]).min()
+        ```
+        """
+        return min(self, key=key)
+
+    def min_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
+        """Return the smallest element of the Xlist given the key criteria.
+
+        Wrap the potential failure in an Wresult
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+        ```
+        """
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.min(key)))
+
+    def max(self, key: F1[[X], _Comparable] = id) -> X:
+        """Return the bigget element of the Xiter given the key criteria.
+
+        ### Raise
+
+        - ValueError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            input = Xlist(["ae", "bd", "cc"])
+            assert input.max() == "cc"
+            assert input.max(lambda x: x[-1]) == "ae"
+            with pytest.raises(IndexError):
+                Xiter([]).max()
+        ```
+        """
+        return max(self, key=key)
+
+    def max_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
+        """Return the biggest element of the Xlist given the key criteria.
+
+        Wrap the potential failure in an Wresult
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+        ```
+        """
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.max(key)))
 
     def take(self, n: int) -> "Xiter[X]":
         """Return a new iterator limited to the first 'n' elements.
