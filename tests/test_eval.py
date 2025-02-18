@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, override
+from typing import Any, Generator, override
 
 from xfp import Xeither, Xresult, Xiter, Xlist, curry, tupled, Xopt
 from xfp.functions import tupled2
@@ -55,6 +55,24 @@ def test_xiter_lazy() -> None:
 
 def test_xiter_consumation() -> None:
     r1 = Xiter([1, 2, 3])
+    r2 = r1.map(lambda x: x * x)
+    assert next(r1) == 1
+    assert next(r2) == 1
+    r3 = r2.map(lambda x: x * x)
+    assert next(r1) == 2
+    assert next(r1) == 3
+    assert next(r2) == 4
+    assert next(r3) == 16
+    assert next(r3) == 81
+    assert next(r2) == 9
+
+
+def test_xiter_from_generator() -> None:
+    def gen() -> Generator[int, Any, None]:
+        for i in [1, 2, 3]:
+            yield i
+
+    r1 = Xiter(gen())
     r2 = r1.map(lambda x: x * x)
     assert next(r1) == 1
     assert next(r2) == 1

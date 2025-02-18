@@ -48,3 +48,22 @@ Considering a file "book.txt", we are going to read it line by line and do a wor
             .foreach(tupled2(lambda key, value: print(f"word {key} count: {value}")))
         )
     ```
+4. What if the we are working with the biggest book of the universe ? let's stream the lines one by one :
+    ```python
+    from xfp import Xiter, Xdict
+    from xfp.functions import tupled2
+
+    def lines() -> Generator[str, Any, None]:
+        with open("book.txt", "r") as f:
+            for line in f:
+                yield line
+
+        (
+            Xiter(lines())
+            .flat_map(lambda line: line.split(" "))
+            .fold_left(Xdict[str, int]({}))(lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
+            .items()
+            .sorted(tupled2(lambda _, value: value), reverse=True)
+            .foreach(tupled2(lambda key, value: print(f"word {key} count: {value}")))
+        )
+    ```
