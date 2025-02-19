@@ -1,10 +1,11 @@
+from __future__ import annotations
 # from _typeshed import SupportsRichComparison # not available ...
 
 from copy import copy, deepcopy
-from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast
+from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast, overload
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
-from xfp.functions import F1, curry_method2, id
+from xfp.functions import F1, curry_method2
 
 
 class _SupportsDunderLT(Protocol):
@@ -69,11 +70,11 @@ class Xlist(Generic[X]):
         """
         return self.get(i)
 
-    def copy(self) -> "Xlist[X]":
+    def copy(self) -> Xlist[X]:
         "Return a shallow copy of itself."
         return Xlist(copy(self.__data))
 
-    def deepcopy(self) -> "Xlist[X]":
+    def deepcopy(self) -> Xlist[X]:
         "Return a deep copy of itself."
         return Xlist(deepcopy(self.__data))
 
@@ -105,7 +106,7 @@ class Xlist(Generic[X]):
         """Alias for get_fr(0)."""
         return self.get_fr(0)
 
-    def tail(self) -> "Xlist[X]":
+    def tail(self) -> Xlist[X]:
         """Return the Xlist except its first element.
 
         ### Raise
@@ -116,14 +117,14 @@ class Xlist(Generic[X]):
             raise IndexError("<tail> operation not allowed on empty list")
         return Xlist(self.__data[1:])
 
-    def tail_fr(self) -> Xresult[IndexError, "Xlist[X]"]:
+    def tail_fr(self) -> Xresult[IndexError, Xlist[X]]:
         """Return the Xlist except its first element.
 
         Wrap the potential error in an Xresult.
         """
-        return cast(Xresult[IndexError, "Xlist[X]"], Xtry.from_unsafe(self.tail))
+        return cast(Xresult[IndexError, Xlist[X]], Xtry.from_unsafe(self.tail))
 
-    def map[Y](self, f: F1[[X], Y]) -> "Xlist[Y]":
+    def map[Y](self, f: F1[[X], Y]) -> Xlist[Y]:
         """Return a new Xlist with the function f applied to each element.
 
         ### Usage
@@ -138,7 +139,7 @@ class Xlist(Generic[X]):
         """
         return Xlist([f(el) for el in self])
 
-    def filter(self, predicate: F1[[X], bool]) -> "Xlist[X]":
+    def filter(self, predicate: F1[[X], bool]) -> Xlist[X]:
         """Return a new Xlist containing only the elements for which predicate is True.
 
         ### Usage
@@ -171,7 +172,7 @@ class Xlist(Generic[X]):
         """
         [statement(e) for e in self]
 
-    def flatten[XS](self: "Xlist[Iterable[XS]]") -> "Xlist[XS]":
+    def flatten[XS](self: Xlist[Iterable[XS]]) -> Xlist[XS]:
         """Return a new Xlist with one less level of nest.
 
         ### Usage
@@ -185,7 +186,7 @@ class Xlist(Generic[X]):
         """
         return Xlist([el for els in self for el in els])
 
-    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> "Xlist[Y]":
+    def flat_map[Y](self, f: F1[[X], Iterable[Y]]) -> Xlist[Y]:
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map
@@ -202,12 +203,9 @@ class Xlist(Generic[X]):
         """
         return self.map(f).flatten()
 
-    def min(self, key: F1[[X], _Comparable] = id) -> X:
-        """Return the smallest element of the Xlist given the key criteria.
-
-        ### Keyword Arguments
-
-        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+    @overload
+    def min(self: Xlist[_Comparable]) -> X:
+        """Return the smallest element of the Xlist. Elements must be comparables.
 
         ### Usage
 
@@ -216,17 +214,35 @@ class Xlist(Generic[X]):
 
             input = Xlist(["ae", "bd", "cc"])
             assert input.min() == "ae"
+        ```
+        """
+        ...
+
+    @overload
+    def min(self, key: F1[[X], _Comparable]) -> X:
+        """Return the smallest element of the Xlist given the key criteria.
+
+        ### Argument
+
+        - key -- the function which extrapolate a sortable from the elements of the list
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist
+
+            input = Xlist(["ae", "bd", "cc"])
             assert input.min(lambda x: x[-1]) == "cc"
         ```
         """
+        ...
+
+    def min[X](self: Xlist[X], key=None) -> X:
         return min(self, key=key)
 
-    def max(self, key: F1[[X], _Comparable] = id) -> X:
-        """Return the biggest element of the Xlist given the key criteria.
-
-        ### Keyword Arguments
-
-        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+    @overload
+    def max(self: Xlist[_Comparable]) -> X:
+        """Return the biggest element of the Xlist. Elements must be comparables.
 
         ### Usage
 
@@ -235,19 +251,60 @@ class Xlist(Generic[X]):
 
             input = Xlist(["ae", "bd", "cc"])
             assert input.max() == "cc"
+        ```
+        """
+        ...
+
+    @overload
+    def max(self, key: F1[[X], _Comparable]) -> X:
+        """Return the biggest element of the Xlist given the key criteria.
+
+        ### Argument
+
+        - key -- the function which extrapolate a sortable from the elements of the list
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist
+
+            input = Xlist(["ae", "bd", "cc"])
             assert input.max(lambda x: x[-1]) == "ae"
         ```
         """
+        ...
+
+    def max[X](self: Xlist[X], key=None) -> X:
         return max(self, key=key)
 
-    def sorted(
-        self, key: F1[[X], _Comparable] = id, reverse: bool = False
-    ) -> "Xlist[X]":
+    @overload
+    def sorted(self: Xlist[_Comparable], *, reverse: bool = False) -> Xlist[X]:
+        """Return a new Xlist containing the same elements sorted. Elements must be comparables.
+
+        ### Keyword Arguments
+
+        - reverse (default False) -- should we sort ascending (False) or descending (True)
+
+        ### Usage
+
+        ```python
+            from xfp import Xlist
+
+            input = Xlist(["bd", "ae", "cc"])
+            assert input.sorted() == Xlist(["ae", "bd", "cc"])
+            assert input.sorted(reverse=True) == Xlist(["cc", "bd", "ae"])
+
+        ```
+        """
+        ...
+
+    @overload
+    def sorted(self, *, key: F1[[X], _Comparable], reverse: bool = False) -> Xlist[X]:
         """Return a new Xlist containing the same elements sorted given the key criteria.
 
         ### Keyword Arguments
 
-        - key (default id)        -- the function which extrapolate a sortable from the elements of the list
+        - key                     -- the function which extrapolate a sortable from the elements of the list
         - reverse (default False) -- should we sort ascending (False) or descending (True)
 
         ### Usage
@@ -261,9 +318,11 @@ class Xlist(Generic[X]):
             assert input.sorted(lambda x: x[-1], reverse = True) == Xlist(["ae", "bd", "cc"])
         ```
         """
+
+    def sorted(self, key=None, reverse: bool = False) -> Xlist[X]:
         return Xlist(sorted(self, key=key, reverse=reverse))
 
-    def reversed(self) -> "Xlist[X]":
+    def reversed(self) -> Xlist[X]:
         """Return a new Xlist containing the same elements in the reverse order."""
         data: list[X] = self.__data.copy()
         data.reverse()
@@ -388,6 +447,6 @@ class Xlist(Generic[X]):
         """
         return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
 
-    def zip[Y](self, other: Iterable[Y]) -> "Xlist[tuple[X, Y]]":
+    def zip[Y](self, other: Iterable[Y]) -> Xlist[tuple[X, Y]]:
         """Zip this Xlist with another iterable."""
         return Xlist(zip(self, other))
