@@ -235,16 +235,25 @@ More info : https://pre-commit.com/
 
 ## Github CI/CD
 
-**Main branch protection rule:**
+### Unit tests / Coverage
+`unit-tests` workflow is triggered on every push, regardless of the branch.
+
+### Main branch
+**Protection rules:**  
 - Require a pull request before merging
-- Require pytest tests to pass before merge
+- Require unit tests to pass before merging
 
-**Documentation build/deployment:**
-- github action `gh-pages` is setup to build and deploy documentation
-- deployment is done in `github-pages` environment, only allowed for the main branch
+**Workflows:**  
+Commits on the main branch triggers:
+- `gh-pages` workflow that builds and deploys documentation
+- `pypi-publish` workflow that builds and publish package to pypi.org (trusted publisher)
 
-**Tests:**
-- github action `pytest-action` is setup to run pytest on each push
+### Test branch
+**Protection rules:**  
+- Require the pushed commits to have passed unit tests before pushing, either:
+  - merge a compliant branch to test 
+  - push the commit to another branch first and then force push the branch to test (`git push -f origin <src_branch>:test`)
 
-**PyPI Publishment:**
-- **TODO** : auto deploy to PyPI
+**Workflows:**  
+Commits on the test branch triggers:
+- `pypi-publish` workflow that builds and publish package to test.pypi.org (trusted publisher)

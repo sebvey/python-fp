@@ -1,8 +1,7 @@
-name: pytest-action
-run-name: PYTEST
+name: unit-tests
 on: [push]
 jobs:
-  run-pytest:
+  pytest-and-coverage:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
