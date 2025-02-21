@@ -312,7 +312,7 @@ class Xlist(Generic[X]):
         """
         ...
 
-    def min_fr[X](self: Xlist[X], key=None) -> X:
+    def min_fr[X](self: Xlist[X], key=None) -> Xresult[ValueError, X]:
         return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.min(key)))
 
     @overload
@@ -398,9 +398,8 @@ class Xlist(Generic[X]):
         """
         ...
 
-    def max_fr[X](self: Xlist[X], key=None) -> X:
+    def max_fr[X](self: Xlist[X], key=None) -> Xresult[ValueError, X]:
         return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.max(key)))
-
 
     @overload
     def sorted(self: Xlist[_Comparable], *, reverse: bool = False) -> Xlist[X]:
