@@ -741,7 +741,6 @@ version = "1.1.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "deprecation" },
-    { name = "mypy" },
 ]
 
 [package.dev-dependencies]
@@ -756,16 +755,14 @@ doc = [
 ]
 test = [
     { name = "hypothesis" },
+    { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "deprecation", specifier = "~=2.1.0" },
-    { name = "mypy", specifier = ">=1.14.1" },
-]
+requires-dist = [{ name = "deprecation", specifier = "~=2.1.0" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -777,6 +774,7 @@ dev = [
 doc = [{ name = "pdoc", specifier = "~=14.7.0" }]
 test = [
     { name = "hypothesis", specifier = "~=6.118.8" },
+    { name = "mypy", specifier = ">=1.14.1" },
     { name = "pytest", specifier = "~=8.2.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
     { name = "pytest-mock", specifier = "~=3.14.0" },

@@ -105,14 +105,14 @@ class Xdict[Y, X]:
         ...
 
     @overload
-    def get[XX](self, y: Y, default: XX, /) -> X | XX:
+    def get(self, y: Y, default: X, /) -> X:
         """Return the value associated with a given key.
 
         If the key is not found in the Xdict, return the given default instead.
         """
         ...
 
-    def get[XX](self, *args) -> X | XX:
+    def get(self, *args) -> X:
         """Return the value associated with a given key.
 
         Implementation for the different `get` methods.
