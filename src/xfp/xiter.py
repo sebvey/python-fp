@@ -167,7 +167,7 @@ class Xiter(Generic[X]):
             raise IndexError(f"Xiter has less than {i} element(s)")
 
     def get_fr(self, i: int) -> Xresult[IndexError, X]:
-        """Return the i-th element of the Xlist.
+        """Return the i-th element of the Xiter.
 
         Does not consume the i-1 first elements, but evaluate them.
         Wrap the potential error in an Xresult.
@@ -176,7 +176,7 @@ class Xiter(Generic[X]):
 
     @deprecated("1.1.0", "2.0.0", details="Use get_fr instead")
     def get_fx(self, i: int) -> Xresult[IndexError, X]:
-        """Return the i-th element of the Xlist.
+        """Return the i-th element of the Xiter.
 
         Does not consume the i-1 first elements, but evaluate them.
         Wrap the potential error in an Xresult.
@@ -327,7 +327,7 @@ class Xiter(Generic[X]):
     def fold_left[T](self, zero: T, f: F1[[T, X], T]) -> T:
         """Return the accumulation of the Xiter elements.
 
-        - Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
+        - Uses a custom accumulator (zero, f) to aggregate the elements of the Xiter
         - Initialize the accumulator with the zero value
         - Then from the first to the last element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
           accumulator(n+1) = f(accumulator(n), self.data[n])
@@ -445,7 +445,7 @@ class Xiter(Generic[X]):
             from xfp import Xiter
             import pytest
 
-            input = Xlist(["ae", "bd", "cc"])
+            input = Xiter(["ae", "bd", "cc"])
             assert input.min() == "ae"
             assert input.min(lambda x: x[-1]) == "cc"
             with pytest.raises(IndexError):
@@ -455,7 +455,7 @@ class Xiter(Generic[X]):
         return min(self, key=key)
 
     def min_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
-        """Return the smallest element of the Xlist given the key criteria.
+        """Return the smallest element of the Xiter given the key criteria.
 
         Wrap the potential failure in an Wresult
 
@@ -487,7 +487,7 @@ class Xiter(Generic[X]):
             from xfp import Xiter
             import pytest
 
-            input = Xlist(["ae", "bd", "cc"])
+            input = Xiter(["ae", "bd", "cc"])
             assert input.max() == "cc"
             assert input.max(lambda x: x[-1]) == "ae"
             with pytest.raises(IndexError):
@@ -497,7 +497,7 @@ class Xiter(Generic[X]):
         return max(self, key=key)
 
     def max_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
-        """Return the biggest element of the Xlist given the key criteria.
+        """Return the biggest element of the Xiter given the key criteria.
 
         Wrap the potential failure in an Wresult
 
