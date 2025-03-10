@@ -1,11 +1,22 @@
-from __future__ import annotations
 # from _typeshed import SupportsRichComparison # not available ...
+from __future__ import annotations
+from warnings import warn
 
 from copy import copy, deepcopy
-from typing import Any, Generic, Iterable, Iterator, Protocol, TypeVar, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    Protocol,
+    TypeVar,
+    cast,
+    overload,
+)
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
-from xfp.functions import F1, curry_method2
+from xfp.functions import F1
 
 
 class _SupportsDunderLT(Protocol):
@@ -19,6 +30,21 @@ class _SupportsDunderGT(Protocol):
 type _Comparable = _SupportsDunderGT | _SupportsDunderLT
 
 X = TypeVar("X", covariant=True)
+
+
+def _partially_apply_fold[A, B](
+    to_apply_func: F1[[B, F1[[B, A], B]], B], b: B
+) -> Callable[[F1[[B, A], B]], B]:
+    def applied(f: F1[[B, A], B]) -> B:
+        warn(
+            "The use of curried version of fold()/fold_left()/fold_right() is deprecated since 1.1.0. "
+            "Use corresponding method with both 'zero' and 'f' arguments instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return to_apply_func(b, f)
+
+    return applied
 
 
 class Xlist(Generic[X]):
@@ -237,7 +263,7 @@ class Xlist(Generic[X]):
         """
         ...
 
-    def min[X](self: Xlist[X], key=None) -> X:
+    def min(self, key: Any = None) -> X:
         return min(self, key=key)
 
     @overload
@@ -274,7 +300,7 @@ class Xlist(Generic[X]):
         """
         ...
 
-    def max[X](self: Xlist[X], key=None) -> X:
+    def max(self, key: Any = None) -> X:
         return max(self, key=key)
 
     @overload
@@ -319,7 +345,7 @@ class Xlist(Generic[X]):
         ```
         """
 
-    def sorted(self, key=None, reverse: bool = False) -> Xlist[X]:
+    def sorted(self, key: Any = None, reverse: bool = False) -> Xlist[X]:
         return Xlist(sorted(self, key=key, reverse=reverse))
 
     def reversed(self) -> Xlist[X]:
@@ -328,7 +354,7 @@ class Xlist(Generic[X]):
         data.reverse()
         return Xlist(data)
 
-    @curry_method2
+    @overload
     def fold_left[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
@@ -338,7 +364,7 @@ class Xlist(Generic[X]):
           accumulator(n+1) = f(accumulator(n), self.data[n])
         - Return the last state of the accumulator
 
-        ### Keyword Arguments
+        ### Arguments
 
         - zero -- initial state of the accumulator
         - f    -- accumulation function, compute the next state of the accumulator
@@ -348,25 +374,42 @@ class Xlist(Generic[X]):
         ```python
             from xfp import Xlist
 
-            assert Xlist([1, 2, 3]).fold_left(0)(lambda x, y: x + y) == 6
-            assert Xlist([1, 2, 3]).fold_left(10)(lambda x, y: x + y) == 16
-            assert Xlist(["1", "2", "3"]).fold_left("")(lambda x, y: x + y) == "123"
-            assert Xlist([]).fold_left(0)(lambda x, y: x + y) == 0
+            assert Xlist([1, 2, 3]).fold_left(0, lambda x, y: x + y) == 6
+            assert Xlist([1, 2, 3]).fold_left(10, lambda x, y: x + y) == 16
+            assert Xlist(["1", "2", "3"]).fold_left("", lambda x, y: x + y) == "123"
+            assert Xlist([]).fold_left(0, lambda x, y: x + y) == 0
         ```
         """
-        acc: Y = zero
-        for e in self:
-            acc = f(acc, e)
-        return acc
+        ...
 
-    @curry_method2
-    def fold_right[Y](self, zero: Y, f: F1[[X, Y], Y]) -> Y:
+    @overload
+    def fold_left[Y](self, zero: Y) -> F1[[F1[[Y, X], Y]], Y]:
+        """@deprecated since 1.1.0 - Use method with both 'zero' and 'f' arguments instead.
+        Return the accumulation of the Xlist elements - Curried Version."""
+        ...
+
+    def fold_left[Y](
+        self, zero: Y, f: F1[[Y, X], Y] | None = None
+    ) -> F1[[F1[[Y, X], Y]], Y] | Y:
+        def _fold_left(zero: Y, f: F1[[Y, X], Y]) -> Y:
+            acc = zero
+            for e in self:
+                acc = f(acc, e)
+            return acc
+
+        if f is None:
+            return _partially_apply_fold(_fold_left, zero)
+        else:
+            return _fold_left(zero, f)
+
+    @overload
+    def fold_right[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
         - Uses a custom accumulator (zero, f) to aggregate the elements of the Xlist
         - Initialize the accumulator with the zero value
         - Then from the last to the first element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
-          accumulator(n+1) = f(accumulator(n), self.data[n])
+            accumulator(n+1) = f(accumulator(n), self.data[n])
         - Return the last state of the accumulator
 
         ### Keyword Arguments
@@ -379,24 +422,55 @@ class Xlist(Generic[X]):
         ```python
             from xfp import Xlist
 
-            assert Xlist([1, 2, 3]).fold_right(0)(lambda x, y: x + y) == 6
-            assert Xlist([1, 2, 3]).fold_right(10)(lambda x, y: x + y) == 16
-            assert Xlist(["1", "2", "3"]).fold_right("")(lambda x, y: x + y) == "321"
-            assert Xlist([]).fold_right(0)(lambda x, y: x + y) == 0
+            assert Xlist([1, 2, 3]).fold_right(0, lambda x, y: x + y) == 6
+            assert Xlist([1, 2, 3]).fold_right(10, lambda x, y: x + y) == 16
+            assert Xlist(["1", "2", "3"]).fold_right("", lambda x, y: x + y) == "321"
+            assert Xlist([]).fold_right(0, lambda x, y: x + y) == 0
         ```
         """
-        acc: Y = zero
-        for e in self.reversed():
-            acc = f(e, acc)
-        return acc
+        ...
 
-    @curry_method2
+    @overload
+    def fold_right[Y](self, zero: Y) -> F1[[F1[[Y, X], Y]], Y]:
+        """@deprecated since 1.1.0 - Use method with both 'zero' and 'f' arguments instead.
+        Return the accumulation of the Xlist elements - Curried Version."""
+        ...
+
+    def fold_right[Y](
+        self, zero: Y, f: F1[[Y, X], Y] | None = None
+    ) -> F1[[F1[[Y, X], Y]], Y] | Y:
+        def _fold_right(zero: Y, f: F1[[Y, X], Y]) -> Y:
+            acc: Y = zero
+            for e in self.reversed():
+                acc = f(acc, e)
+            return acc
+
+        if f is None:
+            return _partially_apply_fold(_fold_right, zero)
+        else:
+            return _fold_right(zero, f)
+
+    @overload
     def fold[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
         """Return the accumulation of the Xlist elements.
 
         Shorthand for fold_left
         """
-        return self.fold_left(zero)(f)
+        ...
+
+    @overload
+    def fold[Y](self, zero: Y) -> F1[[F1[[Y, X], Y]], Y]:
+        """@deprecated since 1.1.0 - Use method with both 'zero' and 'f' arguments instead.
+        Return the accumulation of the Xlist elements - Curried Version."""
+        ...
+
+    def fold[Y](
+        self, zero: Y, f: F1[[Y, X], Y] | None = None
+    ) -> F1[[F1[[Y, X], Y]], Y] | Y:
+        if f is None:
+            return self.fold_left(zero)
+        else:
+            return self.fold_left(zero, f)
 
     def reduce(self, f: F1[[X, X], X]) -> X:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
