@@ -204,7 +204,7 @@ def test_xiter_tail_fr_fail() -> None:
 
 def test_xiter_fold() -> None:
     input = Xiter(["b", "c"])
-    actual = input.fold("a")(lambda acc, el: acc + el)
+    actual = input.fold("a", lambda acc, el: acc + el)
     expected = "abc"
 
     assert actual == expected

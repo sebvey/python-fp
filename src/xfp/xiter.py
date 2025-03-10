@@ -6,7 +6,7 @@ from collections.abc import Iterable as ABCIterable
 from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
-from xfp.functions import F1, curry2, curry_method2
+from xfp.functions import F1, curry2
 from xfp.utils import _Comparable
 
 X = TypeVar("X", covariant=True)
@@ -338,7 +338,6 @@ class Xiter(Generic[X]):
         """
         return self.map(f).flatten()
 
-    @curry_method2
     def fold_left[T](self, zero: T, f: F1[[T, X], T]) -> T:
         """Return the accumulation of the Xiter elements.
 
@@ -373,13 +372,12 @@ class Xiter(Generic[X]):
             acc = f(acc, e)
         return acc
 
-    @curry_method2
     def fold[T](self, zero: T, f: F1[[T, X], T]) -> T:
         """Return the accumulation of the Xiter elements.
 
         Shorthand for fold_left
         """
-        return self.fold_left(zero)(f)
+        return self.fold_left(zero, f)
 
     def reduce(self, f: F1[[X, X], X]) -> X:
         """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
@@ -412,7 +410,7 @@ class Xiter(Generic[X]):
             h = self.head()
         except IndexError:
             raise IndexError("<reduce> operation not allowed on empty list")
-        return self.tail().fold(h)(f)
+        return self.tail().fold(h, f)
 
     def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
