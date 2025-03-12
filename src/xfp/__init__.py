@@ -1,6 +1,6 @@
 # Warning : import order matters
-from xfp.utils import curry, curry_method, tupled
-from xfp.xresult import (
+from .utils import curry, curry_method, tupled
+from .xresult import (
     Xresult,
     XRBranch,
     XresultError,
@@ -8,11 +8,13 @@ from xfp.xresult import (
     Xopt,
     Xtry,
 )
-from xfp.xlist import Xlist
-from xfp.xiter import Xiter
-from xfp.xdict import Xdict
+from .xlist import Xlist
+from .xiter import Xiter
+from .xdict import Xdict
+from . import tools
 
 __all__ = [
+    "tools",
     "curry",
     "curry_method",
     "tupled",

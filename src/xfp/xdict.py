@@ -3,6 +3,7 @@ from typing import (
     Any,
     Iterator,
     Protocol,
+    Self,
     cast,
     overload,
     runtime_checkable,
@@ -373,3 +374,7 @@ class Xdict[Y, X]:
         ```
         """
         return self.foreach(lambda _, x: statement(x))
+
+    def pipe[T](self, f: F1[[Self], T]) -> T:
+        "Pipes (aka applies) the given function to the Xdict."
+        return f(self)

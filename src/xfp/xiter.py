@@ -1,7 +1,7 @@
 from copy import deepcopy
 from itertools import tee
 import itertools
-from typing import Generic, Iterable, Iterator, Any, TypeVar, cast, overload
+from typing import Generic, Iterable, Iterator, Any, Self, TypeVar, cast, overload
 from collections.abc import Iterable as ABCIterable
 from deprecation import deprecated  # type: ignore
 
@@ -611,3 +611,7 @@ class Xiter(Generic[X]):
         Do not consume the original iterator.
         """
         return Xlist(self.copy())
+
+    def pipe[T](self, f: F1[[Self], T]) -> T:
+        "Pipes (aka applies) the given function to the Xiter."
+        return f(self)

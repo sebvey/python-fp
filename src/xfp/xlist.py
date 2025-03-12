@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     Iterator,
     Protocol,
+    Self,
     TypeVar,
     cast,
     overload,
@@ -640,3 +641,7 @@ class Xlist(Generic[X]):
     def zip[T](self, other: Iterable[T]) -> "Xlist[tuple[X, T]]":
         """Zip this Xlist with another iterable."""
         return Xlist(zip(self, other))
+
+    def pipe[T](self, f: F1[[Self], T]) -> T:
+        "Pipes (aka applies) the given function to the Xlist."
+        return f(self)
