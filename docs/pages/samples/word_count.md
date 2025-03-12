@@ -14,12 +14,12 @@ Considering a file "book.txt", we are going to read it line by line and do a wor
     from xfp import Xlist
 
     with open("book.txt", "r") as book:
-    print(
-        Xlist(book.readlines())
-        .map(lambda line: line.split(" "))
-        .map(len)
-        .fold_left(0)(lambda x, y: x + y)
-    )
+        print(
+            Xlist(book.readlines())
+            .map(lambda line: line.split(" "))
+            .map(len)
+            .fold_left(0,lambda x, y: x + y)
+        )
     ```
 2. Now let's imagine we want to have a distinct count per word, then display the number of occurrence for each word :
     ```python
@@ -28,9 +28,10 @@ Considering a file "book.txt", we are going to read it line by line and do a wor
     with open("book.txt", "r") as book:
         (
             Xlist(book.readlines())
+            .map(lambda line: line.strip())
             .flat_map(lambda line: line.split(" "))
-            .fold_left(Xdict[str, int]({}))(lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
-            .foreach(lambda key, value: print(f"word {key} count: {value}"))
+            .fold_left(Xdict[str, int]({}), lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
+            .foreach(lambda key, value: print(f"word '{key}': {value} occurence(s)"))
         )
     ```
 3. Sort them to display the more frequent first :
@@ -41,29 +42,32 @@ Considering a file "book.txt", we are going to read it line by line and do a wor
     with open("book.txt", "r") as book:
         (
             Xlist(book.readlines())
+            .map(lambda line: line.strip())
             .flat_map(lambda line: line.split(" "))
-            .fold_left(Xdict[str, int]({}))(lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
+            .fold_left(Xdict[str, int]({}), lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
             .items()
             .sorted(tupled2(lambda _, value: value), reverse=True)
-            .foreach(tupled2(lambda key, value: print(f"word {key} count: {value}")))
+            .foreach(tupled2(lambda key, value: print(f"word '{key}': {value} occurence(s)")))
         )
     ```
 4. What if the we are working with the biggest book of the universe ? let's stream the lines one by one :
     ```python
+    from typing import Generator, Any
     from xfp import Xiter, Xdict
     from xfp.functions import tupled2
-
+    
     def lines() -> Generator[str, Any, None]:
         with open("book.txt", "r") as f:
             for line in f:
                 yield line
-
-        (
-            Xiter(lines())
-            .flat_map(lambda line: line.split(" "))
-            .fold_left(Xdict[str, int]({}))(lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
-            .items()
-            .sorted(tupled2(lambda _, value: value), reverse=True)
-            .foreach(tupled2(lambda key, value: print(f"word {key} count: {value}")))
-        )
+    
+    (
+        Xiter(lines())
+        .map(lambda line: line.strip())
+        .flat_map(lambda line: line.split(" "))
+        .fold_left(Xdict[str, int]({}), lambda acc, el: acc.updated(el, acc.get(el, 0) + 1))
+        .items()
+        .sorted(tupled2(lambda _, value: value), reverse=True)
+        .foreach(tupled2(lambda key, value: print(f"'{key}': {value} occurence(s)")))
+    )
     ```
