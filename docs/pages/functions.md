@@ -66,7 +66,7 @@ The decorator name is different depending on the number of parameters. For insta
 
 ## Tupling
 
-Another useful functionalities for our functions parameters is grouping them into a single tuple parameter. Since our collection API often takes transformation from X to E, it is common to process lists of tuples (for example, created with `zip`) by defining functions of multiple parameters and tupling them on the fly.
+Another useful functionality for our functions parameters is grouping them into a single tuple parameter. Since our collection API often takes transformation from X to E, it is common to process lists of tuples (for example, created with `zip`) by defining functions of multiple parameters and tupling them on the fly.
 
 ```python
 from xfp import Xlist
@@ -100,7 +100,7 @@ The native `Callable` representation of a function with vanilla python is alread
 from xfp.functions import F1
 from typing import Callable
 
-def concat3(a: int, b: int, c: int): str:
+def concat3(a: int, b: int, c: int) -> str:
     return f"{a}{b}{c}"
 
 alias1: Callable[[int, int, int], str] = concat3
