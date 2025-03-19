@@ -1,45 +1,25 @@
-from inspect import signature
-from functools import partial
-from typing import TypeVar, ParamSpec, cast, Concatenate, Callable, Any
+from typing import Any, Protocol
+import xfp.functions as f
+from deprecation import deprecated  # type: ignore
 
-A = TypeVar("A")
-P = ParamSpec("P")
-T = TypeVar("T")
-Self = TypeVar("Self")
-
-# Element type alias
-type E = Any
-type Unused = None
-
-
-def id[E](e: E) -> E:
-    return e
+# type: ignore
+deprecated("1.1.0", "2.0.0", details="moved to xfp.functions")
+id: f.F1[[Any], Any] = f.id
+deprecated("1.1.0", "2.0.0", details="moved to xfp.functions")
+tupled: f.F2[[f.F1[..., Any]], [tuple], Any] = f.tupled
+deprecated("1.1.0", "2.0.0", details="moved to xfp.functions")
+curry: f.F2[[f.F1[..., Any]], ..., Any] = f.curry
+deprecated("1.1.0", "2.0.0", details="moved to xfp.functions")
+curry_method: f.F2[[f.F1[..., Any]], ..., Any] = f.curry_method
 
 
-def curry(f: Callable[Concatenate[A, P], T]) -> Callable[[A], Any]:
-    if len(signature(f).parameters) == 1:
-        return cast(Callable[[A], T], f)
-    else:
-
-        def g(x: A) -> Callable:
-            return curry(cast(Callable, partial(f, x)))
-
-        return g
+# internally used for type checking
+class _SupportsDunderLT(Protocol):
+    def __lt__(self, other: Any, /) -> bool: ...
 
 
-def curry_method(f: Callable[Concatenate[Self, A, P], T]) -> Callable[[Self, A], Any]:
-    if len(signature(f).parameters) == 2:
-        return cast(Callable[[Self, A], T], f)
-    else:
-
-        def g(self: Self, x: A) -> Callable:
-            return curry(cast(Callable, partial(f, self, x)))
-
-        return g
+class _SupportsDunderGT(Protocol):
+    def __gt__(self, other: Any, /) -> bool: ...
 
 
-def tupled(f: Callable[..., T]) -> Callable[[tuple], T]:
-    def g(t: tuple) -> T:
-        return f(*t)
-
-    return g
+type _Comparable = _SupportsDunderGT | _SupportsDunderLT

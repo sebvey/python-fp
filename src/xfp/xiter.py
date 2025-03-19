@@ -1,15 +1,18 @@
 from copy import deepcopy
 from itertools import tee
 import itertools
-from typing import Callable, Iterable, Iterator, Any, cast, overload
+from typing import Generic, Iterable, Iterator, Any, TypeVar, cast, overload
 from collections.abc import Iterable as ABCIterable
-from deprecation import deprecated
+from deprecation import deprecated  # type: ignore
 
 from xfp import Xresult, Xlist, Xtry
-from .utils import E
+from xfp.functions import F1, curry2
+from xfp.utils import _Comparable
+
+X = TypeVar("X", covariant=True)
 
 
-class Xiter[X: E]:
+class Xiter(Generic[X]):
     """Enhance Lists (lazy) with functional behaviors.
 
     This class provides common behaviors used for declarative programming.
@@ -22,12 +25,12 @@ class Xiter[X: E]:
     """
 
     @classmethod
-    def cycle(cls, c: Iterable[X]) -> "Xiter[X]":
+    def cycle[T](cls, c: Iterable[T]) -> "Xiter[T]":
         "Proxy for itertools.cycle."
         return Xiter(itertools.cycle(c))
 
     @classmethod
-    def repeat(cls, x: X) -> "Xiter[X]":
+    def repeat[T](cls, x: T) -> "Xiter[T]":
         "Proxy for itertools.repeat."
         return Xiter(itertools.repeat(x))
 
@@ -61,7 +64,7 @@ class Xiter[X: E]:
         """
         return self.get(i)
 
-    def takewhile(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def takewhile(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator that stops yielding elements when predicate = False.
 
         Do not consume the original iterator.
@@ -134,9 +137,9 @@ class Xiter[X: E]:
         """
         a, b = tee(self)
         self.__iter = Xiter(a)
-        return Xiter(b).map(lambda x: deepcopy(x))
+        return Xiter(map(deepcopy, b))
 
-    def chain(self, other: Iterable[X]) -> "Xiter[X]":
+    def chain[T](self, other: Iterable[T]) -> "Xiter[X | T]":
         """Proxy for itertools.chain.
 
         Return a chain object whose `.__next__()` method returns elements from the
@@ -164,7 +167,7 @@ class Xiter[X: E]:
             raise IndexError(f"Xiter has less than {i} element(s)")
 
     def get_fr(self, i: int) -> Xresult[IndexError, X]:
-        """Return the i-th element of the Xlist.
+        """Return the i-th element of the Xiter.
 
         Does not consume the i-1 first elements, but evaluate them.
         Wrap the potential error in an Xresult.
@@ -173,7 +176,7 @@ class Xiter[X: E]:
 
     @deprecated("1.1.0", "2.0.0", details="Use get_fr instead")
     def get_fx(self, i: int) -> Xresult[IndexError, X]:
-        """Return the i-th element of the Xlist.
+        """Return the i-th element of the Xiter.
 
         Does not consume the i-1 first elements, but evaluate them.
         Wrap the potential error in an Xresult.
@@ -222,21 +225,21 @@ class Xiter[X: E]:
         """
         return self.tail_fr()
 
-    def appended(self, el: E) -> "Xiter[X | E]":
+    def appended[T](self: "Xiter[T]", el: T) -> "Xiter[T]":
         """Return a new iterator with el appended.
 
         After exhaustion of self, the next `next` call will return `el`.
         """
         return self.chain([el])
 
-    def prepended(self, el: E) -> "Xiter[X | E]":
+    def prepended[T](self: "Xiter[T]", el: T) -> "Xiter[T]":
         """Return a new iterator with el prepended.
 
         Before iterating over self, the first `next` call will return `el`.
         """
         return Xiter([el]).chain(self)
 
-    def map(self, f: Callable[[X], E]) -> "Xiter[E]":
+    def map[T](self, f: F1[[X], T]) -> "Xiter[T]":
         """Return a new iterator, with f applied to each future element.
 
         ### Usage
@@ -253,7 +256,7 @@ class Xiter[X: E]:
         """
         return Xiter(map(f, self.copy()))
 
-    def filter(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def filter(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator skipping the elements with predicate = False.
 
         ### Usage
@@ -271,7 +274,7 @@ class Xiter[X: E]:
         """
         return Xiter(filter(predicate, self.copy()))
 
-    def foreach(self, statement: Callable[[X], Any]) -> None:
+    def foreach(self, statement: F1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the iterator.
 
         Do not consume the original iterator.
@@ -297,7 +300,7 @@ class Xiter[X: E]:
         """
         [statement(e) for e in self.copy()]
 
-    def flatten(self) -> "Xiter[E]":
+    def flatten[XS](self: "Xiter[Iterable[XS]]") -> "Xiter[XS]":
         """Return a new iterator, with each element nested iterated on individually.
 
         ## Usage
@@ -314,15 +317,12 @@ class Xiter[X: E]:
 
         def result(xi):
             for el in xi:
-                if isinstance(el, ABCIterable):
-                    for inner_el in el:
-                        yield inner_el
-                else:
-                    yield el
+                for inner_el in el:
+                    yield inner_el
 
         return Xiter(result(self.copy()))
 
-    def flat_map(self, f: Callable[[X], Iterable[E]]) -> "Xiter[E]":
+    def flat_map[T](self, f: F1[[X], Iterable[T]]) -> "Xiter[T]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map.
@@ -338,7 +338,191 @@ class Xiter[X: E]:
         """
         return self.map(f).flatten()
 
-    def take(self, n: int) -> "Xiter[E]":
+    def fold_left[T](self, zero: T, f: F1[[T, X], T]) -> T:
+        """Return the accumulation of the Xiter elements.
+
+        - Uses a custom accumulator (zero, f) to aggregate the elements of the Xiter
+        - Initialize the accumulator with the zero value
+        - Then from the first to the last element, compute accumulator(n+1) using f, accumulator(n) and self.data[n], such as:
+          accumulator(n+1) = f(accumulator(n), self.data[n])
+        - Return the last state of the accumulator
+
+        ### Keyword Arguments
+
+        - zero -- initial state of the accumulator
+        - f    -- accumulation function, compute the next state of the accumulator
+
+        ### Warnings
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+
+            assert Xiter([1, 2, 3]).fold_left(0)(lambda x, y: x + y) == 6
+            assert Xiter([1, 2, 3]).fold_left(10)(lambda x, y: x + y) == 16
+            assert Xiter(["1", "2", "3"]).fold_left("")(lambda x, y: x + y) == "123"
+            assert Xiter([]).fold_left(0)(lambda x, y: x + y) == 0
+        ```
+        """
+        acc: T = zero
+        for e in self:
+            acc = f(acc, e)
+        return acc
+
+    def fold[T](self, zero: T, f: F1[[T, X], T]) -> T:
+        """Return the accumulation of the Xiter elements.
+
+        Shorthand for fold_left
+        """
+        return self.fold_left(zero, f)
+
+    def reduce(self, f: F1[[X, X], X]) -> X:
+        """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
+
+        ### Raise
+
+        - IndexError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - f -- accumulation function, compute the next state of the accumulator
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            assert Xiter([1, 2, 3]).reduce(lambda x, y: x + y) == 6
+            assert Xiter(["1", "2", "3"]).reduce(lambda x, y: x + y) == "123"
+            with pytest.raises(IndexError):
+                Xiter([]).reduce(lambda x, y: x + y)
+        ```
+        """
+        try:
+            h = self.head()
+        except IndexError:
+            raise IndexError("<reduce> operation not allowed on empty list")
+        return self.tail().fold(h, f)
+
+    def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
+        """Return the accumulation of the Xiter elements using the first element as the initial state of accumulation.
+
+        Wrap the potential error in an Xresult.
+
+        ### Keyword Arguments
+
+        - f -- accumulation function, compute the next state of the accumulator
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter, Xtry
+
+            Xiter([1, 2, 3]).reduce_fr(lambda x, y: x + y)       # -> Xtry.Success(6)
+            Xiter(["1", "2", "3"]).reduce_fr(lambda x, y: x + y) # -> Xtry.Success("123")
+            Xiter([]).reduce_fr(lambda x, y: x + y)              # -> Xtry.Failure(IndexError("<reduce> operation not allowed on empty list"))
+
+        ```
+        """
+        return cast(Xresult[IndexError, X], Xtry.from_unsafe(lambda: self.reduce(f)))
+
+    def min(self, key: F1[[X], _Comparable] = id) -> X:
+        """Return the smallest element of the Xiter given the key criteria.
+
+        ### Raise
+
+        - ValueError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            input = Xiter(["ae", "bd", "cc"])
+            assert input.min() == "ae"
+            assert input.min(lambda x: x[-1]) == "cc"
+            with pytest.raises(IndexError):
+                Xiter([]).min()
+        ```
+        """
+        return min(self, key=key)
+
+    def min_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
+        """Return the smallest element of the Xiter given the key criteria.
+
+        Wrap the potential failure in an Wresult
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+        ```
+        """
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.min(key)))
+
+    def max(self, key: F1[[X], _Comparable] = id) -> X:
+        """Return the bigget element of the Xiter given the key criteria.
+
+        ### Raise
+
+        - ValueError -- when the Xiter is empty
+
+        ### Keyword Arguments
+
+        - key (default id) -- the function which extrapolate a sortable from the elements of the list
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+
+        ### Usage
+
+        ```python
+            from xfp import Xiter
+            import pytest
+
+            input = Xiter(["ae", "bd", "cc"])
+            assert input.max() == "cc"
+            assert input.max(lambda x: x[-1]) == "ae"
+            with pytest.raises(IndexError):
+                Xiter([]).max()
+        ```
+        """
+        return max(self, key=key)
+
+    def max_fr(self, key: F1[[X], _Comparable] = id) -> Xresult[ValueError, X]:
+        """Return the biggest element of the Xiter given the key criteria.
+
+        Wrap the potential failure in an Wresult
+
+        ### Warning
+
+        This function falls in infinite loop in the case of infinite iterator.
+        ```
+        """
+        return cast(Xresult[ValueError, X], Xtry.from_unsafe(lambda: self.max(key)))
+
+    def take(self, n: int) -> "Xiter[X]":
         """Return a new iterator limited to the first 'n' elements.
         Return a copy if the original iterator has less than 'n' elements.
         Return an empty Xiter if n is negative.
@@ -358,7 +542,7 @@ class Xiter[X: E]:
 
         return Xiter(self.slice(n))
 
-    def takeuntil(self, predicate: Callable[[X], bool]) -> "Xiter[X]":
+    def takeuntil(self, predicate: F1[[X], bool]) -> "Xiter[X]":
         """Return a new iterator that stops yielding elements when predicate = True.
 
         Do not consume the original iterator.
@@ -376,15 +560,22 @@ class Xiter[X: E]:
         ```
         """
 
-        return self.takewhile(lambda x: not predicate(x))
+        # fixes "error: Cannot use a covariant type variable as a parameter" on lambda x: not predicate(x)
+        @curry2
+        def invert[T](p: F1[[T], bool], x: T) -> bool:
+            return not p(x)
+
+        return self.takewhile(invert(predicate))
 
     @overload
-    def slice(self, stop: int | None, /): ...
+    def slice(self, stop: int | None, /) -> "Xiter[X]": ...
 
     @overload
-    def slice(self, start: int | None, stop: int | None, step: int | None = 1, /): ...
+    def slice(
+        self, start: int | None, stop: int | None, step: int | None = 1, /
+    ) -> "Xiter[X]": ...
 
-    def slice(self, *args):
+    def slice(self, *args) -> "Xiter[X]":
         """Return an new Xiter with selected elements from the Xiter.
         Works like sequence slicing but does not support negative values
         for start, stop, or step.
@@ -410,7 +601,7 @@ class Xiter[X: E]:
 
         return Xiter(itertools.islice(__iter_copy, *args))
 
-    def zip(self, other: Iterable[E]) -> "Xiter[tuple[X, E]]":
+    def zip[T](self, other: Iterable[T]) -> "Xiter[tuple[X, T]]":
         """Zip this iterator with another iterable."""
         return Xiter(zip(self.copy(), other))
 

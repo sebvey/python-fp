@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Never, ParamSpec, TypeVar
 from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
+from xfp.functions import F0, F1
 
 P = ParamSpec("P")
 X = TypeVar("X")
@@ -37,7 +38,7 @@ class Xtry:
     """
 
     @classmethod
-    def from_unsafe(cls, f: Callable[[], X]) -> Xresult[Exception, X]:
+    def from_unsafe[X](cls, f: F0[X]) -> Xresult[Exception, X]:
         """Return the result of a function as an Xresult.
 
         Execute the callable and catch the result :
@@ -61,7 +62,7 @@ class Xtry:
             return cls.Failure(e)
 
     @classmethod
-    def safed(cls, f: Callable[P, X]) -> Callable[P, Xresult[Exception, X]]:
+    def safed(cls, f: F1[P, X]) -> F1[P, Xresult[Exception, X]]:
         """Return a new function being f with the side effect wrapped.
 
         Used as a decorator for quickly converting unsafe code into safe one.
@@ -97,7 +98,7 @@ class Xtry:
             )
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Failure[Y: Exception](Xresult[Y, Any], metaclass=XresultFailureMeta):
+    class Failure[Y: Exception](Xresult[Y, Never], metaclass=XresultFailureMeta):
         """Specific result holding an exception.
 
         Can also act as an extractor in pattern matching.
@@ -119,7 +120,7 @@ class Xtry:
             return isinstance(instance, Xeither.Right)
 
     @dataclass(frozen=True, init=False, match_args=False, eq=False)
-    class Success[X](Xresult[Exception, X], metaclass=XresultSuccessMeta):
+    class Success[X](Xresult[Never, X], metaclass=XresultSuccessMeta):
         """Specific result holding a value, with alternate path being an exception.
 
         Can also act as an extractor in pattern matching.

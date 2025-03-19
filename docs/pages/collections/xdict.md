@@ -27,31 +27,30 @@ This enables to lift the Xlist functionalities to the Xdict, while letting the u
 
 - First case: We don't care about key reconciliation
     ```python
-    from xfp import Xdict, tupled
-    from typing import Callable, Any
+    from xfp import Xdict
+    from xpf.functions import tupled2, F1
 
     input = Xdict({"a": 1, "b": 2})
     
-    def flat_map[Y, X](xdict: Xdict[Y, X], f: Callable[[Y, X], Xdict[Any, Any]]) -> Xdict[Any, Any]:
-        return Xdict.from_list(xdict.items().flat_map(tupled(f)))
+    def flat_map[T, U, Y, X](xdict: Xdict[Y, X], f: F1[[Y, X], Xdict[T, U]]) -> Xdict[T, U]:
+        return Xdict.from_list(xdict.items().flat_map(tupled2(f)))
 
     result = flat_map(input, lambda y, x: Xdict({f"{y}{y}": x * x, f"{y}{y}{y}": x * x * x}))
     assert result = Xdict({"aa": 1, "aaa": 1, "bb": 4, "bbb": 8})
     ```
 - Second case: The same key may be found accross multiple reduction, we need a custom reconciliation 
     ```python
-    from xfp import Xdict, Xlist, tupled
-    from typing import Callable, Any
+    from xfp import Xdict
+    from xpf.functions import tupled2, F1
 
     input = Xdict({"a": 1, "b": 2})
 
-
-    def flat_map[Y, X](xdict: Xdict[Y, X], f: Callable[[Y, X], Xdict[Any, Any]]) -> Xdict[Any, Any]:
-        fmapped = xdict.items().flat_map(tupled(f))
+    def flat_map[T, U, Y, X](xdict: Xdict[Y, X], f: F1[[Y, X], Xdict[T, U]]) -> Xdict[T, U]:
+        fmapped = xdict.items().flat_map(tupled2(f))
         return Xdict.from_list(
-            Xlist(set(iter(fmapped.map(tupled(lambda y, _: y)))))        # we get a list of distinct keys
-            .map(lambda x: fmapped.filter(tupled(lambda y, _: x == y)))  # we split our flat_mapped (key, value) list by keys
-            .map(lambda l: l.max(tupled(lambda _, x: x)))                # we only keep the maximum value for each sublist
+            Xlist(set(iter(fmapped.map(tupled2(lambda y, _: y)))))        # we get a list of distinct keys
+            .map(lambda x: fmapped.filter(tupled2(lambda y, _: x == y)))  # we split our flat_mapped (key, value) list by keys
+            .map(lambda l: l.max(tupled2(lambda _, x: x)))                # we only keep the maximum value for each sublist
         )
 
     result = flat_map(input, lambda y, x: Xdict({f"{y}{y}": x * x, f"cube": x * x * x}))

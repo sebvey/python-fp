@@ -94,7 +94,7 @@ Applying a transformation over a collection systematically creates a shallow cop
 
 ```python
 from xfp import Xlist
-from dataclasses import dataclas
+from dataclasses import dataclass
 
 @dataclass
 class Wrapper:
