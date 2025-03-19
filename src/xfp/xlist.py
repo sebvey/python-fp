@@ -150,19 +150,19 @@ class Xlist(Generic[X]):
         """
         return cast(Xresult[IndexError, Xlist[X]], Xtry.from_unsafe(self.tail))
 
-    def appended(self, el: X) -> Xlist[X]:
+    def appended[T](self: Xlist[T], el: T) -> Xlist[T]:
         """Return a new Xlist with el appended at its end."""
         newlist = self.copy()
         newlist.__data.append(el)
         return newlist
 
-    def prepended(self, el: X) -> Xlist[X]:
+    def prepended[T](self: Xlist[T], el: T) -> Xlist[T]:
         """Return a new Xlist with el prepended at index 0."""
         newlist = self.copy()
         newlist.__data.insert(0, el)
         return newlist
 
-    def inserted(self, i: int, el: X) -> Xlist[X]:
+    def inserted[T](self: Xlist[T], i: int, el: T) -> Xlist[T]:
         """Return a new Xlist with el inserted before position i."""
         newlist = self.copy()
         newlist.__data.insert(i, el)

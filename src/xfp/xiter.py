@@ -225,14 +225,14 @@ class Xiter(Generic[X]):
         """
         return self.tail_fr()
 
-    def appended(self, el: X) -> "Xiter[X]":
+    def appended[T](self: "Xiter[T]", el: T) -> "Xiter[T]":
         """Return a new iterator with el appended.
 
         After exhaustion of self, the next `next` call will return `el`.
         """
         return self.chain([el])
 
-    def prepended(self, el: X) -> "Xiter[X]":
+    def prepended[T](self: "Xiter[T]", el: T) -> "Xiter[T]":
         """Return a new iterator with el prepended.
 
         Before iterating over self, the first `next` call will return `el`.
