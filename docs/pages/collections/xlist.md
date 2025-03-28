@@ -43,6 +43,6 @@ from dataclasses import dataclass
 class Wrapper:
     i: int
 
-Xlist([1, 2, 3]).reversed() # Xlist([3, 2, 1])
-Xlist([Wrapper(2), Wrapper(1)]).sorted(lambda w: w.i) # Xlist([Wrapper(1), Wrapper(2)])
+assert Xlist([1, 2, 3]).reversed() == Xlist([3, 2, 1])
+assert Xlist([Wrapper(2), Wrapper(1)]).sorted(lambda w: w.i) == Xlist([Wrapper(1), Wrapper(2)])
 ```

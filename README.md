@@ -19,12 +19,9 @@ output = reduce(lambda x, y: x + " " + y, only_long_word)
 assert output == "Look Array Process"
 ```
 
-This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts. 
+This project aims to soften the functional syntax already existing within the language, and go even further by enabling more functional concepts.
 
-
-
-
-Github repository [HERE](https://github.com/sebvey/python-fp/)
+Github repository: [python-fp](https://github.com/sebvey/python-fp/)
 
 # WHY
 
@@ -219,17 +216,15 @@ match r3:
         print(f"Something went wrong : {exception}")
 ```
 
-
 # HOW TO CONTRIBUTE
 
 ## Setup
 - clone the repo
-- install poetry
-- install compatible python version (from 3.12), eg. `pyenv install 3.12.4`
-- install the project : `poetry install`
-- set up the git hook scripts (linter / formatter): `pre-commit install` 
+- install uv
+- install the project: `uv sync --all-groups`
+- set up the git hook scripts (linter / formatter): `uv run pre-commit install` 
 
--> poetry installs xfp package in editable mode, so that xfp is available as a package from anywhere and editable.  
+-> uv installs xfp package in editable mode, so that xfp is available as a package in the environment and editable.  
 
 ## Linter / formatter = ruff
 Ruff is hooked on pre-commit as linter and formatter.  
@@ -238,16 +233,27 @@ More here : https://github.com/astral-sh/ruff
 ## Pre-commit
 More info : https://pre-commit.com/
 
-## CI/CD (Github)
+## Github CI/CD
 
-- Main branch : no pushes, only merges from branches that pass tests
-- github action `pytest-action` is setup to run pytest on each push
-- **TODO** : auto deploy to PyPI
+### Unit tests / Coverage
+`unit-tests` workflow is triggered on every push, regardless of the branch.
 
-# HOW TO PUBLISH TO PYPI
+### Main branch
+**Protection rules:**  
+- Require a pull request before merging
+- Require unit tests to pass before merging
 
-By now, pypi credentials (token) have to be configured locally with :  
-`poetry config pypi-token.pypi <token>`
+**Workflows:**  
+Commits on the main branch triggers:
+- `gh-pages` workflow that builds and deploys documentation
+- `pypi-publish` workflow that builds and publish package to pypi.org (trusted publisher)
 
-To publish locally (from given branch) :
-`poetry build && poetry publish`
+### Test branch
+**Protection rules:**  
+- Require the pushed commits to have passed unit tests before pushing, either:
+  - merge a compliant branch to test 
+  - push the commit to another branch first and then force push the branch to test (`git push -f origin <src_branch>:test`)
+
+**Workflows:**  
+Commits on the test branch triggers:
+- `pypi-publish` workflow that builds and publish package to test.pypi.org (trusted publisher)

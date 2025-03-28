@@ -125,10 +125,11 @@ While the `g` syntax is often useful (for example to prepare functions to use in
 XFP comes with a convenient decorator `curry` to infer the g function from the f one:
 
 ```python
-from xfp import Xlist, curry
+from xfp import Xlist
+from xfp.functions import curry2
 
 # the effective signature of f becomes def f(i: int) -> Callable[[str], Xlist[str]]
-@curry
+@curry2
 def f(i: int, j: str) -> Xlist[str]:
     return i * j
 
