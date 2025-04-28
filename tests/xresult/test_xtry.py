@@ -39,6 +39,19 @@ def test_safed_lift_failure() -> None:
     assert isinstance(actual().value, Exception)
 
 
+def test_safed_input_annotations_identity() -> None:
+    def original(a: int, b: str) -> str:
+        return b * a
+
+    @Xtry.safed
+    def safed(a: int, b: str) -> str:
+        return b * a
+
+    del original.__annotations__["return"]
+    del safed.__annotations__["return"]
+    assert original.__annotations__ == safed.__annotations__
+
+
 def test_Xtry_instantiate_xresult() -> None:
     success = Xtry.Success[int](3)
     failure = Xtry.Failure[Exception](Exception("fail"))
