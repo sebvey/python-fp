@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import functools
 from typing import Never, ParamSpec, TypeVar
 from xfp.xresult._xresult import Xresult, XRBranch
 from xfp.xresult.xeither import Xeither
@@ -83,6 +84,10 @@ class Xtry:
 
         def inner(*args: P.args, **kwargs: P.kwargs) -> Xresult[Exception, X]:
             return cls.from_unsafe(lambda: f(*args, **kwargs))
+
+        accurate_return: str = inner.__annotations__["return"]
+        functools.update_wrapper(inner, f)
+        inner.__annotations__["return"] = accurate_return
 
         return inner
 
