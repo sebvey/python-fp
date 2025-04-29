@@ -22,6 +22,9 @@ dev = [
 ]
 
 doc = ["pdoc~=14.7.0"]
+sb = [
+    "trio>=0.30.0",
+]
 
 test = [
     "pytest~=8.2.0",
