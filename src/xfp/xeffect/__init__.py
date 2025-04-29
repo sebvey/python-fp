@@ -1,70 +1,64 @@
-from dataclasses import dataclass
-import functools
-import time
-from typing import Callable, ParamSpec
-from xfp import XRBranch, Xresult
-from abc import ABC, abstractmethod
+from __future__ import annotations
+from typing import Any, Callable, Coroutine, Generator
 
-P = ParamSpec("P")
-type XEF[L, R] = Callable[P, Xresult[L, R]]
-
-### RETRIER ###############################
+from xfp import Xresult
 
 
-class Retrier(ABC):
-    @abstractmethod
-    def retried_xef[L, R](
-        self,
-        f: XEF[L, R],
-    ) -> XEF[L, R]:
-        pass
+# Coroutine = function 'résolu' (les arguments sont définis)
+# -> il ne reste plus qu'à await déclencher l'exécution asynchrone
+# Dans le cas XFP, les coroutines sont toutes du même type, elle retourne un
+# Xresult[L,R]
+# => Appelé coro
+type PyXRCo[L, R] = Coroutine[Any, Any, Xresult[L, R]]
+
+# XCoro = XFP Coroutine
+# Conteneur pour la PyXRCo
+# -> va permettre de faire de la composition
+#    = appliquer de nouveaux effets pour produire de nouvelle coroutines
+#    - map()
 
 
-@dataclass
-class SimpleRetrier[L](Retrier):
-    retries: int
-    delay: int
-    left_filter: Callable[[L], bool] = lambda _: True
+# cfunc : function python qui produit une coroutine
 
-    def __post_init__(self) -> None:
-        if self.retries < 1:
-            raise ValueError("Retries must be one or more")
-        if self.delay <= 0:
-            raise ValueError("Delay must be > 0")
-
-    def retried_xef[R](self, f: XEF[L, R]) -> XEF[L, R]:
-        @functools.wraps(f)
-        def _retried_xef(*args, **kwargs) -> Xresult[L, R]:
-            def loop(attempt: int, f: XEF[L, R]) -> Xresult[L, R]:
-                print(f"attempt {attempt} ...")
-                result: Xresult[L, R] = f(*args, **kwargs)
-                print(f"loop result: {repr(result)}")
-
-                if result.branch == XRBranch.LEFT:
-                    if not self.left_filter(result.value):
-                        print("LEFT, but not a value to retry")
-                        return result
-                    if attempt == self.retries:
-                        print("Left, value to retry, but done trying ... it's enough")
-                        return result
-                    time.sleep(self.delay)
-                    return loop(attempt + 1, f)
-                return result
-
-            return loop(0, f)
-
-        return _retried_xef
+# Xeffect = objet qui porte la description de l'effet (la fonction qui produit la coroutine)
 
 
-###### 1 - XEFFECT ################################
+class Xeffect[**P, L, R]:
+    def __init__(self, cfunc: Callable[P, PyXRCo[L, R]]) -> None:
+        self._func = cfunc
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> XCoroutine[L, R]:
+        return XCoroutine(self._func(*args, **kwargs))
 
 
-class Xeffect[L, R]:
-    def __init__(self, f: XEF[L, R]) -> None:
-        self._xef = f
+class XCoroutine[L, R]:
+    def __init__(self, coroutine: PyXRCo[L, R]) -> None:
+        self._coroutine = coroutine
 
-    def __call__(self, *args, **kwds):
-        return self._xef(*args, **kwds)
+    def __await__(self) -> Generator[Any, Any, Xresult[L, R]]:
+        return self._coroutine.__await__()
 
-    def retried(self, retrier: Retrier) -> XEF[L, R]:
-        return Xeffect(retrier.retried_xef(self._xef))
+    def map_right[PO, LO, RO](self, xeffect: Xeffect[PO, LO, RO]) -> XCoroutine[LO, RO]:
+        async def func() -> Xresult[L, RO]:
+            first_result: Xresult[L, R] = await self._coroutine
+            if first_result.is_right():
+                return await xeffect(first_result.value)._coroutine
+            return first_result
+
+        return XCoroutine(func())
+
+    def map_left[PO, LO, RO](self, xeffect: Xeffect[PO, LO, RO]) -> XCoroutine[LO, R]:
+        async def func() -> Xresult[LO, R]:
+            first_result: Xresult[L, R] = await self._coroutine
+            if first_result.is_left():
+                return await xeffect(first_result.value)._coroutine
+            return first_result
+
+        return XCoroutine(func())
+
+    def map[PO, LO, RO](self, xeffect: Xeffect[PO, LO, RO]) -> XCoroutine[LO, RO]:
+        "Alias for .map_right()"
+        return self.map_right(xeffect)
+
+
+# TODO - map* - xeffect with one arg (left|right type of the coroutine)

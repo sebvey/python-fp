@@ -172,6 +172,14 @@ class Xresult[Y, X]:
         except XresultError as e:
             return Xresult(e, XRBranch.LEFT)
 
+    def is_left(self) -> bool:
+        """Return True if branch of the Xresult is LEFT."""
+        return self.branch == XRBranch.LEFT
+
+    def is_right(self) -> bool:
+        """Return True if branch of the Xresult is RIGHT."""
+        return self.branch == XRBranch.RIGHT
+
     def map[T](self, f: F1[[X], T]) -> "Xresult[Y, T]":
         """Alias for map_right."""
         return self.map_right(f)
