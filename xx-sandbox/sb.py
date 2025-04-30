@@ -1,6 +1,6 @@
 from typing import Any, Never
 from xfp import Xresult, Xtry, XRfunc
-from xfp.xfunc import xrf
+from xfp.xfunc import funcbox
 import anyio
 import math
 
@@ -30,12 +30,17 @@ async def print_repr(x: Any) -> None:
 
 
 async def functional_main() -> None:
-    await parse("6").flat_map(factorial).flat_map(xrf.print)
+    await parse("6").flat_map(factorial).flat_map(funcbox.print_xr)
     await (
         parse("hello").flat_map(factorial).foreach_left(print_repr)
         # .flat_map_left(XRfunc.from_unsafe(lambda e: print(repr(e))))
     )
-    await parse("hello").flat_map_left(recover).flat_map(factorial).foreach(xrf.print)
+    await (
+        parse("hello")
+        .flat_map_left(recover)
+        .flat_map(factorial)
+        .foreach(funcbox.print_xr)
+    )
 
 
 async def background_tick(duration: Sec) -> None:

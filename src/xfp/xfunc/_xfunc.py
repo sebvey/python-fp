@@ -1,101 +1,129 @@
 from __future__ import annotations
 from typing import Any, Callable, Generator
 
-from xfp import Xtry, Xresult
+from xfp import Xtry, Xresult, XRBranch
 from ._typing import PyCoXR, PyCo
 
-# Coroutine Function - cofunc - (async def)
-# description paramétrable d'un code à exécuter
-# l'appel à la fonction produit une coroutine
-#
-# Dans le scope XFP peuvent être de plusieurs 'genres' :
-# - décrive la production d'un XResult (XRFunc?)
-# - plus générale : (XFunc?)
-# - peuvent prendre un ou plusieurs paramètres ...
-
-# XRFunc = objet qui porte la description d'un code produisant XResult
-# __call__ renvoi XRCoroutine
-
-# Coroutine object = objet 'résolu' (plus d'arguments à fournir, déjà injectés)
-# représentant du code exécutable de manière asynchrone
-# -> il ne reste plus qu'à await l'objet pour orchestrer l'exécution asynchrone
-#
-# Dans le scope XFP, les coroutines peuvent soit :
-# - retourner un Xresult[L,R] => coroutine de type PyCoXR[L,R]
-# - plus généralement retourner un type X => coroutine de type PyCo[X]
+# TODO - IN PROGRESS - pipe()
+# TODO - et le currying dans tout ça ? pronostic, ça va piquer
+# TODO - typing bien foireux, particulièrement en terme d'argument. J'ai peur que ce soit hard...
 
 
-# XRCoroutine = XFP Result Coroutine
-# Conteneur pour coroutines produisant un XResult
-# -> va permettre de faire de la composition
-#    = appliquer de nouveaux effets pour produire de nouvelle XRCoroutines
+class Xfunc[**P, X]:
+    def __init__(self, cofunc: Callable[P, PyCo[X]]) -> None:
+        self._cofunc: Callable[P, PyCo[X]] = cofunc
 
-# TODO NEXT - pipe() - foreach() - map()
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> PyCo[X]:
+        return Xcoroutine(self._cofunc(*args, **kwargs))
+
+    @classmethod
+    def from_safe(cls, func: Callable[P, X]) -> Xfunc[P, X]:
+        async def cofunc(*args: P.args, **kwargs: P.kwargs) -> X:
+            return func(*args, **kwargs)
+
+        return Xfunc(cofunc)
+
+
+class Xcoroutine[X]:
+    def __init__(self, coroutine: PyCo[X]) -> None:
+        self._coroutine = coroutine
+
+    def __await__(self) -> Generator[Any, Any, X]:
+        return self._coroutine.__await__()
+
+    # TODO - pipe with two implems : pipe(Xfunc) et pipe(XRfunc) - ça va être golo
+    def pipe[P, XO](self, xfunc: Xfunc[P, X]) -> Xcoroutine[XO]:
+        async def cofunc() -> XO:
+            result: X = await self._coroutine
+            return await xfunc(result)
+
+        return Xfunc(cofunc)
 
 
 class XRfunc[**P, L, R]:
     def __init__(self, cofunc: Callable[P, PyCoXR[L, R]]) -> None:
         self._cofunc: Callable[P, PyCoXR[L, R]] = cofunc
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> XRCoroutine[L, R]:
-        return XRCoroutine(self._cofunc(*args, **kwargs))
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> XRcoroutine[L, R]:
+        return XRcoroutine(self._cofunc(*args, **kwargs))
 
     @classmethod
-    def from_unsafe[R](cls, func: Callable[P, R]) -> XRfunc[P, Exception, R]:
-        async def effect(*args: P.args, **kwargs: P.kwargs) -> Xresult[Exception, R]:
+    def from_unsafe(cls, func: Callable[P, R]) -> XRfunc[P, Exception, R]:
+        async def cofunc(*args: P.args, **kwargs: P.kwargs) -> Xresult[Exception, R]:
             try:
                 return Xtry.Success(func(*args, **kwargs))
             except Exception as e:
                 return Xtry.Failure(e)
 
-        return XRfunc(effect)
+        return XRfunc(cofunc)
 
 
-class XRCoroutine[L, R]:
+class XRcoroutine[L, R]:
     def __init__(self, coroutine: PyCoXR[L, R]) -> None:
         self._coroutine = coroutine
 
     def __await__(self) -> Generator[Any, Any, Xresult[L, R]]:
         return self._coroutine.__await__()
 
-    def flat_map_right[PO, LO, RO](
-        self, xeffect: XRfunc[PO, LO, RO]
-    ) -> XRCoroutine[L | LO, RO]:
-        async def cofunc() -> Xresult[L | LO, RO]:
-            first_result: Xresult[L, R] = await self
-            if first_result.is_right():
-                return await xeffect(first_result.value)
-            return first_result
+    def map_right[**P, X](self, xfunc: Xfunc[P, X]) -> XRcoroutine[L, X]:
+        async def cofunc() -> Xresult[L, X]:
+            result: Xresult[L, R] = await self
+            if result.is_right():
+                return Xresult(await xfunc(result.value), XRBranch.RIGHT)
 
-        return XRCoroutine(cofunc())
+        return XRcoroutine(cofunc())
+
+    def map[**P, X](self, xfunc: Xfunc[P, X]) -> XRcoroutine[L, X]:
+        return self.map_right(xfunc)
+
+    def map_left[**P, X](self, xfunc: Xfunc[P, X]) -> XRcoroutine[X, R]:
+        async def cofunc() -> Xresult[X, R]:
+            result: Xresult[L, R] = await self
+            if result.is_left():
+                return Xresult(await xfunc(result.value), XRBranch.LEFT)
+
+        return XRcoroutine(cofunc())
+
+    def flat_map_right[PO, LO, RO](
+        self, xrfunc: XRfunc[PO, LO, RO]
+    ) -> XRcoroutine[L | LO, RO]:
+        async def cofunc() -> Xresult[L | LO, RO]:
+            result: Xresult[L, R] = await self
+            if result.is_right():
+                return await xrfunc(result.value)
+            return result
+
+        return XRcoroutine(cofunc())
 
     def flat_map_left[PO, LO, RO](
-        self, xeffect: XRfunc[PO, LO, RO]
-    ) -> XRCoroutine[LO, R | RO]:
+        self, xrfunc: XRfunc[PO, LO, RO]
+    ) -> XRcoroutine[LO, R | RO]:
         async def func() -> Xresult[LO, R]:
             result: Xresult[L, R] = await self
             if result.is_left():
-                return await xeffect(result.value)
+                return await xrfunc(result.value)
             return result
 
-        return XRCoroutine(func())
+        return XRcoroutine(func())
 
     def flat_map[PO, LO, RO](
-        self, xeffect: XRfunc[PO, LO, RO]
-    ) -> XRCoroutine[L | LO, RO]:
+        self, xrfunc: XRfunc[PO, LO, RO]
+    ) -> XRcoroutine[L | LO, RO]:
         "Alias for .flat_map_right()"
-        return self.flat_map_right(xeffect)
+        return self.flat_map_right(xrfunc)
 
+    # TODO - switch to Xfunc - mais bon niveau runtime c'est équivalent ...
     def foreach_right(self, cofunc: Callable[[R], PyCo[Any]]) -> PyCo[None]:
-        "Do the async statement procedure to the underlying value if self is a RIGHT"
+        "Do Xfunc to the underlying value if self is a RIGHT"
 
         async def new_cofunc() -> None:
             result: Xresult[L, R] = await self
             if result.is_right():
                 return await cofunc(result.value)
 
-        return XRCoroutine(new_cofunc())
+        return XRcoroutine(new_cofunc())
 
+    # TODO - idem
     def foreach_left(self, cofunc: Callable[[L], PyCo[Any]]) -> PyCo[None]:
         "Do the async statement procedure to the underlying value if self is a LEFT"
 
@@ -104,11 +132,9 @@ class XRCoroutine[L, R]:
             if result.is_left():
                 return await cofunc(result.value)
 
-        return XRCoroutine(new_cofunc())
+        return XRcoroutine(new_cofunc())
 
-    def foreach[PO, LO](self, cofunc: Callable[[R], PyCo[Any]]) -> PyCo[None]:
+    # TODO - idem
+    def foreach(self, cofunc: Callable[[R], PyCo[Any]]) -> PyCo[None]:
         "Alias for .foreach_right()"
         return self.foreach_right(cofunc)
-
-
-# TODO - typing foireux, particulièrement en terme d'argument
