@@ -23,7 +23,7 @@ dev = [
 
 doc = ["pdoc~=14.7.0"]
 sb = [
-    "trio>=0.30.0",
+    "anyio[trio]>=4.9.0",
 ]
 
 test = [

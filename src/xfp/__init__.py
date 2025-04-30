@@ -11,7 +11,7 @@ from xfp.xresult import (
 from xfp.xlist import Xlist
 from xfp.xiter import Xiter
 from xfp.xdict import Xdict
-from xfp.xeffect import Xeffect
+from xfp.xfunc import XRfunc
 
 __all__ = [
     "curry",
@@ -26,5 +26,5 @@ __all__ = [
     "Xopt",
     "Xtry",
     "Xdict",
-    "Xeffect",
+    "XRfunc",
 ]
