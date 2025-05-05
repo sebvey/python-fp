@@ -93,7 +93,14 @@ class Xresult[Y, X]:
         )
 
     def __repr__(self) -> str:
-        return f"{self.branch} : {self.value}"
+        if self.is_left():
+            return f"Xresult.Left({self.value})"
+        return f"Xresult.Right({self.value})"
+
+    def __str__(self) -> str:
+        if self.is_left():
+            return f"Xresult.Left({self.value})"
+        return f"Xresult.Right({self.value})"
 
     def __iter__(self) -> Iterator[X]:
         """Return a tri-state iterator of this Xresult.
@@ -122,6 +129,14 @@ class Xresult[Y, X]:
                 raise XresultError(self)
 
         return Internal()
+
+    @staticmethod
+    def left(value: Y) -> "Xresult[Y,X]":
+        return Xresult(value, XRBranch.LEFT)
+
+    @staticmethod
+    def right(value: X) -> "Xresult[Y,X]":
+        return Xresult(value, XRBranch.RIGHT)
 
     @staticmethod
     def fors[T](els: "F0[list[T]]") -> "Xresult[XresultError, T]":

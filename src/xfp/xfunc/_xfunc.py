@@ -1,19 +1,19 @@
 from __future__ import annotations
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, overload
 
 from xfp import Xtry, Xresult, XRBranch
 from ._typing import PyCoXR, PyCo
 
-# TODO - IN PROGRESS - pipe()
-# TODO - et le currying dans tout ça ? pronostic, ça va piquer
+# TODO - currying est juste un embryon pour voir si ça marche
 # TODO - typing bien foireux, particulièrement en terme d'argument. J'ai peur que ce soit hard...
+# TODO - Xfunc / XRfunc, en fait faut les appeler Afunc / ARfunc (async func)
 
 
 class Xfunc[**P, X]:
     def __init__(self, cofunc: Callable[P, PyCo[X]]) -> None:
         self._cofunc: Callable[P, PyCo[X]] = cofunc
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> PyCo[X]:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Xcoroutine[X]:
         return Xcoroutine(self._cofunc(*args, **kwargs))
 
     @classmethod
@@ -31,13 +31,27 @@ class Xcoroutine[X]:
     def __await__(self) -> Generator[Any, Any, X]:
         return self._coroutine.__await__()
 
-    # TODO - pipe with two implems : pipe(Xfunc) et pipe(XRfunc) - ça va être golo
-    def pipe[P, XO](self, xfunc: Xfunc[P, X]) -> Xcoroutine[XO]:
-        async def cofunc() -> XO:
-            result: X = await self._coroutine
-            return await xfunc(result)
+    @overload
+    def pipe[P, LO, RO](self, xrfunc: XRfunc[P, LO, RO]) -> XRcoroutine[LO, RO]:
+        "pipe an XRfunc."
+        ...
 
-        return Xfunc(cofunc)
+    @overload
+    def pipe[P, RO](self, xfunc: Xfunc[P, RO]) -> Xcoroutine[RO]:
+        "pipe an Xfunc."
+        ...
+
+    def pipe[P, LO, RO](
+        self, xxrfunc: Xfunc[P, RO] | XRfunc[P, LO, RO]
+    ) -> Xcoroutine[RO] | XRcoroutine[LO, RO]:
+        async def cofunc() -> RO:
+            result: X = await self._coroutine
+            return await xxrfunc(result)
+
+        if isinstance(xxrfunc, Xfunc):
+            return Xcoroutine(cofunc())
+        elif isinstance(xxrfunc, XRfunc):
+            return XRcoroutine(cofunc())
 
 
 class XRfunc[**P, L, R]:
@@ -70,6 +84,8 @@ class XRcoroutine[L, R]:
             result: Xresult[L, R] = await self
             if result.is_right():
                 return Xresult(await xfunc(result.value), XRBranch.RIGHT)
+            else:
+                return result
 
         return XRcoroutine(cofunc())
 
@@ -81,6 +97,8 @@ class XRcoroutine[L, R]:
             result: Xresult[L, R] = await self
             if result.is_left():
                 return Xresult(await xfunc(result.value), XRBranch.LEFT)
+            else:
+                return result
 
         return XRcoroutine(cofunc())
 
@@ -138,3 +156,9 @@ class XRcoroutine[L, R]:
     def foreach(self, cofunc: Callable[[R], PyCo[Any]]) -> PyCo[None]:
         "Alias for .foreach_right()"
         return self.foreach_right(cofunc)
+
+    def pipe[P, X](self, xfunc: Xfunc[P, X]) -> Xcoroutine[X]:
+        async def cofunc() -> X:
+            return await xfunc(await self._coroutine)
+
+        return Xcoroutine(cofunc())

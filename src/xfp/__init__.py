@@ -12,6 +12,7 @@ from xfp.xlist import Xlist
 from xfp.xiter import Xiter
 from xfp.xdict import Xdict
 from xfp.xfunc import XRfunc, Xfunc
+from xfp.alist import Alist
 
 __all__ = [
     "curry",
@@ -28,4 +29,5 @@ __all__ = [
     "Xdict",
     "XRfunc",
     "Xfunc",
+    "Alist",
 ]

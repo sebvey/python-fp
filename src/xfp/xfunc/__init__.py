@@ -1,4 +1,5 @@
 from ._xfunc import Xfunc, XRfunc, Xcoroutine, XRcoroutine
+from ._xcurry import xcurry2
 from . import funcbox
 
 __all__: list[str] = [
@@ -7,4 +8,5 @@ __all__: list[str] = [
     "XRcoroutine",
     "Xcoroutine",
     "funcbox",
+    "xcurry2",
 ]
