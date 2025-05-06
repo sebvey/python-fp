@@ -6,7 +6,7 @@ from xfp.xfunc import Xfunc
 import trio
 
 
-X = TypeVar("X", contravariant=True)
+X = TypeVar("X", covariant=True)
 
 
 class Alist[X]:
