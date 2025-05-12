@@ -4,8 +4,8 @@ import trio
 # - a semaphore is handled by the consumer
 # - a nursery is handled by the consumer
 # - launching a task is conditioned to semaphore
-# - each time the consumer launch a consume task, it 'acquire' from the semaphore
-# - the task itself 'release' from the semaphore
+# - each time the consumer launch a consume task, it acquires from the semaphore
+# - the task itself releases from the semaphore
 
 PAR = 4
 
@@ -37,7 +37,7 @@ async def consumer(receive_channel: trio.MemoryReceiveChannel) -> str:
 
 async def main() -> None:
     async with trio.open_nursery() as nursery:
-        send_channel, receive_channel = trio.open_memory_channel(9999)
+        send_channel, receive_channel = trio.open_memory_channel(float("inf"))
         nursery.start_soon(producer, send_channel)
         await trio.sleep(0.1)
         nursery.start_soon(consumer, receive_channel)

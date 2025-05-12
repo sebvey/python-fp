@@ -4,7 +4,7 @@ l'appel à la fonction produit un coroutine object
 
 Coroutine Object - coroutine
 description paramétré d'un code à exécuter
-les paramètres ont été injecté, 'il ne reste plus qu'à await'
+les paramètres ont été injectés, 'il ne reste plus qu'à await'
 type = abc.Coroutine[Any,Any,X]
 
 Awaitable
@@ -13,4 +13,4 @@ tout object que l'on peut await (en arrière plan il va construire et await un c
 
 TYPING:
 COROUTINE FUNCTION:
-- Callable[P,Coroutine[Any,Any,X]]
+- Callable[P,Coroutine[Any,Any,X]] (P: ParamSpec)
