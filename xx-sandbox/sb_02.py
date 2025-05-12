@@ -1,25 +1,26 @@
 from typing import Any
-from xfp import Xresult, Xtry, XRfunc, Xfunc
-import anyio
+from xfp import Xresult, Xtry
+from xfp.a import ARfunc, Afunc
+import trio
 import math
 
 type Sec = int
 
 
-@XRfunc
+@ARfunc
 async def parse(s: str) -> Xresult[ValueError, int]:
-    await anyio.sleep(0.5)
+    await trio.sleep(0.5)
     return Xtry.from_unsafe(lambda: int(s))
 
 
-@Xfunc
+@Afunc
 async def double(i: int) -> int:
     return i * 2
 
 
-@XRfunc
+@ARfunc
 async def factorial(i: int) -> Xresult[ValueError, int]:
-    await anyio.sleep(0.5)
+    await trio.sleep(0.5)
     return Xtry.from_unsafe(lambda: math.factorial(i))
 
 
@@ -28,7 +29,7 @@ async def print_repr(x: Any) -> None:
 
 
 async def functional_main() -> None:
-    await parse("6").map_right(double).flat_map(factorial).map(Xfunc.from_safe(print))
+    await parse("6").map_right(double).flat_map(factorial).map(Afunc.from_safe(print))
 
 
 async def background_tick(duration: Sec) -> None:
@@ -36,13 +37,13 @@ async def background_tick(duration: Sec) -> None:
     while n <= duration:
         print(f"BACKGROUND TICK - {n}")
         n += 1
-        await anyio.sleep(1)
+        await trio.sleep(1)
 
 
 async def main() -> None:
-    async with anyio.create_task_group() as tg:
-        tg.start_soon(background_tick, 6)
-        tg.start_soon(functional_main)
+    async with trio.open_nursery() as nursery:
+        nursery.start_soon(background_tick, 3)
+        nursery.start_soon(functional_main)
 
 
-anyio.run(main)
+trio.run(main)

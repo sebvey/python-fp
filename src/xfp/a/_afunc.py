@@ -1,45 +1,66 @@
 from __future__ import annotations
-from typing import Awaitable
+from typing import Any, Awaitable, Callable, Generator, overload
 
 from xfp import Xresult, XRBranch
-from xfp.functions import F1
 
 from ._typing import AwaitableXR, CoFunc, CoFuncXR
 
 
-# Afunc = Awaitable Function:
-# - meant for functions that DOES NOT RAISE (if raising is expected, use ARfunc.from_unsafe instead)
-
-# TODO - curry embryo (start with two args to one)
-
-
-class Afunc[**P, X]:
-    def __init__(self, cofunc: CoFunc[P, X]) -> None:
+class Afunc[**P, R]:
+    def __init__(self, cofunc: CoFunc[P, R]) -> None:
         self._cofunc = cofunc
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[X]:
-        return self.cofunc(*args, **kwargs)
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Acoroutine[R]:
+        return Acoroutine(self._cofunc(*args, **kwargs))
 
     @staticmethod
-    def from_safe(func: F1[P, X]) -> Afunc[P, X]:
-        async def cofunc(*args: P.args, **kwargs: P.kwargs) -> Awaitable[X]:
+    def from_safe(func: Callable[P, R]) -> Afunc[P, R]:
+        async def cofunc(*args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
             return func(*args, **kwargs)
 
         return Afunc(cofunc)
 
-    # TODO - map another Afunc, with only one arg
-    # TODO - map another ARfunc, with only one arg
+
+class Acoroutine[R]:
+    def __init__(self, coroutine: Awaitable[R]) -> None:
+        self._coroutine = coroutine
+
+    def __await__(self) -> Generator[Any, Any, R]:
+        return self._coroutine.__await__()
+
+    @overload
+    def pipe[Ro](self, afunc: Afunc[[R], Ro]) -> Acoroutine[Ro]:
+        "pipe an Afunc"
+        ...
+
+    @overload
+    def pipe[Lo, Ro](self, arfunc: ARfunc[[R], Lo, Ro]) -> ARcoroutine[Lo, Ro]:
+        "pipe an ARfunc"
+        ...
+
+    def pipe[Lo, Ro](
+        self, aarfunc: Afunc[[R], Ro] | ARfunc[[R], Lo, Ro]
+    ) -> Acoroutine[Ro] | ARcoroutine[Lo, Ro]:
+        async def cofunc() -> Ro:
+            return await aarfunc(await self._coroutine)
+
+        if isinstance(aarfunc, Afunc):
+            return Acoroutine(cofunc())
+        elif isinstance(aarfunc, ARfunc):
+            return ARcoroutine(cofunc())
+        else:
+            raise ValueError("pipe only Afunc or ARfunc")
 
 
 class ARfunc[**P, L, R]:
     def __init__(self, cofunc: CoFuncXR[P, L, R]) -> None:
         self._cofunc = cofunc
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> AwaitableXR[L, R]:
-        return self.cofunc(*args, **kwargs)
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> ARcoroutine[L, R]:
+        return ARcoroutine(self._cofunc(*args, **kwargs))
 
     @staticmethod
-    def from_unsafe(func: F1[P, R]) -> ARfunc[P, Exception, R]:
+    def from_unsafe(func: Callable[P, R]) -> ARfunc[P, Exception, R]:
         async def cofunc(*args: P.args, **kwargs: P.kwargs) -> Xresult[Exception, R]:
             try:
                 return Xresult(func(*args, **kwargs), XRBranch.RIGHT)
@@ -47,3 +68,63 @@ class ARfunc[**P, L, R]:
                 return Xresult(e, XRBranch.LEFT)
 
         return ARfunc(cofunc)
+
+
+class ARcoroutine[L, R]:
+    def __init__(self, coroutine: AwaitableXR[L, R]) -> None:
+        self._coroutine = coroutine
+
+    def __await__(self) -> Generator[Any, Any, Xresult[L, R]]:
+        return self._coroutine.__await__()
+
+    def map_right[Ro](self, afunc: Afunc[[R], Ro]) -> ARcoroutine[L, Ro]:
+        async def cofunc() -> Xresult[L, Ro]:
+            result: Xresult[L, R] = await self
+            if result.is_right():
+                return Xresult(await afunc(result.value), XRBranch.RIGHT)
+            return result
+
+        return ARcoroutine(cofunc())
+
+    def map[Ro](self, afunc: Afunc[[R], Ro]) -> ARcoroutine[L, Ro]:
+        return self.map_right(afunc)
+
+    def map_left[Lo](self, afunc: Afunc[[L], Lo]) -> ARcoroutine[Lo, R]:
+        async def cofunc() -> Xresult[Lo, R]:
+            result: Xresult[L, R] = await self
+            if result.is_left():
+                return Xresult(await afunc(result.value), XRBranch.LEFT)
+            return result
+
+        return ARcoroutine(cofunc())
+
+    def flat_map_right[Lo, Ro](
+        self, arfunc: ARfunc[[R], Lo, Ro]
+    ) -> ARcoroutine[L | Lo, Ro]:
+        async def cofunc() -> Xresult[L | Lo, Ro]:
+            result: Xresult[L, R] = await self
+            if result.is_right():
+                return await arfunc(result.value)
+            return result
+
+        return ARcoroutine(cofunc())
+
+    def flat_map[Lo, Ro](self, arfunc: ARfunc[[R], Lo, Ro]) -> ARcoroutine[L | Lo, Ro]:
+        return self.flat_map_right(arfunc)
+
+    def flat_map_left[Lo, Ro](
+        self, arfunc: ARfunc[[L], Lo, Ro]
+    ) -> ARcoroutine[Lo, R | Ro]:
+        async def cofunc() -> Xresult[Lo, R | Ro]:
+            result: Xresult[L, R] = await self
+            if result.is_left():
+                return await arfunc(result.value)
+            return result
+
+        return ARcoroutine(cofunc())
+
+    def pipe[Ro](self, afunc: Afunc[[Xresult[L, R]], Ro]) -> Acoroutine[Ro]:
+        async def cofunc() -> Ro:
+            return await afunc(await self._coroutine)
+
+        return Acoroutine(cofunc())

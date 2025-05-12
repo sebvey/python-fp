@@ -44,7 +44,7 @@ async def main() -> None:
     async with trio.open_nursery() as n:
         n.start_soon(my_task)
         await trio.sleep(0.5)
-        n.start_soon(background_tick, 20)
+        n.start_soon(background_tick, 12)
 
 
 trio.run(main)
