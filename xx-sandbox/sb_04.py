@@ -1,12 +1,12 @@
 import random
-from xfp import Xresult, XRfunc, Xfunc, Alist
+from xfp import Xresult
+from xfp.a import ARfunc, Afunc, Alist
 import trio
-from pprint import pprint
 
 type Sec = int
 
 
-@Xfunc
+@Afunc
 async def random_delay_and_double(i: int) -> int:
     waiting_time = random.randrange(1000, 10000) / 1000
     await trio.sleep(waiting_time)
@@ -14,9 +14,9 @@ async def random_delay_and_double(i: int) -> int:
     return i * 2
 
 
-@XRfunc
-async def str_negative(i: int) -> Xresult[ValueError, str]:
-    return Xresult.right(-i) if i >= 0 else Xresult.left(ValueError("Negative int"))
+@ARfunc
+async def positive_to_str(i: int) -> Xresult[ValueError, str]:
+    return Xresult.right(str(i)) if i >= 0 else Xresult.left(ValueError("Negative int"))
 
 
 # TODO - Alist is for list of X
@@ -27,15 +27,17 @@ async def functional_main() -> None:
     result = await (
         Alist.from_iterable([-1, 2, 3, 4, 5, 6, -7])
         .map(random_delay_and_double)
-        .map(str_negative)
+        .map(positive_to_str)
     )
-    pprint(result)
+    print("----")
+    result.foreach(print)
+    print("----")
 
 
 async def background_tick(duration: Sec) -> None:
     n = 0
     while n <= duration:
-        print(f"BACKGROUND TICK - {n}")
+        print("-")
         n += 1
         await trio.sleep(1)
 

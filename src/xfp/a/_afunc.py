@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Any, Awaitable, Callable, Generator, overload
+from typing import Any, Awaitable, Callable, Generator, overload, Coroutine
 
 from xfp import Xresult, XRBranch
 
-from ._typing import AwaitableXR, CoFunc, CoFuncXR
+from ._typing import CoFunc, CoFuncXR
 
 
 class Afunc[**P, R]:
@@ -21,12 +21,21 @@ class Afunc[**P, R]:
         return Afunc(cofunc)
 
 
-class Acoroutine[R]:
-    def __init__(self, coroutine: Awaitable[R]) -> None:
+class Acoroutine[R](Coroutine[Any, Any, R]):
+    def __init__(self, coroutine: Coroutine[Any, Any, R]) -> None:
         self._coroutine = coroutine
 
     def __await__(self) -> Generator[Any, Any, R]:
         return self._coroutine.__await__()
+
+    def send(self, value) -> Any:
+        return self._coroutine.send(value)
+
+    def throw(self, value) -> Any:
+        return self._coroutine.throw(value)
+
+    def close(self) -> None:
+        return self._coroutine.close()
 
     @overload
     def pipe[Ro](self, afunc: Afunc[[R], Ro]) -> Acoroutine[Ro]:
@@ -70,12 +79,21 @@ class ARfunc[**P, L, R]:
         return ARfunc(cofunc)
 
 
-class ARcoroutine[L, R]:
-    def __init__(self, coroutine: AwaitableXR[L, R]) -> None:
+class ARcoroutine[L, R](Coroutine[Any, Any, Xresult[L, R]]):
+    def __init__(self, coroutine: Coroutine[Any, Any, Xresult[L, R]]) -> None:
         self._coroutine = coroutine
 
     def __await__(self) -> Generator[Any, Any, Xresult[L, R]]:
         return self._coroutine.__await__()
+
+    def send(self, value) -> Any:
+        return self._coroutine.send(value)
+
+    def throw(self, value) -> Any:
+        return self._coroutine.throw(value)
+
+    def close(self) -> None:
+        return self._coroutine.close()
 
     def map_right[Ro](self, afunc: Afunc[[R], Ro]) -> ARcoroutine[L, Ro]:
         async def cofunc() -> Xresult[L, Ro]:
@@ -122,6 +140,22 @@ class ARcoroutine[L, R]:
             return result
 
         return ARcoroutine(cofunc())
+
+    def recover[Ro](self, afunc: Afunc[[L], Ro]) -> Acoroutine[R | Ro]:
+        """
+        if LEFT -> recover value with effectless function
+        if RIGHT -> simply 'extract' value
+        => output is no more a Xresult but a standard value
+        TODO: arguable choice to switch to a Acoroutine
+        """
+
+        async def cofunc() -> R | Ro:
+            result = await self
+            if result.is_left():
+                return await afunc(result.value)
+            return result.value
+
+        return Acoroutine(cofunc())
 
     def pipe[Ro](self, afunc: Afunc[[Xresult[L, R]], Ro]) -> Acoroutine[Ro]:
         async def cofunc() -> Ro:

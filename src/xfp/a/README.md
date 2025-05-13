@@ -1,16 +1,26 @@
+# PURE PYTHON
+
 Coroutine Function (async def) - cofunc
 description paramétrable d'un code à exécuter
 l'appel à la fonction produit un coroutine object
 
-Coroutine Object - coroutine
+Coroutine Object - Coroutine[YieldType, SendType, ReturnType] 
 description paramétré d'un code à exécuter
 les paramètres ont été injectés, 'il ne reste plus qu'à await'
-type = abc.Coroutine[Any,Any,X]
+possède les méthodes permettant d'être géré par un background:
+- send(value) -> 'starts or resume exec of the coroutine'
+- throw(value) -> 'raises the specified exception'
+- close() -> 'causes the coroutine to clean itself up and exit'
 
-Awaitable
-un peu plus général que le coroutine object :
-tout object que l'on peut await (en arrière plan il va construire et await un coroutine object )
+est aussi un Awaitable (objet que l'on peut await dans les coroutine functions)
 
-TYPING:
-COROUTINE FUNCTION:
-- Callable[P,Coroutine[Any,Any,X]] (P: ParamSpec)
+
+Awaitable[ReturnType]
+objet que l'on peut await dans les coroutines functions
+n'est pas en soit une coroutine, ne peut pas être géré tel qu'elle par un backend.
+Doit être await dans une coroutine function pour ça
+type
+
+# A
+
+

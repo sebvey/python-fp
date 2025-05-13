@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import Any, TypeVar
+from typing import Any
 from collections.abc import Awaitable, Generator, Iterable
-from ._typing import CoFunc1
 
 import trio
 
 from xfp.xlist import Xlist
+from ._afunc import Afunc
 
 # typing vs abc Iterable :
 # https://stackoverflow.com/questions/52827463/collections-iterable-vs-typing-iterable-in-type-annotation-and-checking-for-iter
@@ -21,22 +21,31 @@ from xfp.xlist import Xlist
 # Alist est mappable:
 # produit une nouvelle Alist en mettant à jour _el_cofunc
 
-X = TypeVar("X", covariant=True)
 
-
+@Afunc
 async def _identity[A](e: A) -> A:
     return e
 
 
-class Alist[X, Y]:
-    "Awaitable that produces list of elements."
+# I : input type
+# R : result type
+
+
+class Alist[I, R]:
+    """Awaitable that produces list of elements.
+    We can map Afunc
+    (no runtime enforcement -> we can also map standard cofunc
+    TODO: should be enforced ?
+    TODO: should be allowed, signature adapted ?
+    )
+    """
 
     def __init__(
-        self, iterable: Iterable[X], el_cofunc: CoFunc1[X, Y], par: int
+        self, iterable: Iterable[I], el_afunc: Afunc[[I], R], par: int
     ) -> None:
         "for private use. TODO: protect from outside call"
-        self._iterable = iterable
-        self._el_cofunc = el_cofunc
+        self._iterable: Iterable[I] = iterable
+        self._el_afunc: Afunc[[I], R] = el_afunc
         self._par: int | None = par
 
     @staticmethod
@@ -51,7 +60,7 @@ class Alist[X, Y]:
             raise ValueError("'par' must be a positive integer or None")
 
     @staticmethod
-    def from_iterable(iterable: Iterable[X], par: int | None = None) -> Alist[X, X]:
+    def from_iterable[E](iterable: Iterable[E], par: int | None = None) -> Alist[E, E]:
         """
         Only finite iterable should be used.
         par (PositiveInt | None): parallelism. None -> 'infinite' parallelism
@@ -65,25 +74,25 @@ class Alist[X, Y]:
                     f"'{type(iterable).__name__}' not allowed to construct Alist"
                 )
 
-    def __await__(self) -> Generator[Any, Any, Xlist[X]]:
+    def __await__(self) -> Generator[Any, Any, Xlist[I]]:
         return self._cofunc().__await__()
 
-    def par(self, par: int | None) -> Alist[X, Y]:
+    def par(self, par: int | None) -> Alist[I, R]:
         "returns a new Alist with parallelism set to 'par' (max number of elements transformed in parallel)"
-        return Alist(self._iterable, self._el_cofunc, self._parse_par(par))
+        return Alist(self._iterable, self._el_afunc, self._parse_par(par))
 
-    async def _cofunc(self) -> Xlist[Y]:
+    async def _cofunc(self) -> Xlist[R]:
         "cofunction describing the whole materialisation of the Alist to an Xlist"
 
-        results: list[Y] = []
+        results: list[R] = []
         semaphore: trio.Semaphore | None = (
             trio.Semaphore(self._par) if self._par else None
         )
 
         async def transform_closure(
-            item: X,
+            item: I,
         ) -> None:
-            results.append(await self._el_cofunc(item))
+            results.append(await self._el_afunc(item))
             if semaphore:
                 semaphore.release()
 
@@ -95,17 +104,18 @@ class Alist[X, Y]:
 
         return Xlist(results)
 
-    def map[Z](self, CoFunc1: CoFunc1[Y, Z]) -> Alist[X, Z]:
-        async def new_el_cofunc(el: X) -> Z:
-            return await CoFunc1((await self._el_cofunc(el)))
+    def map[Ro](self, afunc: Afunc[[R], Ro]) -> Alist[I, Ro]:
+        @Afunc
+        async def new_el_afunc(el: I) -> Ro:
+            return await afunc((await self._el_afunc(el)))
 
-        return Alist(self._iterable, new_el_cofunc, self._par)
+        return Alist(self._iterable, new_el_afunc, self._par)
 
-    def foreach(self, CoFunc1: CoFunc1[Y, Any]) -> Awaitable[None]:
-        async def new_el_cofunc(el: X) -> None:
-            await CoFunc1((await self._el_cofunc(el)))
+    def foreach(self, afunc: Afunc[[R], Any]) -> Awaitable[None]:
+        async def new_el_afunc(el: I) -> None:
+            await afunc((await self._el_afunc(el)))
 
         # We use Alist to construct the new cofunction
         # We use this cofunction to produce the coroutine object (awaitable)
         # We return the awaitable
-        return Alist(self._iterable, new_el_cofunc, self._par)._cofunc()
+        return Alist(self._iterable, new_el_afunc, self._par)._cofunc()
