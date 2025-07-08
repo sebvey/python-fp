@@ -2,7 +2,9 @@ from typing import Callable
 from inspect import signature
 from functools import partial
 from typing import TypeVar, ParamSpec, cast, Concatenate, Any
+from xfp.functions.xfunc import XFunc
 
+__all__ = ["XFunc"]
 
 A = TypeVar("A")
 P = ParamSpec("P")
