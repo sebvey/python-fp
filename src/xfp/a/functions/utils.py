@@ -1,0 +1,30 @@
+from typing import Callable, Coroutine
+from typing import Any
+
+from xfp.functions import F1
+
+# fmt: off
+type AF0[Out] =                                                                                                                                                                         Callable[[], Coroutine[Any, Any, Out]]
+type AF1[**In, Out] =                                                                                                                                                                   Callable[In, Coroutine[Any, Any, Out]]
+type AF2[**In1, **In2, Out] =                                                                                                                                                           F1[In1, AF1[In2, Out]]
+type AF3[**In1, **In2, **In3, Out] =                                                                                                                                                    F1[In1, AF2[In2, In3, Out]]
+type AF4[**In1, **In2, **In3, **In4, Out] =                                                                                                                                             F1[In1, AF3[In2, In3, In4, Out]]
+type AF5[**In1, **In2, **In3, **In4, **In5, Out] =                                                                                                                                      F1[In1, AF4[In2, In3, In4, In5, Out]]
+type AF6[**In1, **In2, **In3, **In4, **In5, **In6, Out] =                                                                                                                               F1[In1, AF5[In2, In3, In4, In5, In6, Out]]
+type AF7[**In1, **In2, **In3, **In4, **In5, **In6, **In7, Out] =                                                                                                                        F1[In1, AF6[In2, In3, In4, In5, In6, In7, Out]]
+type AF8[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, Out] =                                                                                                                 F1[In1, AF7[In2, In3, In4, In5, In6, In7, In8, Out]]
+type AF9[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, Out] =                                                                                                          F1[In1, AF8[In2, In3, In4, In5, In6, In7, In8, In9, Out]]
+type AF10[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, Out] =                                                                                                 F1[In1, AF9[In2, In3, In4, In5, In6, In7, In8, In9, In10, Out]]
+type AF11[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, Out] =                                                                                         F1[In1, AF10[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, Out]]
+type AF12[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, Out] =                                                                                 F1[In1, AF11[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, Out]]
+type AF13[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, Out] =                                                                         F1[In1, AF12[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, Out]]
+type AF14[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, Out] =                                                                 F1[In1, AF13[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, Out]]
+type AF15[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, Out] =                                                         F1[In1, AF14[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, Out]]
+type AF16[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, Out] =                                                 F1[In1, AF15[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, Out]]
+type AF17[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, Out] =                                         F1[In1, AF16[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, Out]]
+type AF18[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, **In18, Out] =                                 F1[In1, AF17[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, Out]]
+type AF19[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, **In18, **In19, Out] =                         F1[In1, AF18[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, Out]]
+type AF20[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, **In18, **In19, **In20, Out] =                 F1[In1, AF19[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, Out]]
+type AF21[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, **In18, **In19, **In20, **In21, Out] =         F1[In1, AF20[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, Out]]
+type AF22[**In1, **In2, **In3, **In4, **In5, **In6, **In7, **In8, **In9, **In10, **In11, **In12, **In13, **In14, **In15, **In16, **In17, **In18, **In19, **In20, **In21, **In22, Out] = F1[In1, AF21[In2, In3, In4, In5, In6, In7, In8, In9, In10, In11, In12, In13, In14, In15, In16, In17, In18, In19, In20, In21, In22, Out]]
+# fmt: on

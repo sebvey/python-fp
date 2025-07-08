@@ -1,5 +1,7 @@
-from collections.abc import Callable
 from dataclasses import dataclass
+from xfp.a.functions import AF1
+from xfp.a.functions import AFunc
+from xfp.functions import F1
 
 
 @dataclass(frozen=True)
@@ -12,13 +14,19 @@ class XFunc[**X, Y]:
     - functor behavior, both covariant (with the ouput) and contravariant (if a unique input parameter exists)
     """
 
-    f: Callable[X, Y]
+    f: F1[X, Y]
 
     def __call__(self, *args: X.args, **kwargs: X.kwargs) -> Y:
         """Uses the underlying f.__call__."""
         return self.f(*args, **kwargs)
 
-    def map[U](self, g: Callable[[Y], U]) -> "XFunc[X, U]":
+    def a(self) -> "AFunc[X, Y]":
+        async def h(*args: X.args, **kwargs: X.kwargs) -> Y:
+            return self(*args, **kwargs)
+
+        return AFunc(h)
+
+    def map[U](self, g: F1[[Y], U]) -> "XFunc[X, U]":
         """Pipe another function directly after self.f.
 
         ## Arguments
@@ -51,7 +59,7 @@ class XFunc[**X, Y]:
 
         return XFunc(h)
 
-    def contramap[**T, XX](self: "XFunc[[XX], Y]", g: Callable[T, XX]) -> "XFunc[T, Y]":
+    def contramap[**T, XX](self: "XFunc[[XX], Y]", g: F1[T, XX]) -> "XFunc[T, Y]":
         """Pipe another function directly before self.f.
 
         ## Arguments
@@ -81,3 +89,14 @@ class XFunc[**X, Y]:
         ```
         """
         return XFunc(g).map(self)
+
+    def async_map[U](self, g: AF1[[Y], U]) -> "AFunc[X, U]":
+        async def h(*args: X.args, **kwargs: X.kwargs) -> U:
+            return await g(self(*args, **kwargs))
+
+        return AFunc(h)
+
+    def async_contramap[**T, XX](
+        self: "XFunc[[XX], Y]", g: AF1[T, XX]
+    ) -> "AFunc[T, Y]":
+        return AFunc(g).map(self)
