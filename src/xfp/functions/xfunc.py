@@ -10,26 +10,6 @@ class XFunc[**X, Y]:
 
     ## Features:
     - functor behavior, both covariant (with the ouput) and contravariant (if a unique input parameter exists)
-
-    - Contravariant functor:
-    ```python
-        from typing import TYPE_CHECKING, reveal_type
-        from xfp import XFunc
-
-        def replace_points(j: str) -> str:
-            return j.replace(".", ",")
-
-        def float_to_string(i: float) -> str:
-            return str(i)
-
-        xfuncked = XFunc(replace_points)
-        contramapped = xfuncked.contramap(float_to_string)
-        if TYPE_CHECKING:
-            reveal_type(xfuncked) # XFunc[(j: str), str]
-            reveal_type(contramapped) # XFunc[(i: float), str]
-
-        assert contramapped(3.14159) == "3,14159"
-    ```
     """
 
     f: Callable[X, Y]
