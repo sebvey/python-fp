@@ -30,8 +30,9 @@ class XFunc[**X, Y]:
         ## Usage
 
         ```python
-            from xfp import XFunc
+            from xfp.functions import XFunc
             import asyncio
+
             def multiply(i: int, *, j: str) -> str:
                 return j * i
 
@@ -60,7 +61,7 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp import XFunc
+            from xfp.functions import XFunc
 
             def multiply(i: int, *, j: str) -> str:
                 return j * i
@@ -95,7 +96,7 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp import XFunc
+            from xfp.functions import XFunc
 
             def replace_points(j: str) -> str:
                 return j.replace(".", ",")
@@ -117,7 +118,6 @@ class XFunc[**X, Y]:
     def async_map[U](self, g: AF1[[Y], U]) -> "AFunc[X, U]":
         """Lift the synchronous XFunc and pipe another async function directly after.
 
-
         ## Arguments
 
         - g: the async function to be called after f resulted
@@ -126,7 +126,7 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp import XFunc
+            from xfp.functions import XFunc
             import asyncio
 
             def multiply(i: int, *, j: str) -> str:
@@ -137,7 +137,7 @@ class XFunc[**X, Y]:
                 return len(s)
 
             xfuncked = XFunc(multiply)
-            mapped = xfuncked.map(waited_len)
+            mapped = xfuncked.async_map(waited_len)
             if TYPE_CHECKING:
                 reveal_type(xfuncked) # XFunc[(i: int, *, j: str), str]
                 reveal_type(mapped) # AFunc[(i: int, *, j: str), int]
@@ -162,7 +162,7 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp import XFunc
+            from xfp.functions import XFunc
             import asyncio
 
             def replace_points(j: str) -> str:
