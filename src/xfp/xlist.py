@@ -613,7 +613,7 @@ class Xlist(Generic[X]):
         """
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
-        return self.tail().fold(self.head())(f)
+        return self.tail().fold(self.head(), f)
 
     def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
