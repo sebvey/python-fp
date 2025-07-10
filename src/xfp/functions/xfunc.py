@@ -1,6 +1,6 @@
 import threading
 from typing import cast
-from xfp.functions import AF1, F1, XF1
+from xfp.functions import AF1, XF1
 import asyncio
 from asyncio import AbstractEventLoop
 import inspect
@@ -19,16 +19,17 @@ class XFunc[**X, Y]:
     """
 
     def __init__(self, f: XF1[X, Y]) -> None:
+        self.f: AF1[X, Y]
         if isinstance(f, XFunc):
-            self.f: AF1[X, Y] = f.f
+            self.f = f.f
         elif inspect.iscoroutinefunction(f):
-            self.f: AF1[X, Y] = f
+            self.f = f
         else:
 
             async def h(*args: X.args, **kwargs: X.kwargs) -> Y:
                 return cast(Y, f(*args, **kwargs))
 
-            self.f: AF1[X, Y] = h
+            self.f = h
         inspect.markcoroutinefunction(self)
 
     async def __call__(self, *args: X.args, **kwargs: X.kwargs) -> Y:
@@ -59,7 +60,7 @@ class XFunc[**X, Y]:
         t.join()
         return fut.result()
 
-    def collect(self, *args: X.args, **kwargs: X.kwargs) -> F1[X, Y]:
+    def collect(self, *args: X.args, **kwargs: X.kwargs) -> Y:
         """Return the raw synchrone function equivalent.
 
         Works as a transparent-er asyncio.run, since you don't have to worry at all about the event loop you're in.
