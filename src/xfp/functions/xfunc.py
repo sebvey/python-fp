@@ -13,7 +13,9 @@ class XFunc[**X, Y]:
 
     ## Features:
     - functor behavior, both covariant (with the ouput) and contravariant (if a unique input parameter exists)
-    - interfaced with synchroned function: ad-hoc resynchronization of the function
+    - interfaced with synchroned function:
+        - ad-hoc resynchronization of the function
+        - ad-hoc lifting of synchrone function
     """
 
     def __init__(self, f: XF1[X, Y]) -> None:
@@ -65,17 +67,17 @@ class XFunc[**X, Y]:
         ## Usage
 
         ```python
-            from xfp.a.functions XFunc
+            from xfp.functions XFunc
             import asyncio
 
             async def multiply(i: int, *, j: str) -> str:
                 await asyncio.sleep(5)
                 return j * i
 
-            afuncked = XFunc(multiply)
-            resyncked = afuncked.collect
+            xfuncked = XFunc(multiply)
+            resyncked = xfuncked.collect
 
-            assert asyncio.run(afuncked(2, "abc")) == resyncked(2, "abc")
+            assert asyncio.run(xfuncked(2, "abc")) == resyncked(2, "abc")
         ```
         """
         try:
@@ -96,17 +98,17 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp.a.functions import XFunc
+            from xfp.functions import XFunc
             import asyncio
 
             async def multiply(i: int, *, j: str) -> str:
             await asyncio.sleep(5)
                 return j * i
 
-            afuncked = XFunc(multiply)
-            mapped = afuncked.map(len)
+            xfuncked = XFunc(multiply)
+            mapped = xfuncked.map(len)
             if TYPE_CHECKING:
-                reveal_type(afuncked) # XFunc[(i: int, *, j: str), str]
+                reveal_type(xfuncked) # XFunc[(i: int, *, j: str), str]
                 reveal_type(mapped) # XFunc[(i: int, *, j: str), int]
 
             # kwargs are preserved
@@ -133,7 +135,7 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp.a.functions import XFunc
+            from xfp.functions import XFunc
             import asyncio
 
             async def replace_points(j: str) -> str:
@@ -143,10 +145,10 @@ class XFunc[**X, Y]:
             def float_to_string(i: float) -> str:
                 return str(i)
 
-            afuncked = XFunc(replace_points)
-            contramapped = afuncked.contramap(float_to_string)
+            xfuncked = XFunc(replace_points)
+            contramapped = xfuncked.contramap(float_to_string)
             if TYPE_CHECKING:
-                reveal_type(afuncked) # XFunc[(j: str), str]
+                reveal_type(xfuncked) # XFunc[(j: str), str]
                 reveal_type(contramapped) # XFunc[(i: float), str]
 
             assert asyncio.run(contramapped(3.14159)) == "3,14159"
