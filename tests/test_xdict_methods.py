@@ -174,7 +174,7 @@ def test_filter_values_should_keep_true_predicate():
 
 
 @given(st_xdict)
-def test_foreach_calls(xdict):
+def test_foreach_calls(xdict: Xdict):
     assume(len(xdict) > 0)
     called = False
 
