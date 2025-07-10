@@ -17,7 +17,7 @@ from typing import (
 )
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry, tupled
-from xfp.a import AsyncHolder, SequentialHolder
+from xfp.a import AsyncHolder, SimpleAsyncHolder
 from xfp.functions import F1, XF1
 
 
@@ -72,7 +72,7 @@ class Xlist(Generic[X]):
         self, iterable: Iterable[X], async_handler: Optional[AsyncHolder] = None
     ) -> None:
         """Construct an Xlist from an iterable."""
-        self.async_handler = async_handler if async_handler else SequentialHolder()
+        self.async_handler = async_handler if async_handler else SimpleAsyncHolder()
         match iterable:
             case ABCIterable():
                 self.__data = list(iterable)
