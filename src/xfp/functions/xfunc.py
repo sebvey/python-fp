@@ -1,56 +1,91 @@
-from dataclasses import dataclass
-from xfp.a.functions import AF1
-from xfp.a.functions import AFunc
-from xfp.functions import F1
+import threading
+from typing import cast
+from xfp.functions import AF1, F1, XF1
+import asyncio
+from asyncio import AbstractEventLoop
+import inspect
 
 
-@dataclass(frozen=True)
 class XFunc[**X, Y]:
-    """Encapsulate a native Python function.
+    """Encapsulate a native async Python function.
 
     Used to enhance its behavior through the homogene XFP Api.
 
     ## Features:
     - functor behavior, both covariant (with the ouput) and contravariant (if a unique input parameter exists)
-    - linked asynchronous behaviour: chaining (co/contra-variant way) async functions, lifting synchronous function
+    - interfaced with synchroned function: ad-hoc resynchronization of the function
     """
 
-    f: F1[X, Y]
+    def __init__(self, f: XF1[X, Y]) -> None:
+        if isinstance(f, XFunc):
+            self.f: AF1[X, Y] = f.f
+        elif inspect.iscoroutinefunction(f):
+            self.f: AF1[X, Y] = f
+        else:
 
-    def __call__(self, *args: X.args, **kwargs: X.kwargs) -> Y:
+            async def h(*args: X.args, **kwargs: X.kwargs) -> Y:
+                return cast(Y, f(*args, **kwargs))
+
+            self.f: AF1[X, Y] = h
+        inspect.markcoroutinefunction(self)
+
+    async def __call__(self, *args: X.args, **kwargs: X.kwargs) -> Y:
         """Uses the underlying f.__call__."""
-        return self.f(*args, **kwargs)
+        return await self.f(*args, **kwargs)
 
-    @property
-    def a(self) -> "AFunc[X, Y]":
-        """Lift the synchronous XFunc and return an AFunc equivalent.
+    def __materialize_run(self, *args: X.args, **kwargs: X.kwargs) -> Y:
+        return asyncio.run(self(*args, **kwargs))
 
-        The resulting AFunc still has an synchronous behavior, but is wrapped into a Coroutine.
+    def __materialize_thread(
+        self, loop: AbstractEventLoop, *args: X.args, **kwargs: X.kwargs
+    ) -> Y:
+        fut: asyncio.Future[Y] = loop.create_future()
+
+        def run_in_thread() -> None:
+            try:
+                new_loop: AbstractEventLoop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                result: Y = new_loop.run_until_complete(self(*args, **kwargs))
+                fut.set_result(result)
+            except Exception as e:
+                fut.set_exception(e)
+            finally:
+                new_loop.close()
+
+        t = threading.Thread(target=run_in_thread)
+        t.start()
+        t.join()
+        return fut.result()
+
+    def collect(self, *args: X.args, **kwargs: X.kwargs) -> F1[X, Y]:
+        """Return the raw synchrone function equivalent.
+
+        Works as a transparent-er asyncio.run, since you don't have to worry at all about the event loop you're in.
 
         ## Usage
 
         ```python
-            from xfp.functions import XFunc
+            from xfp.a.functions XFunc
             import asyncio
 
-            def multiply(i: int, *, j: str) -> str:
+            async def multiply(i: int, *, j: str) -> str:
+                await asyncio.sleep(5)
                 return j * i
 
-            xfuncked = XFunc(multiply)
-            asyncked = xfuncked.a
-            operated = asyncked.map(lambda resulting_str: resulting_str * 2) # work with your asynchronous lifted function
+            afuncked = XFunc(multiply)
+            resyncked = afuncked.collect
 
-            assert asyncio.run(asyncked(2, "abc")) == xfuncked(2, "abc")
-            assert operated(2, "abc") == "abcabcabcabc"
+            assert asyncio.run(afuncked(2, "abc")) == resyncked(2, "abc")
         ```
         """
+        try:
+            loop: AbstractEventLoop = asyncio.get_running_loop()
+        except RuntimeError:
+            return self.__materialize_run(*args, **kwargs)
+        else:
+            return self.__materialize_thread(loop, *args, **kwargs)
 
-        async def h(*args: X.args, **kwargs: X.kwargs) -> Y:
-            return self(*args, **kwargs)
-
-        return AFunc(h)
-
-    def map[U](self, g: F1[[Y], U]) -> "XFunc[X, U]":
+    def map[U](self, g: XF1[[Y], U]) -> "XFunc[X, U]":
         """Pipe another function directly after self.f.
 
         ## Arguments
@@ -61,30 +96,32 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp.functions import XFunc
+            from xfp.a.functions import XFunc
+            import asyncio
 
-            def multiply(i: int, *, j: str) -> str:
+            async def multiply(i: int, *, j: str) -> str:
+            await asyncio.sleep(5)
                 return j * i
 
-            xfuncked = XFunc(multiply)
-            mapped = xfuncked.map(len)
+            afuncked = XFunc(multiply)
+            mapped = afuncked.map(len)
             if TYPE_CHECKING:
-                reveal_type(xfuncked) # XFunc[(i: int, *, j: str), str]
+                reveal_type(afuncked) # XFunc[(i: int, *, j: str), str]
                 reveal_type(mapped) # XFunc[(i: int, *, j: str), int]
 
             # kwargs are preserved
-            assert mapped(3, j = "abc") == len(multiply(3, j = "abc"))
-            assert mapped(3, j = "abc") == 9
+            assert asyncio.run(mapped(3, j = "abc")) == len(asyncio.run(multiply(3, j = "abc")))
+            assert asyncio.run(mapped(3, j = "abc")) == 9
         ```
         """
 
-        # chaining two sync functions must never use AFunc because of notebook execution
-        def h(*args: X.args, **kwargs: X.kwargs) -> U:
-            return g(self(*args, **kwargs))
+        async def h(*args: X.args, **kwargs: X.kwargs) -> U:
+            y: Y = await self(*args, **kwargs)
+            return await XFunc(g)(y)
 
         return XFunc(h)
 
-    def contramap[**T, XX](self: "XFunc[[XX], Y]", g: F1[T, XX]) -> "XFunc[T, Y]":
+    def contramap[**T, XX](self: "XFunc[[XX], Y]", g: XF1[T, XX]) -> "XFunc[T, Y]":
         """Pipe another function directly before self.f.
 
         ## Arguments
@@ -96,90 +133,23 @@ class XFunc[**X, Y]:
 
         ```python
             from typing import TYPE_CHECKING, reveal_type
-            from xfp.functions import XFunc
+            from xfp.a.functions import XFunc
+            import asyncio
 
-            def replace_points(j: str) -> str:
+            async def replace_points(j: str) -> str:
+                await asyncio.sleep(5)
                 return j.replace(".", ",")
 
             def float_to_string(i: float) -> str:
                 return str(i)
 
-            xfuncked = XFunc(replace_points)
-            contramapped = xfuncked.contramap(float_to_string)
+            afuncked = XFunc(replace_points)
+            contramapped = afuncked.contramap(float_to_string)
             if TYPE_CHECKING:
-                reveal_type(xfuncked) # XFunc[(j: str), str]
+                reveal_type(afuncked) # XFunc[(j: str), str]
                 reveal_type(contramapped) # XFunc[(i: float), str]
 
-            assert contramapped(3.14159) == "3,14159"
-        ```
-        """
-        return XFunc(g).map(self)
-
-    def async_map[U](self, g: AF1[[Y], U]) -> "AFunc[X, U]":
-        """Lift the synchronous XFunc and pipe another async function directly after.
-
-        ## Arguments
-
-        - g: the async function to be called after f resulted
-
-        ## Usage
-
-        ```python
-            from typing import TYPE_CHECKING, reveal_type
-            from xfp.functions import XFunc
-            import asyncio
-
-            def multiply(i: int, *, j: str) -> str:
-                return j * i
-
-            async def waited_len(s: str):
-                await asyncio.sleep(5)
-                return len(s)
-
-            xfuncked = XFunc(multiply)
-            mapped = xfuncked.async_map(waited_len)
-            if TYPE_CHECKING:
-                reveal_type(xfuncked) # XFunc[(i: int, *, j: str), str]
-                reveal_type(mapped) # AFunc[(i: int, *, j: str), int]
-
-            # after 5 seconds
-            assert asyncio.run(mapped(3, j = "abc")) == 9
-        ```
-        """
-        return self.a.async_map(g)
-
-    def async_contramap[**T, XX](
-        self: "XFunc[[XX], Y]", g: AF1[T, XX]
-    ) -> "AFunc[T, Y]":
-        """Lift the synchronous XFunc and pipe another async function directly before self.f.
-
-        ## Arguments
-
-        - self: retrained on XFunc with a unique input parameter
-        - g: the async function to be called before f
-
-        ## Usage
-
-        ```python
-            from typing import TYPE_CHECKING, reveal_type
-            from xfp.functions import XFunc
-            import asyncio
-
-            def replace_points(j: str) -> str:
-                return j.replace(".", ",")
-
-            async def float_to_string(i: float) -> str:
-                await asyncio.sleep(5)
-                return str(i)
-
-            xfuncked = XFunc(replace_points)
-            contramapped = xfuncked.async_contramap(float_to_string)
-            if TYPE_CHECKING:
-                reveal_type(xfuncked) # XFunc[(j: str), str]
-                reveal_type(contramapped) # AFunc[(i: float), str]
-
-            # after 5 seconds
             assert asyncio.run(contramapped(3.14159)) == "3,14159"
         ```
         """
-        return self.a.async_contramap(g)
+        return XFunc(g).map(self)
