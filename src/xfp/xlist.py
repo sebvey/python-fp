@@ -9,14 +9,16 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    Optional,
     Protocol,
     TypeVar,
     cast,
     overload,
 )
 from collections.abc import Iterable as ABCIterable
-from xfp import Xresult, Xtry
-from xfp.functions import F1
+from xfp import Xresult, Xtry, tupled
+from xfp.a import AsyncHolder, SequentialHolder
+from xfp.functions import F1, XF1
 
 
 class _SupportsDunderLT(Protocol):
@@ -59,8 +61,18 @@ class Xlist(Generic[X]):
     - List proxies or quality of lifes
     """
 
-    def __init__(self, iterable: Iterable[X]) -> None:
+    def spawn[T](self, iterable: Iterable[T]) -> "Xlist[T]":
+        """Construct an Xlist from an iterable.
+
+        Reuse the algorithmic helpers from current instance.
+        """
+        return Xlist(iterable, self.async_handler)
+
+    def __init__(
+        self, iterable: Iterable[X], async_handler: Optional[AsyncHolder] = None
+    ) -> None:
         """Construct an Xlist from an iterable."""
+        self.async_handler = async_handler if async_handler else SequentialHolder()
         match iterable:
             case ABCIterable():
                 self.__data = list(iterable)
@@ -98,11 +110,11 @@ class Xlist(Generic[X]):
 
     def copy(self) -> Xlist[X]:
         "Return a shallow copy of itself."
-        return Xlist(copy(self.__data))
+        return self.spawn(copy(self.__data))
 
     def deepcopy(self) -> Xlist[X]:
         "Return a deep copy of itself."
-        return Xlist(deepcopy(self.__data))
+        return self.spawn(deepcopy(self.__data))
 
     def get(self, i: int) -> X:
         """Return the i-th element of the Xlist.
@@ -141,7 +153,7 @@ class Xlist(Generic[X]):
         """
         if len(self) <= 0:
             raise IndexError("<tail> operation not allowed on empty list")
-        return Xlist(self.__data[1:])
+        return self.spawn(self.__data[1:])
 
     def tail_fr(self) -> Xresult[IndexError, Xlist[X]]:
         """Return the Xlist except its first element.
@@ -168,7 +180,7 @@ class Xlist(Generic[X]):
         newlist.__data.insert(i, el)
         return newlist
 
-    def map[T](self, f: F1[[X], T]) -> Xlist[T]:
+    def map[T](self, f: XF1[[X], T]) -> Xlist[T]:
         """Return a new Xlist with the function f applied to each element.
 
         ### Usage
@@ -181,9 +193,9 @@ class Xlist(Generic[X]):
             assert input.map(f) == Xlist([f(1), f(2), f(3)]) # == Xlist([1, 4, 9])
         ```
         """
-        return Xlist([f(el) for el in self])
+        return self.spawn(self.async_handler.distribute(f, self))
 
-    def filter(self, predicate: F1[[X], bool]) -> Xlist[X]:
+    def filter(self, predicate: XF1[[X], bool]) -> Xlist[X]:
         """Return a new Xlist containing only the elements for which predicate is True.
 
         ### Usage
@@ -196,9 +208,10 @@ class Xlist(Generic[X]):
             assert input.filter(predicate) == Xlist([2, 4]) # keep only even numbers
         ```
         """
-        return Xlist([el for el in self if predicate(el)])
+        filters: Iterable[bool] = self.async_handler.distribute(predicate, self)
+        return self.spawn([el for el, b in zip(self, filters) if b])
 
-    def foreach(self, statement: F1[[X], Any]) -> None:
+    def foreach(self, statement: XF1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each element of the Xlist.
 
         ### Usage
@@ -214,7 +227,7 @@ class Xlist(Generic[X]):
             # This is an element of the list : 3
         ```
         """
-        [statement(e) for e in self]
+        self.async_handler.distribute(statement, self)
 
     def flatten[XS](self: Xlist[Iterable[XS]]) -> Xlist[XS]:
         """Return a new Xlist with one less level of nest.
@@ -228,9 +241,9 @@ class Xlist(Generic[X]):
             assert Xlist([[1, 2], [3]]).flatten() == Xlist([1, 2, 3])
         ```
         """
-        return Xlist([el for els in self for el in els])
+        return self.spawn([el for els in self for el in els])
 
-    def flat_map[T](self, f: F1[[X], Iterable[T]]) -> "Xlist[T]":
+    def flat_map[T](self, f: XF1[[X], Iterable[T]]) -> "Xlist[T]":
         """Return the result of map and then flatten.
 
         Exists as homogenisation with Xresult.flat_map
@@ -267,7 +280,7 @@ class Xlist(Generic[X]):
         ...
 
     @overload
-    def min(self, key: F1[[X], _Comparable]) -> X:
+    def min(self, key: XF1[[X], _Comparable]) -> X:
         """Return the smallest element of the Xlist given the key criteria.
 
         ### Argument
@@ -290,7 +303,11 @@ class Xlist(Generic[X]):
         ...
 
     def min(self, key: Any = None) -> X:
-        return min(self, key=key)
+        if key:
+            keys = self.async_handler.distribute(key, self)
+            return min(zip(self, keys), key=tupled(lambda _, k: k))[0]
+        else:
+            return min(self)
 
     @overload
     def min_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
@@ -310,7 +327,7 @@ class Xlist(Generic[X]):
         ...
 
     @overload
-    def min_fr(self, key: F1[[X], _Comparable]) -> Xresult[ValueError, X]:
+    def min_fr(self, key: XF1[[X], _Comparable]) -> Xresult[ValueError, X]:
         """Return the smallest element of the Xlist given the key criteria.
 
         Wrap the potential failure in an Xresult.
@@ -353,7 +370,7 @@ class Xlist(Generic[X]):
         ...
 
     @overload
-    def max(self, key: F1[[X], _Comparable]) -> X:
+    def max(self, key: XF1[[X], _Comparable]) -> X:
         """Return the biggest element of the Xlist given the key criteria.
 
         ### Argument
@@ -376,7 +393,11 @@ class Xlist(Generic[X]):
         ...
 
     def max(self, key: Any = None) -> X:
-        return max(self, key=key)
+        if key:
+            keys = self.async_handler.distribute(key, self)
+            return max(zip(self, keys), key=tupled(lambda _, k: k))[0]
+        else:
+            return max(self)
 
     @overload
     def max_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
@@ -396,7 +417,7 @@ class Xlist(Generic[X]):
         ...
 
     @overload
-    def max_fr(self, key: F1[[X], _Comparable]) -> Xresult[ValueError, X]:
+    def max_fr(self, key: XF1[[X], _Comparable]) -> Xresult[ValueError, X]:
         """Return the biggest element of the Xlist given the key criteria.
 
         Wrap the potential failure in an Wresult.
@@ -441,7 +462,7 @@ class Xlist(Generic[X]):
         ...
 
     @overload
-    def sorted(self, *, key: F1[[X], _Comparable], reverse: bool = False) -> Xlist[X]:
+    def sorted(self, *, key: XF1[[X], _Comparable], reverse: bool = False) -> Xlist[X]:
         """Return a new Xlist containing the same elements sorted given the key criteria.
 
         ### Keyword Arguments
@@ -462,13 +483,19 @@ class Xlist(Generic[X]):
         """
 
     def sorted(self, key: Any = None, reverse: bool = False) -> Xlist[X]:
-        return Xlist(sorted(self, key=key, reverse=reverse))
+        if key:
+            keys = self.async_handler.distribute(key, self)
+            return self.spawn(
+                sorted(zip(self, keys), key=tupled(lambda _, k: k), reverse=reverse)
+            ).map(tupled(lambda el, _: el))
+        else:
+            return self.spawn(sorted(self, reverse=reverse))
 
     def reversed(self) -> Xlist[X]:
         """Return a new Xlist containing the same elements in the reverse order."""
         data: list[X] = self.__data.copy()
         data.reverse()
-        return Xlist(data)
+        return self.spawn(data)
 
     @overload
     def fold_left[Y](self, zero: Y, f: F1[[Y, X], Y]) -> Y:
@@ -588,7 +615,7 @@ class Xlist(Generic[X]):
         else:
             return self.fold_left(zero, f)
 
-    def reduce(self, f: F1[[X, X], X]) -> X:
+    def reduce(self, f: XF1[[X, X], X]) -> X:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         ### Raise
@@ -613,9 +640,9 @@ class Xlist(Generic[X]):
         """
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
-        return self.tail().fold(self.head(), f)
+        return self.async_handler.reduce(f, self)
 
-    def reduce_fr(self, f: F1[[X, X], X]) -> Xresult[IndexError, X]:
+    def reduce_fr(self, f: XF1[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
 
         Wrap the potential error in an Xresult.
@@ -639,4 +666,4 @@ class Xlist(Generic[X]):
 
     def zip[T](self, other: Iterable[T]) -> "Xlist[tuple[X, T]]":
         """Zip this Xlist with another iterable."""
-        return Xlist(zip(self, other))
+        return self.spawn(zip(self, other))

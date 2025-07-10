@@ -1,0 +1,27 @@
+from dataclasses import dataclass
+import functools
+from typing import override, Iterable
+from xfp import tupled
+from xfp.a.async_holder import AsyncHolder
+
+from xfp.functions import XF1, XFunc
+
+
+@dataclass
+class SequentialHolder(AsyncHolder):
+    @override
+    def ap[X, Y](
+        self, async_process: Iterable[XF1[[X], Y]]
+    ) -> XFunc[[Iterable[X]], Iterable[Y]]:
+        def h(iter: Iterable[X]) -> Iterable[Y]:
+            return list(
+                map(
+                    tupled(lambda f, el: XFunc(f).collect(el)), zip(async_process, iter)
+                )
+            )
+
+        return XFunc(h)
+
+    @override
+    def reduce[X](self, f: XF1[[X, X], X], xs: Iterable[X]) -> X:
+        return functools.reduce(XFunc(f).collect, xs)
