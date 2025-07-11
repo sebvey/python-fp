@@ -1,6 +1,6 @@
 import threading
-from typing import cast
-from xfp.functions import AF1, XF1
+from typing import Any, cast
+from xfp.functions import AF1, F1, XF1
 import asyncio
 from asyncio import AbstractEventLoop
 import inspect
@@ -17,6 +17,22 @@ class XFunc[**X, Y]:
         - ad-hoc resynchronization of the function
         - ad-hoc lifting of synchrone function
     """
+
+    @classmethod
+    def from_sync(cls, f: F1[X, Y]) -> "XFunc[X, Y]":
+        """Instantiate an XFunc from a synchrone function.
+
+        Purely proxy to init, but may please mypy more in certain situations.
+        """
+        return cls(f)
+
+    @classmethod
+    def from_async(cls, f: AF1[X, Y]) -> "XFunc[X, Y]":
+        """Instantiate an XFunc from an asynchrone function.
+
+        Purely proxy to init, but may please mypy more in certain situations.
+        """
+        return cls(f)
 
     def __init__(self, f: XF1[X, Y]) -> None:
         self.f: AF1[X, Y]
@@ -124,7 +140,8 @@ class XFunc[**X, Y]:
 
         return XFunc(h)
 
-    def contramap[**T, XX](self: "XFunc[[XX], Y]", g: XF1[T, XX]) -> "XFunc[T, Y]":
+    # linked type is disabled here to ease usage
+    def contramap[**T](self: "XFunc[[Any], Y]", g: XF1[T, Any]) -> "XFunc[T, Y]":
         """Pipe another function directly before self.f.
 
         ## Arguments

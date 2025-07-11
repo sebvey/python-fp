@@ -538,7 +538,7 @@ class Xresult[Y, X]:
         """
         match self:
             case Xresult(v, XRBranch.RIGHT):
-                return Xresult(f(cast(X, v)), XRBranch.LEFT)
+                return cast(Xresult[Y, Never], Xresult(f(cast(X, v)), XRBranch.LEFT))
             case _:
                 return cast(Xresult[Y, Never], self)
 
@@ -577,7 +577,7 @@ class Xresult[Y, X]:
         """
         match self:
             case Xresult(v, XRBranch.LEFT):
-                return Xresult(f(cast(Y, v)), XRBranch.RIGHT)
+                return cast(Xresult[Never, T], Xresult(f(cast(Y, v)), XRBranch.LEFT))
             case _:
                 return cast(Xresult[Never, X], self)
 
