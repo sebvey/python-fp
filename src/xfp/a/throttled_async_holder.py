@@ -2,7 +2,6 @@ import asyncio
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp import Xlist
 from xfp.a import SequentialHolder
 from xfp.a.async_holder import AsyncHolder
 
@@ -18,6 +17,8 @@ class ThrottledAsyncHolder(AsyncHolder):
     def ap[X, Y](
         self, async_process: Iterable[XF1[[X], Y]]
     ) -> XFunc[[Iterable[X]], Iterable[Y]]:
+        from xfp import Xlist
+
         async def h(iter: Iterable[X]) -> Iterable[Y]:
             async def chunk_op(iterf: Iterable[tuple[X, XF1[[X], Y]]]) -> Iterable[Y]:
                 return await asyncio.gather(*[XFunc(f)(el) for el, f in iterf])
