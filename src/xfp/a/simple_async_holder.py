@@ -2,7 +2,6 @@ import asyncio
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp import tupled
 from xfp.a.async_holder import AsyncHolder
 
 from xfp.functions import XF1, XFunc
@@ -16,7 +15,7 @@ class SimpleAsyncHolder(AsyncHolder):
     ) -> XFunc[[Iterable[X]], Iterable[Y]]:
         async def h(iter: Iterable[X]) -> Iterable[Y]:
             return await asyncio.gather(
-                *(map(tupled(lambda f, el: XFunc(f)(el)), zip(async_process, iter)))
+                *(map((lambda fel: XFunc(fel[0])(fel[1])), zip(async_process, iter)))
             )
 
         return XFunc(h)

@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 from collections.abc import Iterable as ABCIterable
-from xfp import Xresult, Xtry, tupled
+from xfp import Xresult, Xtry
 from xfp.a import AsyncHolder, SimpleAsyncHolder
 from xfp.functions import F1, XF1
 
@@ -304,10 +304,10 @@ class Xlist(Generic[X]):
 
     def min(self, key: Any = None) -> X:
         if key:
-            keys = self.async_handler.distribute(key, self)
-            return min(zip(self, keys), key=tupled(lambda _, k: k))[0]
+            keys: Iterable[_Comparable] = self.async_handler.distribute(key, self)
+            return min(zip(keys, self), key=lambda kv: kv[0])[1]
         else:
-            return min(self)
+            return min(self, key=key)
 
     @overload
     def min_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
@@ -395,9 +395,9 @@ class Xlist(Generic[X]):
     def max(self, key: Any = None) -> X:
         if key:
             keys = self.async_handler.distribute(key, self)
-            return max(zip(self, keys), key=tupled(lambda _, k: k))[0]
+            return max(zip(keys, self), key=lambda kv: kv[0])[1]
         else:
-            return max(self)
+            return max(self, key=key)
 
     @overload
     def max_fr(self: Xlist[_Comparable]) -> Xresult[ValueError, X]:
@@ -486,10 +486,10 @@ class Xlist(Generic[X]):
         if key:
             keys = self.async_handler.distribute(key, self)
             return self.spawn(
-                sorted(zip(self, keys), key=tupled(lambda _, k: k), reverse=reverse)
-            ).map(tupled(lambda el, _: el))
+                sorted(zip(keys, self), key=lambda kv: kv[0], reverse=reverse)
+            ).map(lambda kv: kv[1])
         else:
-            return self.spawn(sorted(self, reverse=reverse))
+            return self.spawn(sorted(self, key=key, reverse=reverse))
 
     def reversed(self) -> Xlist[X]:
         """Return a new Xlist containing the same elements in the reverse order."""

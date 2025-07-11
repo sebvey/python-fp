@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp import tupled
 from xfp.a.async_holder import AsyncHolder
 
 from xfp.functions import XF1, XFunc
@@ -15,9 +14,7 @@ class SequentialHolder(AsyncHolder):
     ) -> XFunc[[Iterable[X]], Iterable[Y]]:
         def h(iter: Iterable[X]) -> Iterable[Y]:
             return list(
-                map(
-                    tupled(lambda f, el: XFunc(f).collect(el)), zip(async_process, iter)
-                )
+                map(lambda fel: XFunc(fel[0]).collect(fel[1]), zip(async_process, iter))
             )
 
         return XFunc(h)
