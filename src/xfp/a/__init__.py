@@ -1,11 +1,11 @@
-from xfp.a.async_holder import AsyncHolder
-from xfp.a.sequential_holder import SequentialHolder
-from xfp.a.simple_async_holder import SimpleAsyncHolder
-from xfp.a.throttled_async_holder import ThrottledAsyncHolder
+from xfp.a.async_handler import AsyncHandler
+from xfp.a.sequential_handler import SequentialHandler
+from xfp.a.simple_async_handler import SimpleAsyncHandler
+from xfp.a.throttled_async_handler import ThrottledAsyncHandler
 
 __all__ = [
-    "AsyncHolder",
-    "SequentialHolder",
-    "SimpleAsyncHolder",
-    "ThrottledAsyncHolder",
+    "AsyncHandler",
+    "SequentialHandler",
+    "SimpleAsyncHandler",
+    "ThrottledAsyncHandler",
 ]

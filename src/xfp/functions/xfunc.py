@@ -173,3 +173,12 @@ class XFunc[**X, Y]:
         ```
         """
         return XFunc(g).map(self)
+
+    # linked type is disabled here to ease usage
+    def zip[T, U](
+        self: "XFunc[[Any], Y]", other: XF1[[T], U]
+    ) -> "XFunc[[Any, T], tuple[Y, U]]":
+        async def h(xx: Any, t: T) -> tuple[Y, U]:
+            return await asyncio.gather(self(xx), XFunc(other)(t))
+
+        return XFunc(h)

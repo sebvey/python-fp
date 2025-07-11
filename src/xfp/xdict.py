@@ -11,7 +11,8 @@ from typing import (
 from xfp import Xlist, Xresult, Xtry, tupled
 from collections.abc import Iterable as ABCIterable
 
-from xfp.functions import F1
+from xfp.a import AsyncHandler, SequentialHandler
+from xfp.functions import XF1, XFunc, tupled2, id
 
 
 @runtime_checkable
@@ -47,14 +48,27 @@ class Xdict[Y, X]:
             assert xdict == Xdict({"a": 3, "b": 2})
         ```
         """
-        return cls({k: v for k, v in iterable})
+        if isinstance(iterable, Xlist):
+            return cls({k: v for k, v in iterable}, iterable.async_handler)
+        else:
+            return cls({k: v for k, v in iterable})
 
-    def __init__(self, dic: ABCDict[Y, X]) -> None:
+    def spawn[T, U](self, dic: ABCDict[T, U]) -> "Xdict[T, U]":
+        """Construct an Xlist from an iterable.
+
+        Reuse the algorithmic helpers from current instance.
+        """
+        return Xdict(dic, self.async_handler)
+
+    def __init__(
+        self, dic: ABCDict[Y, X], async_handler: AsyncHandler = SequentialHandler()
+    ) -> None:
         """Construct an Xdict from a dict-like.
 
         Dict-like is defined by the existence of the "items" method.
         """
         self.__data = dict(dic.items())
+        self.async_handler = async_handler
 
     def __iter__(self) -> Iterator[tuple[Y, X]]:
         """Return an iterable over the underlying data."""
@@ -204,21 +218,21 @@ class Xdict[Y, X]:
             assert Xdict({"a": 1, "b": 2}).union(Xdict({"a": 3, "c": 4})) == Xdict({"a": 3, "b": 2, "c": 4})
         ```
         """
-        return Xdict.from_list(list(self.items()) + list(other.items()))
+        return Xdict.from_list(self.items().union(other.items()))
 
     def keys(self) -> Xlist[Y]:
         """Return an Xlist of the keys of the Xdict."""
-        return Xlist(self.__data.keys())
+        return self.items().map(tupled2(lambda k, _: k))
 
     def values(self) -> Xlist[X]:
         """Return an Xlist of the values of the Xdict."""
-        return Xlist(self.__data.values())
+        return self.items().map(tupled2(lambda _, v: v))
 
     def items(self) -> Xlist[tuple[Y, X]]:
         """Return an Xlist of the couples (key, value) of the Xdict."""
-        return Xlist(self.__data.items())
+        return Xlist(self.__data.items(), self.async_handler)
 
-    def map[T, U](self, f: F1[[Y, X], tuple[U, T]]) -> "Xdict[U, T]":
+    def map[T, U](self, f: XF1[[Y, X], tuple[U, T]]) -> "Xdict[U, T]":
         """Return a new Xdict, after transformation of the couples (key, value) through `f`.
 
         Transform each couple with `f`, then recreate an Xdict with the result.
@@ -239,7 +253,7 @@ class Xdict[Y, X]:
         """
         return Xdict.from_list(self.items().map(tupled(f)))
 
-    def map_keys[U](self, f: F1[[Y], U]) -> "Xdict[U, X]":
+    def map_keys[U](self, f: XF1[[Y], U]) -> "Xdict[U, X]":
         """Return a new Xdict, after transformation of the keys through `f`.
 
         Transform each key with `f`, then recreate an Xdict with the result.
@@ -258,9 +272,9 @@ class Xdict[Y, X]:
             assert collisioned == Xdict({"c": 2}) or collisioned == Xdict({"c": 1}) # but it will always return the same
         ```
         """
-        return self.map(lambda y, x: (f(y), x))
+        return self.map(XFunc(f).zip(id))
 
-    def map_values[T](self, f: F1[[X], T]) -> "Xdict[Y, T]":
+    def map_values[T](self, f: XF1[[X], T]) -> "Xdict[Y, T]":
         """Return a new Xdict, after transformation of the values through `f`.
 
         Transform each value with `f`, then recreate an Xdict with the result.
@@ -273,9 +287,9 @@ class Xdict[Y, X]:
             assert Xdict({"a": 1, "b": 2}).map_values(lambda x: x * 10) == Xdict({"a": 10, "b": 20})
         ```
         """
-        return self.map(lambda y, x: (y, f(x)))
+        return self.map(XFunc(id).zip(f))
 
-    def filter(self, predicate: F1[[Y, X], bool]) -> "Xdict[Y, X]":
+    def filter(self, predicate: XF1[[Y, X], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict couples (key, value) using `predicate`.
@@ -291,7 +305,7 @@ class Xdict[Y, X]:
         """
         return self.from_list(self.items().filter(tupled(predicate)))
 
-    def filter_keys(self, predicate: F1[[Y], bool]) -> "Xdict[Y, X]":
+    def filter_keys(self, predicate: XF1[[Y], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict keys using `predicate`.
@@ -305,9 +319,9 @@ class Xdict[Y, X]:
             assert Xdict({"a": 1, "b": 20}).filter(lambda y: y in ["a", "c"]) == Xdict({"a": 1})
         ```
         """
-        return self.filter(lambda y, _: predicate(y))
+        return self.filter(XFunc(predicate).contramap(lambda y, _: y))
 
-    def filter_values(self, predicate: F1[[X], bool]) -> "Xdict[Y, X]":
+    def filter_values(self, predicate: XF1[[X], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
 
         Filter the Xdict values using `predicate`.
@@ -321,9 +335,9 @@ class Xdict[Y, X]:
             assert Xdict({"a": 1, "b": 20}).filter(lambda x: x < 10) == Xdict({"a": 1})
         ```
         """
-        return self.filter(lambda _, x: predicate(x))
+        return self.filter(XFunc(predicate).contramap(lambda _, x: x))
 
-    def foreach(self, statement: F1[[Y, X], Any]) -> None:
+    def foreach(self, statement: XF1[[Y, X], Any]) -> None:
         """Do the 'statement' procedure once for each couple (key, value) of the Xdict.
 
         ### Usage
@@ -340,7 +354,7 @@ class Xdict[Y, X]:
         """
         self.items().foreach(tupled(statement))
 
-    def foreach_keys(self, statement: F1[[Y], Any]) -> None:
+    def foreach_keys(self, statement: XF1[[Y], Any]) -> None:
         """Do the 'statement' procedure once for each key of the Xdict.
 
         ### Usage
@@ -357,7 +371,7 @@ class Xdict[Y, X]:
         """
         return self.foreach(lambda y, _: statement(y))
 
-    def foreach_values(self, statement: F1[[X], Any]) -> None:
+    def foreach_values(self, statement: XF1[[X], Any]) -> None:
         """Do the 'statement' procedure once for each value of the Xdict.
 
         ### Usage

@@ -3,7 +3,7 @@ from typing import Iterable, Protocol
 from xfp.functions import XF1, XFunc
 
 
-class AsyncHolder(Protocol):
+class AsyncHandler(Protocol):
     # def gather[X](self, async_results: Iterable[Coroutine[Any, Any, X]]) -> Coroutine[Any, Any, Iterable[X]]: ...
 
     def ap[X, Y](

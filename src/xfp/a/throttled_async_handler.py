@@ -2,15 +2,15 @@ import asyncio
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp.a import SequentialHolder
-from xfp.a.async_holder import AsyncHolder
+from xfp.a import SequentialHandler
+from xfp.a.async_handler import AsyncHandler
 
 from xfp.functions import XF1, XFunc
 import itertools
 
 
 @dataclass
-class ThrottledAsyncHolder(AsyncHolder):
+class ThrottledAsyncHandler(AsyncHandler):
     throttle: int
 
     @override
@@ -25,7 +25,7 @@ class ThrottledAsyncHolder(AsyncHolder):
 
             return Xlist(
                 itertools.batched(zip(iter, async_process), self.throttle),
-                SequentialHolder(),
+                SequentialHandler(),
             ).flat_map(chunk_op)
 
         return XFunc(h)

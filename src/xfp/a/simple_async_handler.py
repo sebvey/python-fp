@@ -2,13 +2,13 @@ import asyncio
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp.a.async_holder import AsyncHolder
+from xfp.a.async_handler import AsyncHandler
 
 from xfp.functions import XF1, XFunc
 
 
 @dataclass
-class SimpleAsyncHolder(AsyncHolder):
+class SimpleAsyncHandler(AsyncHandler):
     @override
     def ap[X, Y](
         self, async_process: Iterable[XF1[[X], Y]]

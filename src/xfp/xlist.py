@@ -9,7 +9,6 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
-    Optional,
     Protocol,
     TypeVar,
     cast,
@@ -17,7 +16,7 @@ from typing import (
 )
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
-from xfp.a import AsyncHolder, SimpleAsyncHolder
+from xfp.a import AsyncHandler, SequentialHandler
 from xfp.functions import F1, XF1
 
 
@@ -69,10 +68,10 @@ class Xlist(Generic[X]):
         return Xlist(iterable, self.async_handler)
 
     def __init__(
-        self, iterable: Iterable[X], async_handler: Optional[AsyncHolder] = None
+        self, iterable: Iterable[X], async_handler: AsyncHandler = SequentialHandler()
     ) -> None:
         """Construct an Xlist from an iterable."""
-        self.async_handler = async_handler if async_handler else SimpleAsyncHolder()
+        self.async_handler = async_handler
         match iterable:
             case ABCIterable():
                 self.__data = list(iterable)
@@ -179,6 +178,18 @@ class Xlist(Generic[X]):
         newlist = self.copy()
         newlist.__data.insert(i, el)
         return newlist
+
+    def union[T](self, other: Iterable[T]) -> "Xlist[X | T]":
+        """Return a new Xlist, being the concatenation of self and a given one.
+        ### Usage
+
+        ```python
+            from xfp import Xlist
+
+            assert Xlist([1, 2, 3]).union(Xlist([4, 5, 6])) == Xlist([1, 2, 3, 4, 5, 6])
+        ```
+        """
+        return self.spawn(list(self) + list(other))
 
     def map[T](self, f: XF1[[X], T]) -> Xlist[T]:
         """Return a new Xlist with the function f applied to each element.
