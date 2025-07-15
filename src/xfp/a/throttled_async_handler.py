@@ -1,6 +1,5 @@
 import asyncio
 from dataclasses import dataclass
-import functools
 from typing import override, Iterable
 from xfp.a import SequentialHandler, SimpleAsyncHandler
 from xfp.a.async_handler import AsyncHandler
@@ -58,6 +57,6 @@ class ThrottledAsyncHandler(AsyncHandler):
                 f,
                 Xlist(
                     itertools.batched(xs, self.throttle),
-                    async_handler=SimpleAsyncHandler(),
-                ).map(lambda xxs: functools.reduce(f.collect, xxs)),
+                    async_handler=SequentialHandler(),
+                ).map(lambda xxs: SimpleAsyncHandler().reduce(f, xxs)),
             )

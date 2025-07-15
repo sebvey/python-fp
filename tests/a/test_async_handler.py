@@ -15,13 +15,13 @@ from xfp.functions import XFunc
 
 @XFunc.from_async
 async def multiply(i: int) -> int:
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
     return i * i
 
 
 @XFunc.from_async
 async def sum(i: int, j: int) -> int:
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
     return i + j
 
 
@@ -48,9 +48,9 @@ def test_builtin_handlers_reduce_should_have_same_behavior(
 
 
 def test_async_handler_should_be_faster() -> None:
-    input: Xlist[int] = Xlist(range(1, 1000))
+    input: Xlist[int] = Xlist(range(1, 100))
     sync_list: Xlist[int] = Xlist(input, async_handler=SequentialHandler())
-    tsync_list: Xlist[int] = Xlist(input, async_handler=ThrottledAsyncHandler(5))
+    tsync_list: Xlist[int] = Xlist(input, async_handler=ThrottledAsyncHandler(20))
     async_list: Xlist[int] = Xlist(input, async_handler=SimpleAsyncHandler())
     start: float = time.perf_counter()
     result1: Xlist[int] = sync_list.map(multiply)
@@ -59,6 +59,26 @@ def test_async_handler_should_be_faster() -> None:
     middle2: float = time.perf_counter()
     result3: Xlist[int] = async_list.map(multiply)
     end: float = time.perf_counter()
+    assert result1 == result2
+    assert result2 == result3
+
+    assert (middle1 - start) > (middle2 - middle1)
+    assert (middle2 - middle1) > (end - middle2)
+
+
+def test_async_handler_reduce_should_be_faster() -> None:
+    input: Xlist[int] = Xlist(range(1, 100))
+    sync_list: Xlist[int] = Xlist(input, async_handler=SequentialHandler())
+    tsync_list: Xlist[int] = Xlist(input, async_handler=ThrottledAsyncHandler(20))
+    async_list: Xlist[int] = Xlist(input, async_handler=SimpleAsyncHandler())
+    start: float = time.perf_counter()
+    result1: int = sync_list.reduce(sum)
+    middle1: float = time.perf_counter()
+    result2: int = tsync_list.reduce(sum)
+    middle2: float = time.perf_counter()
+    result3: int = async_list.reduce(sum)
+    end: float = time.perf_counter()
+    assert result1 == ((99 * 100) / 2)
     assert result1 == result2
     assert result2 == result3
 
