@@ -1,10 +1,9 @@
 import asyncio
 from dataclasses import dataclass
-import functools
 from typing import override, Iterable
 from xfp.a.async_handler import AsyncHandler
 
-from xfp.functions import XFunc
+from xfp.functions import XFunc, tupled2
 
 
 @dataclass
@@ -41,4 +40,18 @@ class SimpleAsyncHandler(AsyncHandler):
     @override
     def reduce[X](self, f: XFunc[[X, X], X], xs: Iterable[X]) -> X:
         """Specific implementation of the reduce operation."""
-        return functools.reduce(f.collect, xs)
+        lxs = list(xs)
+        length = len(lxs)
+
+        @XFunc.from_async
+        async def step(sublist: list[X]) -> list[X]:
+            return await asyncio.gather(
+                *map(tupled2(f), zip(sublist[::2], sublist[1::2]))
+            )
+
+        if length == 1:
+            return lxs[0]
+        elif length % 2 == 0:
+            return self.reduce(f, step.collect(lxs))
+        else:
+            return self.reduce(f, step.collect(lxs[1:]) + [lxs[0]])

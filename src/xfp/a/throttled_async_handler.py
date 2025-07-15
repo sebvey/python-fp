@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 import functools
 from typing import override, Iterable
-from xfp.a import SequentialHandler
+from xfp.a import SequentialHandler, SimpleAsyncHandler
 from xfp.a.async_handler import AsyncHandler
 
 from xfp.functions import XFunc
@@ -49,5 +49,15 @@ class ThrottledAsyncHandler(AsyncHandler):
 
     @override
     def reduce[X](self, f: XFunc[[X, X], X], xs: Iterable[X]) -> X:
-        """Specific implementation of the reduce operation."""
-        return functools.reduce(f.collect, xs)
+        from xfp import Xlist
+
+        if len(list(xs)) == 1:
+            return list(xs)[0]
+        else:
+            return self.reduce(
+                f,
+                Xlist(
+                    itertools.batched(xs, self.throttle),
+                    async_handler=SimpleAsyncHandler(),
+                ).map(lambda xxs: functools.reduce(f.collect, xxs)),
+            )
