@@ -12,12 +12,13 @@ class SequentialHandler(AsyncHandler):
     def ap[X, Y](
         self, async_process: Iterable[XF1[[X], Y]]
     ) -> XFunc[[Iterable[X]], Iterable[Y]]:
+        @XFunc.from_sync
         def h(iter: Iterable[X]) -> Iterable[Y]:
             return list(
                 map(lambda fel: XFunc(fel[0]).collect(fel[1]), zip(async_process, iter))
             )
 
-        return XFunc(h)
+        return h
 
     @override
     def reduce[X](self, f: XF1[[X, X], X], xs: Iterable[X]) -> X:

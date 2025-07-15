@@ -13,12 +13,13 @@ class SimpleAsyncHandler(AsyncHandler):
     def ap[X, Y](
         self, async_process: Iterable[XF1[[X], Y]]
     ) -> XFunc[[Iterable[X]], Iterable[Y]]:
+        @XFunc.from_async
         async def h(iter: Iterable[X]) -> Iterable[Y]:
             return await asyncio.gather(
                 *(map((lambda fel: XFunc(fel[0])(fel[1])), zip(async_process, iter)))
             )
 
-        return XFunc(h)
+        return h
 
     @override
     def reduce[X](self, f: XF1[[X, X], X], xs: Iterable[X]) -> X:

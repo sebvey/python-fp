@@ -303,7 +303,12 @@ class Xdict[Y, X]:
             assert Xdict({"a": "a", "b": "c"}).filter(lambda y, x: y == x) == Xdict({"a": "a"})
         ```
         """
-        return self.from_list(self.items().filter(tupled(predicate)))
+
+        @XFunc.from_async
+        async def async_tuple(xy: tuple[Y, X]) -> bool:
+            return await XFunc(predicate)(xy[0], xy[1])
+
+        return self.from_list(self.items().filter(async_tuple))
 
     def filter_keys(self, predicate: XF1[[Y], bool]) -> "Xdict[Y, X]":
         """Return a new Xdict, with the couples not matching the predicate deleted.
