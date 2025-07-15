@@ -17,7 +17,7 @@ from typing import (
 from collections.abc import Iterable as ABCIterable
 from xfp import Xresult, Xtry
 from xfp.a import AsyncHandler, SequentialHandler
-from xfp.functions import F1, XF1
+from xfp.functions import F1, XF1, XFunc
 
 
 class _SupportsDunderLT(Protocol):
@@ -204,7 +204,7 @@ class Xlist(Generic[X]):
             assert input.map(f) == Xlist([f(1), f(2), f(3)]) # == Xlist([1, 4, 9])
         ```
         """
-        return self.spawn(self.async_handler.distribute(f, self))
+        return self.spawn(self.async_handler.map(XFunc(f), self))
 
     def filter(self, predicate: XF1[[X], bool]) -> Xlist[X]:
         """Return a new Xlist containing only the elements for which predicate is True.
@@ -219,7 +219,7 @@ class Xlist(Generic[X]):
             assert input.filter(predicate) == Xlist([2, 4]) # keep only even numbers
         ```
         """
-        filters: Iterable[bool] = self.async_handler.distribute(predicate, self)
+        filters: Iterable[bool] = self.async_handler.map(XFunc(predicate), self)
         return self.spawn([el for el, b in zip(self, filters) if b])
 
     def foreach(self, statement: XF1[[X], Any]) -> None:
@@ -238,7 +238,7 @@ class Xlist(Generic[X]):
             # This is an element of the list : 3
         ```
         """
-        self.async_handler.distribute(statement, self)
+        self.async_handler.map(XFunc(statement), self)
 
     def flatten[XS](self: Xlist[Iterable[XS]]) -> Xlist[XS]:
         """Return a new Xlist with one less level of nest.
@@ -315,7 +315,7 @@ class Xlist(Generic[X]):
 
     def min(self, key: Any = None) -> X:
         if key:
-            keys: Iterable[_Comparable] = self.async_handler.distribute(key, self)
+            keys: Iterable[_Comparable] = self.async_handler.map(key, self)
             return min(zip(keys, self), key=lambda kv: kv[0])[1]
         else:
             return min(self, key=key)
@@ -405,7 +405,7 @@ class Xlist(Generic[X]):
 
     def max(self, key: Any = None) -> X:
         if key:
-            keys = self.async_handler.distribute(key, self)
+            keys = self.async_handler.map(key, self)
             return max(zip(keys, self), key=lambda kv: kv[0])[1]
         else:
             return max(self, key=key)
@@ -495,7 +495,7 @@ class Xlist(Generic[X]):
 
     def sorted(self, key: Any = None, reverse: bool = False) -> Xlist[X]:
         if key:
-            keys = self.async_handler.distribute(key, self)
+            keys = self.async_handler.map(key, self)
             return self.spawn(
                 sorted(zip(keys, self), key=lambda kv: kv[0], reverse=reverse)
             ).map(lambda kv: kv[1])
@@ -651,7 +651,7 @@ class Xlist(Generic[X]):
         """
         if len(self) <= 0:
             raise IndexError("<reduce> operation not allowed on empty list")
-        return self.async_handler.reduce(f, self)
+        return self.async_handler.reduce(XFunc(f), self)
 
     def reduce_fr(self, f: XF1[[X, X], X]) -> Xresult[IndexError, X]:
         """Return the accumulation of the Xlist elements using the first element as the initial state of accumulation.
