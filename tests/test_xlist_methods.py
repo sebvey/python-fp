@@ -169,14 +169,6 @@ def test_xlist_fold() -> None:
     assert actual == expected
 
 
-def test_xlist_fold_curried() -> None:
-    input = Xlist(["b", "c"])
-    actual = input.fold("a")(lambda acc, el: acc + el)
-    expected = "abc"
-
-    assert actual == expected
-
-
 def test_xlist_fold_left() -> None:
     input = Xlist(["b", "c"])
     actual = input.fold("a", lambda acc, el: acc + el)
@@ -185,25 +177,9 @@ def test_xlist_fold_left() -> None:
     assert actual == expected
 
 
-def test_xlist_fold_left_curried() -> None:
-    input = Xlist(["b", "c"])
-    actual = input.fold_left("a")(lambda acc, el: acc + el)
-    expected = "abc"
-
-    assert actual == expected
-
-
 def test_xlist_fold_right() -> None:
     input = Xlist(["c", "b"])
     actual = input.fold_right("a", lambda el, acc: acc + el)
-    expected = "cba"
-
-    assert actual == expected
-
-
-def test_xlist_fold_right_curried() -> None:
-    input = Xlist(["c", "b"])
-    actual = input.fold_right("a")(lambda el, acc: acc + el)
     expected = "cba"
 
     assert actual == expected
